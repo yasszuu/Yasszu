@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Duel Sauvage</title>
+  <meta name="description" content="Choisis deux animaux parmi 100 et découvre qui remporterait un duel dans la nature, stats et explications à l'appui.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700&family=Lilita+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="topbar-link" href="#dex"><span class="paw-dot">🐾</span> Consulter l'Animalédex des 100 espèces</a>
+      <label class="search-pill">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M15 15l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <input id="globalSearch" type="search" placeholder="Recherche" autocomplete="off">
+      </label>
+    </div>
+  </div>
+  <nav class="mainnav">
+    <div class="wrap mainnav-inner">
+      <a href="#top" class="logo" aria-label="Duel Sauvage">DUEL<span>SAUVAGE</span></a>
+      <button class="burger" aria-label="Menu" id="burger"><span></span><span></span><span></span></button>
+      <ul class="navlinks" id="navlinks">
+        <li><a href="#dex">Animalédex</a></li>
+        <li><a href="#arene">Arène de duel</a></li>
+        <li><a href="#legendes">Duels légendaires</a></li>
+        <li><a href="#affiche">Animaux à l'affiche</a></li>
+        <li><a href="#methode">Comment ça marche</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<main id="top" class="page">
+  <div class="panel">
+
+    <!-- Tuiles d'accueil -->
+    <section class="tiles">
+      <a href="#arene" class="tile tile-orange">
+        <span class="tile-kicker">Nouveau</span>
+        <span class="tile-title">Lance ton premier duel dans l'Arène</span>
+      </a>
+      <a href="#dex" class="tile tile-blue">
+        <span class="tile-kicker">100 espèces</span>
+        <span class="tile-title">Explore l'Animalédex</span>
+      </a>
+      <a href="#legendes" class="tile tile-red">
+        <span class="tile-kicker">Classiques</span>
+        <span class="tile-title">Duels légendaires</span>
+      </a>
+    </section>
+
+    <!-- Carrousel à l'affiche -->
+    <section id="affiche" class="block">
+      <div class="tab-label"><span class="tab-icon"></span>Animaux à l'affiche</div>
+      <div class="strip carousel">
+        <button class="car-arrow left" id="carPrev" aria-label="Précédent">‹</button>
+        <div class="car-track" id="carTrack"></div>
+        <button class="car-arrow right" id="carNext" aria-label="Suivant">›</button>
+      </div>
+      <div class="block-foot"><a href="#dex" class="btn-dark">Plus d'animaux</a></div>
+    </section>
+
+    <!-- Arène -->
+    <section id="arene" class="block">
+      <div class="tab-label"><span class="tab-icon"></span>Arène de duel</div>
+      <div class="strip arena">
+        <div class="arena-grid">
+          <button class="corner corner-red" id="slotA" data-slot="A"></button>
+          <div class="vs-col">
+            <div class="vs-badge">VS</div>
+            <button class="swap" id="swapBtn" title="Inverser">⇄</button>
+          </div>
+          <button class="corner corner-blue" id="slotB" data-slot="B"></button>
+        </div>
+        <div class="arena-controls">
+          <div class="terrain-pick" id="terrainPick" role="radiogroup" aria-label="Terrain">
+            <span class="ctrl-label">Terrain</span>
+            <button data-t="auto" class="on">✨ Auto</button>
+            <button data-t="terre">🌿 Terre</button>
+            <button data-t="eau">🌊 Eau</button>
+            <button data-t="air">☁️ Ciel</button>
+          </div>
+          <div class="arena-buttons">
+            <button class="btn-ghost" id="randomBtn">🎲 Duel aléatoire</button>
+            <button class="btn-fight" id="fightBtn">⚔ Lancer le duel</button>
+          </div>
+        </div>
+      </div>
+      <div id="result" class="result" hidden></div>
+    </section>
+
+    <!-- Duels légendaires -->
+    <section id="legendes" class="block">
+      <div class="tab-label"><span class="tab-icon"></span>Duels légendaires</div>
+      <div class="legend-grid" id="legendGrid"></div>
+    </section>
+
+    <!-- Animalédex -->
+    <section id="dex" class="block">
+      <div class="tab-label"><span class="tab-icon"></span>Animalédex</div>
+      <div class="dex-filters">
+        <div class="dex-search">
+          <label for="dexSearch">Nom ou numéro</label>
+          <div class="dex-search-row">
+            <input id="dexSearch" type="search" placeholder="Ex. : lion, 042…" autocomplete="off">
+            <button class="btn-orange" id="dexGo" aria-label="Rechercher">
+              <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="10" cy="10" r="6.5" fill="none" stroke="#fff" stroke-width="2.8"/><path d="M15 15l6 6" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <p class="dex-hint">Utilise la recherche ou filtre par classe et par habitat.</p>
+        </div>
+        <div class="dex-selects">
+          <select id="fClasse"><option value="">Toutes les classes</option></select>
+          <select id="fHabitat"><option value="">Tous les habitats</option></select>
+          <select id="fSort">
+            <option value="id">Trier : numéro</option>
+            <option value="nom">Trier : A → Z</option>
+            <option value="kg">Trier : plus lourd</option>
+            <option value="kmh">Trier : plus rapide</option>
+            <option value="att">Trier : meilleure attaque</option>
+            <option value="venin">Trier : plus venimeux</option>
+          </select>
+        </div>
+      </div>
+      <p class="dex-count" id="dexCount"></p>
+      <div class="dex-grid" id="dexGrid"></div>
+    </section>
+
+    <!-- Méthode -->
+    <section id="methode" class="block">
+      <div class="tab-label"><span class="tab-icon"></span>Comment ça marche</div>
+      <div class="method">
+        <div class="method-card">
+          <h3>1. Les stats</h3>
+          <p>Chaque animal a 5 stats de combat notées sur 100 (attaque, défense, agilité, endurance, intelligence), sa vitesse de pointe réelle, son poids réel et, s'il en a, un venin (0 à 3) et une armure (0 à 3).</p>
+        </div>
+        <div class="method-card">
+          <h3>2. La masse compte énormément</h3>
+          <p>Dans la nature, le poids fait la loi : chaque fois qu'un animal est 10 fois plus lourd, il gagne un gros bonus. Seuls le venin, une armure ou une spécialisation (ex. : mangouste contre serpent) peuvent compenser.</p>
+        </div>
+        <div class="method-card">
+          <h3>3. Le terrain</h3>
+          <p>Un requin sur la terre ferme ou un lion en pleine mer perd presque tous ses moyens. En mode Auto, le duel a lieu là où les deux animaux peuvent réellement se rencontrer.</p>
+        </div>
+        <div class="method-card">
+          <h3>4. Le verdict</h3>
+          <p>Les scores sont convertis en probabilité de victoire : la nature n'est jamais écrite d'avance. Ces résultats sont une estimation ludique, pas une vérité scientifique !</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <a href="#top" class="logo logo-small">DUEL<span>SAUVAGE</span></a>
+    <p>100 animaux réels, des milliers de duels possibles. Photos : Wikipédia / Wikimedia Commons (licences libres).</p>
+    <p class="muted">Projet ludique — les résultats sont des estimations basées sur des données réelles simplifiées.</p>
+  </div>
+</footer>
+
+<!-- Fenêtre fiche animal -->
+<div class="modal" id="detailModal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-box detail-box" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <button class="modal-close" data-close aria-label="Fermer">×</button>
+    <div id="detailBody"></div>
+  </div>
+</div>
+
+<!-- Fenêtre choix d'un combattant -->
+<div class="modal" id="pickModal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-box pick-box" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+    <button class="modal-close" data-close aria-label="Fermer">×</button>
+    <h2 id="pickTitle" class="pick-title"></h2>
+    <div class="pick-tools">
+      <input id="pickSearch" type="search" placeholder="Rechercher un animal…" autocomplete="off">
+      <select id="pickClasse"><option value="">Toutes les classes</option></select>
+    </div>
+    <div class="pick-grid" id="pickGrid"></div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
