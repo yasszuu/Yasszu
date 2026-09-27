@@ -9,41 +9,41 @@ import random
 INTRO_TEMPLATES = [
     "Dans la nature, qui remporte un combat entre {a} et {b} ?",
     "Qui l'emporterait dans un affrontement entre {a} et {b} ?",
-    "Face a face : {a} contre {b}. Qui gagne ?",
-    "Un duel opposant {a} a {b} : qui sortirait vainqueur ?",
+    "Face à face : {a} contre {b}. Qui gagne ?",
+    "Un duel opposant {a} à {b} : qui sortirait vainqueur ?",
     "Qui aurait le dessus entre {a} et {b} ?",
     "Entre {a} et {b}, qui remporterait ce combat ?",
     "Voici un affrontement entre {a} et {b}. Qui gagne selon toi ?",
-    "Accroche-toi, ca va etre violent entre {a} et {b} !",
+    "Accroche-toi, ça va être violent entre {a} et {b} !",
     "Team {a} ou team {b} ? Dis-le en commentaire !",
-    "Alerte affrontement : {a} contre {b}, ca sent le carnage !",
-    "Prepare-toi, {a} et {b} vont s'affronter et ca va faire mal !",
-    "Qui de {a} ou {b} merite vraiment le titre de plus fort ?",
+    "Alerte affrontement : {a} contre {b}, ça sent le carnage !",
+    "Prépare-toi, {a} et {b} vont s'affronter et ça va faire mal !",
+    "Qui de {a} ou {b} mérite vraiment le titre de plus fort ?",
     "{a} contre {b} : le combat que personne n'attendait !",
 ]
 
 RESULT_TEMPLATES = [
-    "{winner} l'emporte avec {higher} pourcent de chances, face a {loser} qui obtient {lower} pourcent.",
-    "Avec {higher} pourcent de chances, {winner} remporte ce combat face a {loser}, credite de {lower} pourcent seulement.",
-    "{winner} domine ce duel avec {higher} pourcent, laissant {loser} a seulement {lower} pourcent.",
-    "C'est {winner} qui l'emporte, credite de {higher} pourcent de chances, contre {lower} pourcent pour {loser}.",
+    "{winner} l'emporte avec {higher} pourcent de chances, face à {loser} qui obtient {lower} pourcent.",
+    "Avec {higher} pourcent de chances, {winner} remporte ce combat face à {loser}, crédité de {lower} pourcent seulement.",
+    "{winner} domine ce duel avec {higher} pourcent, laissant {loser} à seulement {lower} pourcent.",
+    "C'est {winner} qui l'emporte, crédité de {higher} pourcent de chances, contre {lower} pourcent pour {loser}.",
     "{winner} sort vainqueur avec {higher} pourcent de chances, {loser} devra se contenter de {lower} pourcent.",
     "Verdict sans appel : {winner} gagne avec {higher} pourcent, face aux {lower} pourcent de {loser}.",
     "{higher} pourcent pour {winner}, contre seulement {lower} pourcent pour {loser} : la victoire lui revient.",
-    "Le combat tourne en faveur de {winner}, credite de {higher} pourcent de chances face a {loser} et ses {lower} pourcent.",
+    "Le combat tourne en faveur de {winner}, crédité de {higher} pourcent de chances face à {loser} et ses {lower} pourcent.",
 ]
 
 # Petite reaction ajoutee apres le resultat, une fois sur deux environ, pour
 # rendre la voix off plus vivante (chaine vide incluse pour ne pas que ce
 # soit systematique a chaque round).
 REACTION_TEMPLATES = [
-    "Sans pitie pour {loser} !",
-    "Perso je m'attendais pas a ca !",
-    "Le twist de la journee !",
-    "Ca pique pour {loser}, avoue !",
-    "Personne ne voyait venir ce resultat !",
-    "Franchement, ca se discute en commentaire !",
-    "Grosse surprise sur ce coup-la !",
+    "Sans pitié pour {loser} !",
+    "Perso je m'attendais pas à ça !",
+    "Le twist de la journée !",
+    "Ça pique pour {loser}, avoue !",
+    "Personne ne voyait venir ce résultat !",
+    "Franchement, ça se discute en commentaire !",
+    "Grosse surprise sur ce coup-là !",
     "",
     "",
     "",
@@ -51,45 +51,45 @@ REACTION_TEMPLATES = [
 
 
 CTA_TEXTS = [
-    "Commente qui aurait du gagner selon toi !",
+    "Commente qui aurait dû gagner selon toi !",
     "Dis-moi en commentaire qui tu aurais choisi !",
     "Abonne-toi pour le prochain combat d'animaux !",
     "Like si t'as appris un truc aujourd'hui !",
-    "T'es plutot d'accord ou pas d'accord avec ces resultats ? Dis-le en commentaire !",
-    "Abonne-toi, d'autres duels arrivent tres vite !",
+    "T'es plutôt d'accord ou pas d'accord avec ces résultats ? Dis-le en commentaire !",
+    "Abonne-toi, d'autres duels arrivent très vite !",
 ]
 
 OPENING_HOOK_TEMPLATES = [
-    "Entre {winner} et {loser}, la reponse va te surprendre !",
-    "{winner} face a {loser} : le resultat est plus extreme que tu ne le crois.",
-    "Prepare-toi, le duel {winner} contre {loser} arrive tres vite.",
-    "{winner} contre {loser} : reste jusqu'au bout, ca vaut le coup.",
-    "Ce que {winner} fait a {loser} dans cette video va te choquer.",
+    "Entre {winner} et {loser}, la réponse va te surprendre !",
+    "{winner} face à {loser} : le résultat est plus extrême que tu ne le crois.",
+    "Prépare-toi, le duel {winner} contre {loser} arrive très vite.",
+    "{winner} contre {loser} : reste jusqu'au bout, ça vaut le coup.",
+    "Ce que {winner} fait à {loser} dans cette vidéo va te choquer.",
 ]
 
 OPENING_SUBTITLE_TEMPLATES = [
     "AUJOURD'HUI {n} ANIMAUX VONT S'AFFRONTER",
     "{n} ANIMAUX, UN SEUL VAINQUEUR PAR DUEL",
-    "{n} BETES ENTRENT EN SCENE AUJOURD'HUI",
-    "PRET POUR {n} COMBATS D'ANIMAUX ?",
+    "{n} BÊTES ENTRENT EN SCÈNE AUJOURD'HUI",
+    "PRÊT POUR {n} COMBATS D'ANIMAUX ?",
     "{n} ANIMAUX. DES DUELS SANS PITIE.",
 ]
 
 
 FRENCH_ORDINALS = {
-    1: "premier", 2: "deuxieme", 3: "troisieme", 4: "quatrieme", 5: "cinquieme",
-    6: "sixieme", 7: "septieme", 8: "huitieme", 9: "neuvieme", 10: "dixieme",
+    1: "premier", 2: "deuxième", 3: "troisième", 4: "quatrième", 5: "cinquième",
+    6: "sixième", 7: "septième", 8: "huitième", 9: "neuvième", 10: "dixième",
 }
 
 
 def french_ordinal(n: int) -> str:
-    return FRENCH_ORDINALS.get(n, f"{n}eme")
+    return FRENCH_ORDINALS.get(n, f"{n}ième")
 
 
 FIGHT_CARD_HOOK_TEMPLATES = [
     "Que se passe-t-il si {a} rencontre {b} dans la nature ? C'est notre {ordinal} duel du jour, reste jusqu'au bout !",
-    "Imagine {a} face a {b} dans la nature... c'est exactement notre {ordinal} combat du jour !",
-    "Prepare-toi : {a} contre {b}, ce sera notre {ordinal} duel aujourd'hui.",
+    "Imagine {a} face à {b} dans la nature... c'est exactement notre {ordinal} combat du jour !",
+    "Prépare-toi : {a} contre {b}, ce sera notre {ordinal} duel aujourd'hui.",
     "{a} contre {b} : notre {ordinal} duel du jour risque de te surprendre.",
 ]
 
@@ -101,10 +101,10 @@ def random_fight_card_hook(winner: str, loser: str, duel_number: int) -> str:
 
 NO_SPOIL_HOOK_TEMPLATES = [
     "Si {a} croise {b} dans la nature, qui ressort vivant ?",
-    "Entre {a} et {b}, un seul survivrait a une vraie rencontre. Lequel ?",
-    "{a} face a {b} : qui s'en sortirait vraiment ?",
-    "Imagine {a} et {b} nez a nez dans la nature... qui gagnerait ?",
-    "{a} contre {b} : qui l'emporterait si ca se passait pour de vrai ?",
+    "Entre {a} et {b}, un seul survivrait à une vraie rencontre. Lequel ?",
+    "{a} face à {b} : qui s'en sortirait vraiment ?",
+    "Imagine {a} et {b} nez à nez dans la nature... qui gagnerait ?",
+    "{a} contre {b} : qui l'emporterait si ça se passait pour de vrai ?",
 ]
 
 

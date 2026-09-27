@@ -227,6 +227,16 @@ couleur de fond de sa propre zone (haut/bas), avec un contour blanc. Un
 petit "ding" retentit pile au moment du reveal, et le cadre du
 **vainqueur** fait un bref flash doré.
 
+### Pourcentages animés
+
+Au moment du résultat, les deux pourcentages **grimpent de 0 jusqu'à leur
+valeur finale** en ~0,6 s (effet compteur), pendant le clignotement vert/noir.
+
+### Pas deux fois le même animal
+
+Le script évite de montrer le même animal dans deux combats d'une même vidéo
+(tant que le pool de combats le permet).
+
 ### Explication : sous-titres auto-générés
 
 Une fois le résultat annoncé, toute la moitié du **perdant** (haut ou bas)
@@ -325,6 +335,5 @@ tiktok-animal-battle/
 ## Idées d'amélioration futures
 
 - Ajouter une musique de fond libre de droits (mixée en fond sonore).
-- Rendre le pourcentage "animé" (compteur qui grimpe) plutôt que statique.
 - Générer plusieurs vidéos en une fois à partir de plusieurs fichiers config.
 - Ajouter une miniature/texte d'accroche pour le premier écran (hook).

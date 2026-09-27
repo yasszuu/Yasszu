@@ -54,6 +54,18 @@ def next_output_path(output_dir: str, basename: str = "video") -> str:
     return os.path.join(output_dir, f"{basename}_{max_n + 1}.mp4")
 
 
+def _refresh_once(fn):
+    """Force force_refresh=True au premier appel pour chaque jeu d'arguments, puis utilise le cache."""
+    done = set()
+
+    def wrapper(*args, **kwargs):
+        key = (args, tuple(sorted(kwargs.items())))
+        first_time = key not in done
+        done.add(key)
+        return fn(*args, **{**kwargs, "force_refresh": first_time})
+    return wrapper
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generateur de video 'combat d'animaux' pour TikTok")
     parser.add_argument("--config", default="config.json", help="Chemin vers le fichier config.json")
@@ -67,21 +79,17 @@ def main():
                          help="Force la regeneration des fichiers audio meme s'ils sont en cache")
     args = parser.parse_args()
 
+    # Les fonctions sont remplacees DANS video_builder (qui les a importees
+    # par leur nom) : patcher seulement modules.image_fetcher / modules.tts
+    # n'avait aucun effet. Chaque element n'est regenere qu'une fois par
+    # lancement, meme s'il sert plusieurs fois dans la video.
+    import modules.video_builder as video_builder
     if args.refresh_images:
-        import modules.image_fetcher as image_fetcher
-        _orig = image_fetcher.get_animal_image
-        image_fetcher.get_animal_image = lambda term, force_refresh=False: _orig(term, force_refresh=True)
-
+        video_builder.get_animal_image = _refresh_once(video_builder.get_animal_image)
+        video_builder.get_cutout = _refresh_once(video_builder.get_cutout)
     if args.refresh_audio:
-        import modules.tts as tts
-        _orig_tts = tts.get_tts_audio
-        tts.get_tts_audio = lambda text, voice="fr-FR-HenriNeural", rate="+0%", volume="+0%", \
-            pitch="+0Hz", force_refresh=False: \
-            _orig_tts(text, voice, rate, volume, pitch, force_refresh=True)
-        _orig_tts_timings = tts.get_tts_audio_with_timings
-        tts.get_tts_audio_with_timings = lambda text, voice="fr-FR-HenriNeural", rate="+0%", \
-            volume="+0%", pitch="+0Hz", force_refresh=False: \
-            _orig_tts_timings(text, voice, rate, volume, pitch, force_refresh=True)
+        video_builder.get_tts_audio = _refresh_once(video_builder.get_tts_audio)
+        video_builder.get_tts_audio_with_timings = _refresh_once(video_builder.get_tts_audio_with_timings)
 
     config = load_config(args.config)
 

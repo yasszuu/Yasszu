@@ -20,6 +20,7 @@ Tout est rendu en PNG/numpy puis transforme en clip par video_builder.py
 """
 import os
 import math
+from functools import lru_cache
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageFilter, ImageChops
 
@@ -42,7 +43,10 @@ def _text_stroke_width(font_size: int) -> int:
     return max(1, round(font_size * TEXT_STROKE_RATIO))
 
 
+@lru_cache(maxsize=256)
 def load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
+    # Mis en cache : la police est redemandee a chaque image de la video
+    # (plusieurs milliers de fois), la relire depuis le disque ralentissait le rendu.
     try:
         return ImageFont.truetype(path, size)
     except Exception:

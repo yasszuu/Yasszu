@@ -63,6 +63,7 @@ COUNTDOWN_STEP = 0.3
 ANIMAL_SOUND_MAX_DURATION = 1.0
 ANIMAL_SOUND_VOLUME = 0.55
 PUNCH_ZOOM_DURATION = 0.35
+PERCENT_COUNT_UP_DURATION = 0.6  # les pourcentages "grimpent" de 0 a leur valeur finale
 
 
 def _silence(duration: float) -> AudioClip:
@@ -215,7 +216,12 @@ def resolve_animal_visual(display_name: str, search_term: str, outline_thickness
 
 def build_round_clip(round_cfg: dict, vcfg: dict, round_number: int, total_rounds_estimate: int,
                       top_color: str, bottom_color: str, countdown_seconds: float = 3.0,
-                      express: bool = False, log=print):
+                      express: bool = False, texts: dict = None, log=print):
+    # 'texts' memorise les phrases tirees au hasard (intro / resultat) : en
+    # reconstruisant le round plus tard avec les memes phrases, on reutilise
+    # la voix deja en cache au lieu d'en regenerer une nouvelle.
+    if texts is None:
+        texts = {}
     W, H = vcfg["width"], vcfg["height"]
     voice, rate, volume = vcfg["voice"], vcfg["voice_rate"], vcfg["voice_volume"]
     pitch = vcfg.get("voice_pitch", "+0Hz")
@@ -224,6 +230,8 @@ def build_round_clip(round_cfg: dict, vcfg: dict, round_number: int, total_round
     pct_a, pct_b = int(round_cfg["percent_a"]), int(round_cfg["percent_b"])
     fps = vcfg["fps"]
     progress_value = min(1.0, round_number / max(1, total_rounds_estimate))
+    if "intro" not in texts:
+        texts["intro"] = random_intro_sentence(round_cfg["animal_a"], round_cfg["animal_b"])
 
     log(f"  -> Round {round_number} : {name_a} vs {name_b}" + (" [express]" if express else ""))
 
@@ -243,7 +251,7 @@ def build_round_clip(round_cfg: dict, vcfg: dict, round_number: int, total_round
     # ---- Phase 1 : intro, avec apparition ANIMEE (grossit + fondu) de
     #      chaque animal au moment ou son nom est prononce (+ pop) ----
     log("     - phase intro...")
-    intro_text = random_intro_sentence(name_a, name_b)
+    intro_text = texts["intro"]
     intro_audio_path, intro_boundaries = get_tts_audio_with_timings(intro_text, voice, rate, volume, pitch)
     intro_audio = AudioFileClip(intro_audio_path)
 
@@ -351,16 +359,23 @@ def build_round_clip(round_cfg: dict, vcfg: dict, round_number: int, total_round
     result_img_off = render_result_frame(bg_off, pct_a, pct_b, font_bold, top_color, bottom_color)
     result_img_on = render_result_frame(bg_on, pct_a, pct_b, font_bold, top_color, bottom_color)
 
-    result_text = random_result_sentence(winner, higher, loser, lower)
+    if "result" not in texts:
+        texts["result"] = random_result_sentence(winner, higher, loser, lower)
+    result_text = texts["result"]
     result_audio = AudioFileClip(get_tts_audio(result_text, voice, rate, volume, pitch))
     result_duration = result_audio.duration + vcfg["result_display_seconds"]
 
     def make_result_frame(t):
-        if t < WINNER_BLINK_DURATION:
-            blink_on = int(t * WINNER_BLINK_HZ * 2) % 2 == 0
-            frame = result_img_on if blink_on else result_img_off
+        blink_on = t >= WINNER_BLINK_DURATION or int(t * WINNER_BLINK_HZ * 2) % 2 == 0
+        if t < PERCENT_COUNT_UP_DURATION:
+            # Les pourcentages "grimpent" rapidement jusqu'a leur valeur
+            # finale (ease-out : demarre vite, ralentit a la fin).
+            k = 1 - (1 - t / PERCENT_COUNT_UP_DURATION) ** 3
+            bg = bg_on if blink_on else bg_off
+            frame = render_result_frame(bg, round(pct_a * k), round(pct_b * k), font_bold, top_color, bottom_color)
         else:
-            frame = result_img_on  # fige (vainqueur vert / perdant noir, 100%) jusqu'a la fin de la manche
+            # fige (vainqueur vert / perdant noir, 100%) jusqu'a la fin de la manche
+            frame = result_img_on if blink_on else result_img_off
         return np.array(frame)
 
     result_clip = VideoClip(make_result_frame, duration=result_duration).with_fps(min(fps, 30))
@@ -598,34 +613,57 @@ def _add_background_music(final_clip, music_folder: str, music_volume: float, lo
     return final_clip.with_audio(combined_audio)
 
 
+def _countdown_for(round_number: int) -> float:
+    """Decompte qui raccourcit au fil de la video (3s -> 1.5s)."""
+    return max(COUNTDOWN_MIN_SECONDS, COUNTDOWN_START_SECONDS - COUNTDOWN_STEP * (round_number - 1))
+
+
+def _round_animals(round_cfg: dict) -> set:
+    return {round_cfg["animal_a"].strip().lower(), round_cfg["animal_b"].strip().lower()}
+
+
 def build_full_video(config: dict, log=print):
     vcfg = config["video"]
-    candidates = config["rounds"]
+    candidates = list(config["rounds"])
     target_min = vcfg.get("target_duration_min", 80)
     total_rounds_estimate = max(1, round(target_min / AVG_ROUND_DURATION))
 
     # ---- Etape 1 : selection des rounds (on construit les clips au fur et
-    #      a mesure, jusqu'a atteindre la duree cible). ----
+    #      a mesure pour connaitre leur duree, jusqu'a atteindre la duree
+    #      cible). Un meme animal n'apparait qu'une fois par video tant que
+    #      le pool le permet (sinon on complete avec les combats restants). ----
     selected_rounds = []
-    round_clips = []
     round_colors = []
-    round_build_args = []  # (round_number, countdown_seconds, express) pour reconstruction eventuelle
+    round_texts = []   # phrases tirees au hasard, reutilisees a l'etape 3
+    round_express = []
+    used_animals = set()
     total_duration = 0.0
-    for round_cfg in candidates:
+    fresh = list(candidates)
+    leftovers = []
+    while fresh or leftovers:
+        if fresh:
+            round_cfg = fresh.pop(0)
+            if _round_animals(round_cfg) & used_animals:
+                leftovers.append(round_cfg)
+                continue
+        else:
+            round_cfg = leftovers.pop(0)
+
         colors = random_corner_pair()
         round_number = len(selected_rounds) + 1
-        countdown_seconds = max(COUNTDOWN_MIN_SECONDS,
-                                 COUNTDOWN_START_SECONDS - COUNTDOWN_STEP * (round_number - 1))
         express = round_number > 1 and random.random() < EXPRESS_PROBABILITY
+        texts = {}
 
         round_clip = build_round_clip(round_cfg, vcfg, round_number, total_rounds_estimate,
-                                       colors[0], colors[1], countdown_seconds=countdown_seconds,
-                                       express=express, log=log)
+                                       colors[0], colors[1], countdown_seconds=_countdown_for(round_number),
+                                       express=express, texts=texts, log=log)
         selected_rounds.append(round_cfg)
-        round_clips.append(round_clip)
         round_colors.append(colors)
-        round_build_args.append((round_number, countdown_seconds, express))
+        round_texts.append(texts)
+        round_express.append(express)
+        used_animals |= _round_animals(round_cfg)
         total_duration += round_clip.duration
+        round_clip.close()
         if total_duration >= target_min:
             break
 
@@ -633,29 +671,36 @@ def build_full_video(config: dict, log=print):
 
     # ---- Etape 2 : le combat le plus SERRE (issue la plus incertaine) est
     #      deplace en DERNIER (le garder pour la fin cree du suspense ; le
-    #      montrer en premier tuerait la hype). Le hook visuel dans
-    #      l'ouverture montre deja son vainqueur, mais sans reveler l'issue. ----
+    #      montrer en premier tuerait la hype). Le hook dans l'ouverture le
+    #      teasera, sans reveler l'issue. ----
     if len(selected_rounds) > 1:
         hero_idx = min(
             range(len(selected_rounds)),
             key=lambda i: abs(selected_rounds[i]["percent_a"] - selected_rounds[i]["percent_b"]),
         )
-        if hero_idx != len(selected_rounds) - 1:
-            for lst in (selected_rounds, round_clips, round_colors, round_build_args):
-                lst.append(lst.pop(hero_idx))
+        for lst in (selected_rounds, round_colors, round_texts, round_express):
+            lst.append(lst.pop(hero_idx))
 
-        # Le round final ne doit jamais etre "express" : c'est le climax de
-        # la video, il merite son explication complete.
-        round_number, countdown_seconds, express = round_build_args[-1]
-        if express:
-            log("     (le duel final etait 'express', reconstruction avec l'explication complete)")
-            round_clips[-1] = build_round_clip(
-                selected_rounds[-1], vcfg, round_number, total_rounds_estimate,
-                round_colors[-1][0], round_colors[-1][1], countdown_seconds=countdown_seconds,
-                express=False, log=log,
-            )
+    # ---- Etape 3 : construction definitive des rounds dans leur ordre
+    #      final, pour que le numero de round, le decompte qui accelere et
+    #      la barre de progression suivent bien l'ordre reel de la video
+    #      (avant, le duel deplace en dernier gardait ceux de sa position
+    #      d'origine : la barre de progression reculait). Images et voix
+    #      sont deja en cache, cette etape est rapide. Ni le premier ni le
+    #      dernier round (le climax) ne sont "express". ----
+    log("Mise en ordre finale des rounds...")
+    n_rounds = len(selected_rounds)
+    round_clips = []
+    for i, round_cfg in enumerate(selected_rounds):
+        round_number = i + 1
+        express = round_express[i] and 1 < round_number < n_rounds
+        round_clips.append(build_round_clip(
+            round_cfg, vcfg, round_number, n_rounds,
+            round_colors[i][0], round_colors[i][1], countdown_seconds=_countdown_for(round_number),
+            express=express, texts=round_texts[i], log=lambda *a, **k: None,
+        ))
 
-    # ---- Etape 3 : assemblage avec les transitions en balayage rotatif
+    # ---- Etape 4 : assemblage avec les transitions en balayage rotatif
     #      entre chaque round (depuis le noir, cf. la sortie animee). ----
     all_clips = []
     for i, round_clip in enumerate(round_clips):
@@ -688,7 +733,7 @@ def build_full_video(config: dict, log=print):
         codec="libx264",
         audio_codec="aac",
         preset="medium",
-        threads=4,
+        threads=os.cpu_count() or 4,
     )
     total_duration_final = final.duration
     log(f"Termine ! Duree totale : {total_duration_final:.1f} secondes.")

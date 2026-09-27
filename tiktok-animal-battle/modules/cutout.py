@@ -40,7 +40,7 @@ def _get_session():
         return None
 
 
-def get_cutout(photo_path: str, cache_key: str):
+def get_cutout(photo_path: str, cache_key: str, force_refresh: bool = False):
     """
     Renvoie une image PIL RGBA detouree (fond transparent) pour ce fichier,
     mise en cache par 'cache_key' (ex. le terme de recherche de l'animal).
@@ -50,7 +50,7 @@ def get_cutout(photo_path: str, cache_key: str):
     key = hashlib.md5(cache_key.lower().encode("utf-8")).hexdigest()
     cache_path = os.path.join(CACHE_DIR, f"{key}.png")
 
-    if os.path.exists(cache_path):
+    if os.path.exists(cache_path) and not force_refresh:
         try:
             return Image.open(cache_path).convert("RGBA")
         except Exception:
