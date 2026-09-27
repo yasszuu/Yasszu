@@ -1,0 +1,1152 @@
+{
+  "video": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "voice": "fr-FR-HenriNeural",
+    "voice_rate": "+24%",
+    "voice_volume": "+100%",
+    "voice_pitch": "-8Hz",
+    "font_regular": "assets/fonts/Poppins-SemiBold.ttf",
+    "font_bold": "fonts/Super Jello.ttf",
+    "countdown_seconds": 3,
+    "intro_extra_seconds": 0.6,
+    "result_display_seconds": 0.15,
+    "explanation_extra_seconds": 0.8,
+    "music_folder": "musique",
+    "music_volume": 0.096,
+    "output_dir": "output",
+    "output_basename": "video",
+    "target_duration_min": 80,
+    "target_duration_max": 120,
+    "logo_folder": "logo",
+    "intro_background_folder": "fond_intro"
+  },
+  "rounds_pool": [
+    {
+      "animal_a": "Lion",
+      "animal_b": "Tigre",
+      "search_a": "lion animal",
+      "search_b": "tiger animal",
+      "percent_a": 43,
+      "percent_b": 57,
+      "explanation": "Le tigre est plus lourd et plus puissant, mais le lion compense grace a son mental de chasseur en groupe."
+    },
+    {
+      "animal_a": "Ours brun",
+      "animal_b": "Gorille",
+      "search_a": "brown bear animal",
+      "search_b": "gorilla animal",
+      "percent_a": 65,
+      "percent_b": 35,
+      "explanation": "L'ours possede une force brute et des griffes redoutables qui font pencher la balance en sa faveur."
+    },
+    {
+      "animal_a": "Requin blanc",
+      "animal_b": "Orque",
+      "search_a": "great white shark",
+      "search_b": "orca killer whale",
+      "percent_a": 15,
+      "percent_b": 85,
+      "explanation": "L'orque est bien plus intelligente et rapide en milieu marin, elle domine largement ce combat."
+    },
+    {
+      "animal_a": "Aigle royal",
+      "animal_b": "Faucon pelerin",
+      "search_a": "golden eagle bird",
+      "search_b": "peregrine falcon bird",
+      "percent_a": 70,
+      "percent_b": 30,
+      "explanation": "L'aigle royal a des serres bien plus puissantes, meme si le faucon est le plus rapide des deux."
+    },
+    {
+      "animal_a": "Crocodile du Nil",
+      "animal_b": "Hippopotame",
+      "search_a": "nile crocodile animal",
+      "search_b": "hippopotamus animal",
+      "percent_a": 25,
+      "percent_b": 75,
+      "explanation": "L'hippopotame est bien plus lourd et agressif, il l'emporte dans la majorite des affrontements reels."
+    },
+    {
+      "animal_a": "Loup gris",
+      "animal_b": "Hyene tachetee",
+      "search_a": "grey wolf animal",
+      "search_b": "spotted hyena",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Le loup a une machoire legerement moins puissante, mais sa technique de combat en meute fait la difference."
+    },
+    {
+      "animal_a": "Elephant d'Afrique",
+      "animal_b": "Rhinoceros blanc",
+      "search_a": "african elephant animal",
+      "search_b": "white rhinoceros animal",
+      "percent_a": 78,
+      "percent_b": 22,
+      "explanation": "L'elephant est bien plus lourd et intelligent, et utilise ses defenses et sa taille pour dominer le rhinoceros."
+    },
+    {
+      "animal_a": "Kangourou roux",
+      "animal_b": "Casoar",
+      "search_a": "red kangaroo animal",
+      "search_b": "cassowary bird",
+      "percent_a": 40,
+      "percent_b": 60,
+      "explanation": "Le casoar possede des griffes tranchantes comme des couteaux, ce qui en fait un adversaire redoute meme face au kangourou boxeur."
+    },
+    {
+      "animal_a": "Python reticule",
+      "animal_b": "Mangouste",
+      "search_a": "reticulated python snake",
+      "search_b": "mongoose animal",
+      "percent_a": 62,
+      "percent_b": 38,
+      "explanation": "Le python peut etouffer sa proie par constriction, mais la mangouste est reputee pour sa rapidite et sa resistance au venin."
+    },
+    {
+      "animal_a": "Aigle des Philippines",
+      "animal_b": "Renard roux",
+      "search_a": "philippine eagle bird",
+      "search_b": "red fox animal",
+      "percent_a": 68,
+      "percent_b": 32,
+      "explanation": "Cet aigle geant chasse depuis les airs avec un effet de surprise que le renard a du mal a anticiper."
+    },
+    {
+      "animal_a": "Hippopotame",
+      "animal_b": "Rhinoceros noir",
+      "search_a": "hippopotamus animal",
+      "search_b": "black rhinoceros animal",
+      "percent_a": 47,
+      "percent_b": 53,
+      "explanation": "Deux poids lourds tres agressifs : le rhinoceros charge plus fort, mais l'hippopotame a une machoire capable de le blesser gravement."
+    },
+    {
+      "animal_a": "Dragon de Komodo",
+      "animal_b": "Chacal dore",
+      "search_a": "komodo dragon animal",
+      "search_b": "golden jackal animal",
+      "percent_a": 73,
+      "percent_b": 27,
+      "explanation": "Le venin et la morsure du dragon de Komodo font largement pencher la balance malgre l'agilite du chacal."
+    },
+    {
+      "animal_a": "Blaireau du miel",
+      "animal_b": "Chacal a dos noir",
+      "search_a": "honey badger animal",
+      "search_b": "black backed jackal",
+      "percent_a": 58,
+      "percent_b": 42,
+      "explanation": "Le blaireau a miel est celebre pour son courage et sa peau tres epaisse, difficile a mordre efficacement."
+    },
+    {
+      "animal_a": "Buffle d'Afrique",
+      "animal_b": "Lion",
+      "search_a": "african buffalo animal",
+      "search_b": "lion animal",
+      "percent_a": 54,
+      "percent_b": 46,
+      "explanation": "Seul face a un buffle adulte, le lion prend un vrai risque : les cornes et la puissance du buffle ont deja tue des lions isoles."
+    },
+    {
+      "animal_a": "Aigle royal",
+      "animal_b": "Loup gris",
+      "search_a": "golden eagle bird",
+      "search_b": "grey wolf animal",
+      "percent_a": 35,
+      "percent_b": 65,
+      "explanation": "Au sol, le loup est bien plus lourd et rapide que ce que l'aigle peut soulever ou neutraliser efficacement."
+    },
+    {
+      "animal_a": "Ours polaire",
+      "animal_b": "Morse",
+      "search_a": "polar bear animal",
+      "search_b": "walrus animal",
+      "percent_a": 44,
+      "percent_b": 56,
+      "explanation": "Le morse est enorme et ses defenses sont dangereuses ; l'ours polaire prefere generalement chasser des morses jeunes ou affaiblis."
+    },
+    {
+      "animal_a": "Leopard",
+      "animal_b": "Jaguar",
+      "search_a": "leopard animal",
+      "search_b": "jaguar animal",
+      "percent_a": 35,
+      "percent_b": 65,
+      "explanation": "Le jaguar a la morsure la plus puissante de tous les grands felins, capable de percer une carapace de tortue, ce qui lui donne un net avantage sur le leopard."
+    },
+    {
+      "animal_a": "Guepard",
+      "animal_b": "Leopard",
+      "search_a": "cheetah animal",
+      "search_b": "leopard animal",
+      "percent_a": 25,
+      "percent_b": 75,
+      "explanation": "Le guepard est construit pour la vitesse et non le combat, tandis que le leopard est plus robuste et capable de tuer des proies bien plus grosses que lui."
+    },
+    {
+      "animal_a": "Puma",
+      "animal_b": "Jaguar",
+      "search_a": "cougar puma animal",
+      "search_b": "jaguar animal",
+      "percent_a": 30,
+      "percent_b": 70,
+      "explanation": "Le jaguar est nettement plus lourd et possede une morsure bien plus puissante que le puma, qui compte surtout sur sa discretion et son agilite."
+    },
+    {
+      "animal_a": "Chimpanze",
+      "animal_b": "Babouin",
+      "search_a": "chimpanzee animal",
+      "search_b": "baboon animal",
+      "percent_a": 68,
+      "percent_b": 32,
+      "explanation": "Le chimpanze est bien plus fort physiquement et chasse parfois des babouins en groupe dans la nature."
+    },
+    {
+      "animal_a": "Orang-outan",
+      "animal_b": "Chimpanze",
+      "search_a": "orangutan animal",
+      "search_b": "chimpanzee animal",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "L'orang-outan est plus lourd et possede une force phenomenale dans les bras, mais le chimpanze compense par son agressivite et sa rapidite."
+    },
+    {
+      "animal_a": "Requin marteau",
+      "animal_b": "Requin bouledogue",
+      "search_a": "hammerhead shark",
+      "search_b": "bull shark",
+      "percent_a": 35,
+      "percent_b": 65,
+      "explanation": "Le requin bouledogue est reputee etre l'un des requins les plus agressifs et n'hesite pas a s'attaquer a d'autres requins."
+    },
+    {
+      "animal_a": "Crocodile marin",
+      "animal_b": "Requin bouledogue",
+      "search_a": "saltwater crocodile",
+      "search_b": "bull shark",
+      "percent_a": 60,
+      "percent_b": 40,
+      "explanation": "Le crocodile marin est le plus grand reptile vivant et a deja ete observe en train de tuer des requins dans son territoire."
+    },
+    {
+      "animal_a": "Anguille electrique",
+      "animal_b": "Piranha",
+      "search_a": "electric eel",
+      "search_b": "piranha fish",
+      "percent_a": 70,
+      "percent_b": 30,
+      "explanation": "L'anguille electrique peut generer des decharges de plusieurs centaines de volts, suffisant pour assommer un piranha instantanement."
+    },
+    {
+      "animal_a": "Aigle harpie",
+      "animal_b": "Aigle royal",
+      "search_a": "harpy eagle bird",
+      "search_b": "golden eagle bird",
+      "percent_a": 62,
+      "percent_b": 38,
+      "explanation": "L'aigle harpie possede des serres parmi les plus puissantes du monde animal, plus grandes que celles de l'aigle royal."
+    },
+    {
+      "animal_a": "Grand-duc d'Amerique",
+      "animal_b": "Buse a queue rousse",
+      "search_a": "great horned owl",
+      "search_b": "red tailed hawk",
+      "percent_a": 68,
+      "percent_b": 32,
+      "explanation": "Le grand-duc d'Amerique est plus lourd et chasse meme d'autres rapaces, ce qui lui donne l'avantage face a la buse."
+    },
+    {
+      "animal_a": "Pygargue a tete blanche",
+      "animal_b": "Aigle royal",
+      "search_a": "bald eagle bird",
+      "search_b": "golden eagle bird",
+      "percent_a": 40,
+      "percent_b": 60,
+      "explanation": "L'aigle royal est generalement considere comme le plus puissant chasseur des deux, avec des serres plus adaptees au combat aerien."
+    },
+    {
+      "animal_a": "Cobra royal",
+      "animal_b": "Mangouste",
+      "search_a": "king cobra snake",
+      "search_b": "mongoose animal",
+      "percent_a": 42,
+      "percent_b": 58,
+      "explanation": "La mangouste possede une resistance partielle au venin et une vivacite qui lui permettent souvent de vaincre le cobra royal."
+    },
+    {
+      "animal_a": "Anaconda vert",
+      "animal_b": "Jaguar",
+      "search_a": "green anaconda snake",
+      "search_b": "jaguar animal",
+      "percent_a": 38,
+      "percent_b": 62,
+      "explanation": "Sur terre le jaguar a l'avantage grace a sa morsure redoutable, meme si l'anaconda reste dangereux en milieu aquatique."
+    },
+    {
+      "animal_a": "Chien sauvage d'Afrique",
+      "animal_b": "Hyene tachetee",
+      "search_a": "african wild dog",
+      "search_b": "spotted hyena",
+      "percent_a": 30,
+      "percent_b": 70,
+      "explanation": "La hyene tachetee est bien plus lourde et puissante individuellement, meme si les chiens sauvages sont redoutables en meute."
+    },
+    {
+      "animal_a": "Dingo",
+      "animal_b": "Loup gris",
+      "search_a": "dingo animal",
+      "search_b": "grey wolf animal",
+      "percent_a": 25,
+      "percent_b": 75,
+      "explanation": "Le loup gris est nettement plus grand et plus lourd que le dingo, ce qui lui donne un avantage net en combat singulier."
+    },
+    {
+      "animal_a": "Girafe",
+      "animal_b": "Lion",
+      "search_a": "giraffe animal",
+      "search_b": "lion animal",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Un coup de sabot de girafe peut briser la machoire d'un lion, ce qui rend cette proie bien plus dangereuse qu'il n'y parait."
+    },
+    {
+      "animal_a": "Zebre",
+      "animal_b": "Lion",
+      "search_a": "zebra animal",
+      "search_b": "lion animal",
+      "percent_a": 30,
+      "percent_b": 70,
+      "explanation": "Le zebre peut mordre et ruer violemment, mais le lion reste bien mieux equipe pour le combat rapproche."
+    },
+    {
+      "animal_a": "Elan",
+      "animal_b": "Loup gris",
+      "search_a": "moose animal",
+      "search_b": "grey wolf animal",
+      "percent_a": 68,
+      "percent_b": 32,
+      "explanation": "Un elan adulte peut tuer un loup d'un seul coup de sabot, ce qui rend l'affrontement tres risque pour un loup seul."
+    },
+    {
+      "animal_a": "Boeuf musque",
+      "animal_b": "Loup gris",
+      "search_a": "muskox animal",
+      "search_b": "grey wolf animal",
+      "percent_a": 70,
+      "percent_b": 30,
+      "explanation": "Le boeuf musque est un animal massif et tres puissant, generalement hors de portee d'un loup isole."
+    },
+    {
+      "animal_a": "Bison d'Amerique",
+      "animal_b": "Ours grizzly",
+      "search_a": "american bison animal",
+      "search_b": "grizzly bear animal",
+      "percent_a": 60,
+      "percent_b": 40,
+      "explanation": "Le bison est un colosse tres difficile a abattre, et meme le grizzly prefere generalement s'attaquer aux individus jeunes ou affaiblis."
+    },
+    {
+      "animal_a": "Requin tigre",
+      "animal_b": "Requin bouledogue",
+      "search_a": "tiger shark",
+      "search_b": "bull shark",
+      "percent_a": 58,
+      "percent_b": 42,
+      "explanation": "Le requin tigre est generalement plus grand et plus lourd que le requin bouledogue, ce qui lui donne l'avantage en taille."
+    },
+    {
+      "animal_a": "Scorpion",
+      "animal_b": "Mygale",
+      "search_a": "scorpion animal",
+      "search_b": "tarantula spider",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Le scorpion possede un venin et des pinces qui lui donnent un leger avantage sur la mygale, meme si l'issue depend beaucoup des especes en presence."
+    },
+    {
+      "animal_a": "Mamba noir",
+      "animal_b": "Mangouste",
+      "search_a": "black mamba snake",
+      "search_b": "mongoose animal",
+      "percent_a": 58,
+      "percent_b": 42,
+      "explanation": "Le mamba noir est l'un des serpents les plus venimeux et rapides au monde, ce qui le rend tres dangereux meme pour la mangouste."
+    },
+    {
+      "animal_a": "Serpent a sonnette",
+      "animal_b": "Grand geocoucou",
+      "search_a": "rattlesnake animal",
+      "search_b": "greater roadrunner bird",
+      "percent_a": 45,
+      "percent_b": 55,
+      "explanation": "Le grand geocoucou est rapide et ruse, et s'attaque parfois reellement aux serpents a sonnette en visant la tete."
+    },
+    {
+      "animal_a": "Herisson",
+      "animal_b": "Renard roux",
+      "search_a": "hedgehog animal",
+      "search_b": "red fox animal",
+      "percent_a": 60,
+      "percent_b": 40,
+      "explanation": "Les piquants du herisson forment une defense tres efficace que peu de renards parviennent a contourner."
+    },
+    {
+      "animal_a": "Autruche",
+      "animal_b": "Guepard",
+      "search_a": "ostrich bird",
+      "search_b": "cheetah animal",
+      "percent_a": 54,
+      "percent_b": 46,
+      "explanation": "L'autruche peut donner des coups de patte capables de tuer un predateur, ce qui la rend dangereuse malgre la vitesse du guepard."
+    },
+    {
+      "animal_a": "Secretaire (oiseau)",
+      "animal_b": "Cobra royal",
+      "search_a": "secretary bird",
+      "search_b": "king cobra snake",
+      "percent_a": 63,
+      "percent_b": 37,
+      "explanation": "Le secretaire est specialise dans la chasse aux serpents et utilise des coups de patte extremement rapides pour neutraliser sa proie."
+    },
+    {
+      "animal_a": "Tigre de Siberie",
+      "animal_b": "Ours brun",
+      "search_a": "siberian tiger animal",
+      "search_b": "brown bear animal",
+      "percent_a": 52,
+      "percent_b": 48,
+      "explanation": "Ce duel est l'un des plus etudies par les naturalistes : l'ours brun est plus lourd, mais le tigre de Siberie compense par sa vitesse et sa technique d'attaque surprise."
+    },
+    {
+      "animal_a": "Phoque leopard",
+      "animal_b": "Orque",
+      "search_a": "leopard seal animal",
+      "search_b": "orca killer whale",
+      "percent_a": 10,
+      "percent_b": 90,
+      "explanation": "L'orque est un predateur bien plus grand et intelligent qui chasse parfois activement les phoques leopards en Antarctique."
+    },
+    {
+      "animal_a": "Souris",
+      "animal_b": "Chat domestique",
+      "search_a": "mouse animal",
+      "search_b": "domestic cat",
+      "percent_a": 8,
+      "percent_b": 92,
+      "explanation": "Le chat domestique est un predateur bien plus rapide et agile, la souris n'a quasiment aucune chance en confrontation directe."
+    },
+    {
+      "animal_a": "Chihuahua",
+      "animal_b": "Rottweiler",
+      "search_a": "chihuahua dog",
+      "search_b": "rottweiler dog",
+      "percent_a": 6,
+      "percent_b": 94,
+      "explanation": "Malgre son caractere, le chihuahua est totalement depasse par la taille et la force du rottweiler."
+    },
+    {
+      "animal_a": "Chaton",
+      "animal_b": "Pitbull",
+      "search_a": "kitten cat",
+      "search_b": "pitbull dog",
+      "percent_a": 5,
+      "percent_b": 95,
+      "explanation": "L'ecart de taille et de force est trop important pour que le chaton ait une chance reelle."
+    },
+    {
+      "animal_a": "Fourmi",
+      "animal_b": "Ours brun",
+      "search_a": "ant insect",
+      "search_b": "brown bear animal",
+      "percent_a": 1,
+      "percent_b": 99,
+      "explanation": "Une fourmi isolee ne represente absolument aucune menace face a un ours, meme si les fourmis en colonie peuvent etre redoutables."
+    },
+    {
+      "animal_a": "Escargot",
+      "animal_b": "Aigle royal",
+      "search_a": "garden snail",
+      "search_b": "golden eagle bird",
+      "percent_a": 3,
+      "percent_b": 97,
+      "explanation": "L'escargot n'a ni vitesse ni defense efficace face aux serres d'un aigle."
+    },
+    {
+      "animal_a": "Poisson rouge",
+      "animal_b": "Requin blanc",
+      "search_a": "goldfish",
+      "search_b": "great white shark",
+      "percent_a": 2,
+      "percent_b": 98,
+      "explanation": "Le requin blanc chasse des proies bien plus grosses et rapides qu'un simple poisson rouge."
+    },
+    {
+      "animal_a": "Lapin",
+      "animal_b": "Renard roux",
+      "search_a": "rabbit animal",
+      "search_b": "red fox animal",
+      "percent_a": 22,
+      "percent_b": 78,
+      "explanation": "Le renard est un predateur specialise dans la chasse au lapin, meme si ce dernier peut parfois s'echapper grace a sa vitesse."
+    },
+    {
+      "animal_a": "Paresseux",
+      "animal_b": "Jaguar",
+      "search_a": "sloth animal",
+      "search_b": "jaguar animal",
+      "percent_a": 4,
+      "percent_b": 96,
+      "explanation": "Le paresseux est lent et sans defense, une proie facile pour le jaguar quand celui-ci le repere."
+    },
+    {
+      "animal_a": "Poule",
+      "animal_b": "Renard roux",
+      "search_a": "chicken hen",
+      "search_b": "red fox animal",
+      "percent_a": 12,
+      "percent_b": 88,
+      "explanation": "Le renard est reputee pour s'introduire dans les poulaillers, la poule n'a que peu de moyens de se defendre."
+    },
+    {
+      "animal_a": "Tigre de Siberie",
+      "animal_b": "Chien domestique",
+      "search_a": "siberian tiger animal",
+      "search_b": "domestic dog",
+      "percent_a": 96,
+      "percent_b": 4,
+      "explanation": "Meme un grand chien domestique reste tres largement depasse par la puissance d'un tigre de Siberie."
+    },
+    {
+      "animal_a": "Requin blanc",
+      "animal_b": "Phoque commun",
+      "search_a": "great white shark",
+      "search_b": "harbor seal animal",
+      "percent_a": 88,
+      "percent_b": 12,
+      "explanation": "Le requin blanc est parfaitement adapte a la chasse aux phoques, sa proie de predilection."
+    },
+    {
+      "animal_a": "Ours polaire",
+      "animal_b": "Renard polaire",
+      "search_a": "polar bear animal",
+      "search_b": "arctic fox animal",
+      "percent_a": 95,
+      "percent_b": 5,
+      "explanation": "L'ecart de taille est enorme, le renard arctique n'a aucune chance en confrontation directe."
+    },
+    {
+      "animal_a": "Aigle pecheur",
+      "animal_b": "Saumon",
+      "search_a": "osprey bird",
+      "search_b": "salmon fish",
+      "percent_a": 85,
+      "percent_b": 15,
+      "explanation": "L'aigle pecheur possede des serres puissantes et une vue exceptionnelle pour attraper les poissons a la surface."
+    },
+    {
+      "animal_a": "Crocodile du Nil",
+      "animal_b": "Gazelle",
+      "search_a": "nile crocodile animal",
+      "search_b": "gazelle animal",
+      "percent_a": 82,
+      "percent_b": 18,
+      "explanation": "Le crocodile surprend ses proies pres des points d'eau ou la gazelle est particulierement vulnerable."
+    },
+    {
+      "animal_a": "Frelon asiatique",
+      "animal_b": "Abeille",
+      "search_a": "asian hornet insect",
+      "search_b": "honey bee insect",
+      "percent_a": 83,
+      "percent_b": 17,
+      "explanation": "Un frelon asiatique isole domine facilement une abeille seule, meme si les colonies d'abeilles savent parfois se defendre collectivement."
+    },
+    {
+      "animal_a": "Belette",
+      "animal_b": "Lapin",
+      "search_a": "weasel animal",
+      "search_b": "rabbit animal",
+      "percent_a": 63,
+      "percent_b": 37,
+      "explanation": "Malgre sa petite taille, la belette est un predateur tres efficace capable de tuer des lapins bien plus gros qu'elle."
+    },
+    {
+      "animal_a": "Aigle royal",
+      "animal_b": "Souris",
+      "search_a": "golden eagle bird",
+      "search_b": "mouse animal",
+      "percent_a": 97,
+      "percent_b": 3,
+      "explanation": "Une souris represente une proie triviale pour un aigle royal."
+    },
+    {
+      "animal_a": "Lion",
+      "animal_b": "Hyene tachetee",
+      "search_a": "lion animal",
+      "search_b": "spotted hyena",
+      "percent_a": 74,
+      "percent_b": 26,
+      "explanation": "En combat singulier, le lion est generalement plus fort que la hyene, meme si celle-ci reste redoutable en groupe."
+    },
+    {
+      "animal_a": "Lion",
+      "animal_b": "Phacochere",
+      "search_a": "lion animal",
+      "search_b": "warthog animal",
+      "percent_a": 72,
+      "percent_b": 28,
+      "explanation": "Le phacochere peut se defendre avec ses defenses, mais le lion reste largement favori en confrontation directe."
+    },
+    {
+      "animal_a": "Tatou",
+      "animal_b": "Coyote",
+      "search_a": "armadillo animal",
+      "search_b": "coyote animal",
+      "percent_a": 35,
+      "percent_b": 65,
+      "explanation": "La carapace du tatou le protege bien, mais le coyote reste generalement plus habile pour le retourner et l'attaquer par en dessous."
+    },
+    {
+      "animal_a": "Iguane",
+      "animal_b": "Aigle royal",
+      "search_a": "iguana reptile",
+      "search_b": "golden eagle bird",
+      "percent_a": 18,
+      "percent_b": 82,
+      "explanation": "L'aigle royal chasse regulierement des reptiles de cette taille depuis les airs."
+    },
+    {
+      "animal_a": "Canard colvert",
+      "animal_b": "Renard roux",
+      "search_a": "mallard duck",
+      "search_b": "red fox animal",
+      "percent_a": 20,
+      "percent_b": 80,
+      "explanation": "Le renard est un predateur opportuniste tres efficace contre les oiseaux d'eau au sol."
+    },
+    {
+      "animal_a": "Mouton",
+      "animal_b": "Loup gris",
+      "search_a": "sheep animal",
+      "search_b": "grey wolf animal",
+      "percent_a": 22,
+      "percent_b": 78,
+      "explanation": "Le mouton n'a quasiment aucune defense naturelle face a un loup adulte."
+    },
+    {
+      "animal_a": "Pangolin",
+      "animal_b": "Lion",
+      "search_a": "pangolin animal",
+      "search_b": "lion animal",
+      "percent_a": 25,
+      "percent_b": 75,
+      "explanation": "La carapace du pangolin le protege des morsures, mais un lion determine peut tout de meme en venir a bout."
+    },
+    {
+      "animal_a": "Anaconda vert",
+      "animal_b": "Caiman noir",
+      "search_a": "green anaconda snake",
+      "search_b": "black caiman reptile",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Dans l'eau, l'anaconda peut immobiliser le caiman par constriction, mais un caiman adulte reste un adversaire tres dangereux grace a sa machoire puissante."
+    },
+    {
+      "animal_a": "Crocodile marin",
+      "animal_b": "Hippopotame",
+      "search_a": "saltwater crocodile",
+      "search_b": "hippopotamus animal",
+      "percent_a": 40,
+      "percent_b": 60,
+      "explanation": "L'hippopotame est extremement agressif et territorial, capable de blesser gravement un crocodile qui s'aventurerait trop pres."
+    },
+    {
+      "animal_a": "Baleine a bosse",
+      "animal_b": "Orque",
+      "search_a": "humpback whale animal",
+      "search_b": "orca killer whale",
+      "percent_a": 65,
+      "percent_b": 35,
+      "explanation": "Une baleine a bosse adulte est bien plus imposante qu'une orque isolee, et sait se defendre avec de puissants coups de nageoire."
+    },
+    {
+      "animal_a": "Cachalot",
+      "animal_b": "Calmar geant",
+      "search_a": "sperm whale animal",
+      "search_b": "giant squid",
+      "percent_a": 78,
+      "percent_b": 22,
+      "explanation": "Le cachalot est le predateur naturel du calmar geant, qu'il chasse en profondeur grace a son sonar redoutable."
+    },
+    {
+      "animal_a": "Poulpe",
+      "animal_b": "Murene",
+      "search_a": "octopus animal",
+      "search_b": "moray eel",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Le poulpe est tres intelligent et peut immobiliser la murene avec ses tentacules, mais celle-ci possede une morsure redoutable."
+    },
+    {
+      "animal_a": "Crabe de cocotier",
+      "animal_b": "Rat",
+      "search_a": "coconut crab",
+      "search_b": "rat rodent",
+      "percent_a": 70,
+      "percent_b": 30,
+      "explanation": "Le crabe de cocotier est le plus grand crustace terrestre au monde, avec des pinces assez puissantes pour venir a bout d'un rat."
+    },
+    {
+      "animal_a": "Varan du Nil",
+      "animal_b": "Mangouste",
+      "search_a": "nile monitor lizard",
+      "search_b": "mongoose animal",
+      "percent_a": 65,
+      "percent_b": 35,
+      "explanation": "Le varan du Nil est bien plus grand et robuste que la mangouste, ce qui lui donne l'avantage dans la plupart des cas."
+    },
+    {
+      "animal_a": "Diable de Tasmanie",
+      "animal_b": "Renard roux",
+      "search_a": "tasmanian devil animal",
+      "search_b": "red fox animal",
+      "percent_a": 58,
+      "percent_b": 42,
+      "explanation": "Le diable de Tasmanie a une morsure tres puissante pour sa taille, ce qui lui permet souvent de dominer un renard en confrontation directe."
+    },
+    {
+      "animal_a": "Wombat",
+      "animal_b": "Dingo",
+      "search_a": "wombat animal",
+      "search_b": "dingo animal",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Le wombat peut ecraser un predateur contre la paroi de son terrier grace a son arriere-train tres blinde, ce qui deconcerte souvent le dingo."
+    },
+    {
+      "animal_a": "Emeu",
+      "animal_b": "Dingo",
+      "search_a": "emu bird",
+      "search_b": "dingo animal",
+      "percent_a": 40,
+      "percent_b": 60,
+      "explanation": "Le dingo est un predateur agile capable de contourner les coups de patte de l'emeu pour viser ses points faibles."
+    },
+    {
+      "animal_a": "Kookaburra",
+      "animal_b": "Serpent tigre",
+      "search_a": "kookaburra bird",
+      "search_b": "tiger snake",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Le kookaburra est connu pour attraper de petits serpents et les assommer en les frappant contre une branche, mais un grand serpent tigre reste dangereux."
+    },
+    {
+      "animal_a": "Dragon de Komodo",
+      "animal_b": "Sanglier",
+      "search_a": "komodo dragon animal",
+      "search_b": "wild boar animal",
+      "percent_a": 78,
+      "percent_b": 22,
+      "explanation": "Le dragon de Komodo chasse regulierement des sangliers dans son habitat naturel grace a sa salive toxique et sa patience."
+    },
+    {
+      "animal_a": "Vautour fauve",
+      "animal_b": "Aigle royal",
+      "search_a": "griffon vulture bird",
+      "search_b": "golden eagle bird",
+      "percent_a": 30,
+      "percent_b": 70,
+      "explanation": "L'aigle royal est un chasseur actif bien plus puissant que le vautour fauve, qui se nourrit surtout de charognes."
+    },
+    {
+      "animal_a": "Serval",
+      "animal_b": "Chacal a dos noir",
+      "search_a": "serval cat animal",
+      "search_b": "black backed jackal",
+      "percent_a": 45,
+      "percent_b": 55,
+      "explanation": "Le chacal a dos noir est legerement plus robuste, mais le serval compense par son agilite et ses reflexes felins."
+    },
+    {
+      "animal_a": "Caracal",
+      "animal_b": "Chacal dore",
+      "search_a": "caracal cat animal",
+      "search_b": "golden jackal animal",
+      "percent_a": 52,
+      "percent_b": 48,
+      "explanation": "Le caracal est un chasseur tres agile capable de bondir tres haut, ce qui lui donne un leger avantage face au chacal dore."
+    },
+    {
+      "animal_a": "Ours noir",
+      "animal_b": "Puma",
+      "search_a": "american black bear",
+      "search_b": "cougar puma animal",
+      "percent_a": 62,
+      "percent_b": 38,
+      "explanation": "L'ours noir est generalement plus lourd que le puma, ce qui lui donne l'avantage en cas d'affrontement direct."
+    },
+    {
+      "animal_a": "Alligator",
+      "animal_b": "Python birman",
+      "search_a": "american alligator",
+      "search_b": "burmese python",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Dans les Everglades, alligators et pythons birmans s'affrontent parfois : l'alligator, mieux adapte a son territoire, l'emporte generalement de justesse."
+    },
+    {
+      "animal_a": "Loutre geante",
+      "animal_b": "Caiman",
+      "search_a": "giant otter animal",
+      "search_b": "caiman reptile",
+      "percent_a": 35,
+      "percent_b": 65,
+      "explanation": "En groupe, les loutres geantes n'hesitent pas a s'attaquer aux caimans, mais un individu seul reste desavantage face a un caiman adulte."
+    },
+    {
+      "animal_a": "Guepard",
+      "animal_b": "Lycaon",
+      "search_a": "cheetah animal",
+      "search_b": "african wild dog",
+      "percent_a": 58,
+      "percent_b": 42,
+      "explanation": "En tete-a-tete le guepard est plus rapide et mieux arme, meme si le lycaon devient redoutable des qu'il chasse en meute."
+    },
+    {
+      "animal_a": "Grand corbeau",
+      "animal_b": "Faucon pelerin",
+      "search_a": "common raven bird",
+      "search_b": "peregrine falcon bird",
+      "percent_a": 45,
+      "percent_b": 55,
+      "explanation": "Le faucon pelerin est l'un des oiseaux les plus rapides au monde, ce qui lui donne l'avantage en plein vol malgre l'intelligence du corbeau."
+    },
+    {
+      "animal_a": "Fourmi bouledogue",
+      "animal_b": "Mygale",
+      "search_a": "bulldog ant insect",
+      "search_b": "tarantula spider",
+      "percent_a": 45,
+      "percent_b": 55,
+      "explanation": "La fourmi bouledogue possede l'un des venins les plus puissants du monde des insectes, mais la mygale reste bien plus grande et forte."
+    },
+    {
+      "animal_a": "Frelon geant d'Asie",
+      "animal_b": "Mante religieuse",
+      "search_a": "asian giant hornet",
+      "search_b": "praying mantis insect",
+      "percent_a": 65,
+      "percent_b": 35,
+      "explanation": "Le frelon geant d'Asie est extremement agressif et son dard est redoutable, ce qui lui donne l'avantage sur la mante religieuse."
+    },
+    {
+      "animal_a": "Loup gris",
+      "animal_b": "Ours noir",
+      "search_a": "grey wolf animal",
+      "search_b": "american black bear",
+      "percent_a": 30,
+      "percent_b": 70,
+      "explanation": "L'ours noir est nettement plus lourd et puissant qu'un loup seul, qui doit generalement compter sur sa meute pour l'emporter."
+    },
+    {
+      "animal_a": "Requin citron",
+      "animal_b": "Barracuda",
+      "search_a": "lemon shark",
+      "search_b": "great barracuda fish",
+      "percent_a": 65,
+      "percent_b": 35,
+      "explanation": "Le requin citron est generalement plus grand et plus puissant que le barracuda, un redoutable chasseur mais de plus petite taille."
+    },
+    {
+      "animal_a": "Capybara",
+      "animal_b": "Anaconda vert",
+      "search_a": "capybara animal",
+      "search_b": "green anaconda snake",
+      "percent_a": 25,
+      "percent_b": 75,
+      "explanation": "L'anaconda peut immobiliser un capybara par constriction pres des points d'eau, son terrain de predilection."
+    },
+    {
+      "animal_a": "Tapir",
+      "animal_b": "Jaguar",
+      "search_a": "tapir animal",
+      "search_b": "jaguar animal",
+      "percent_a": 20,
+      "percent_b": 80,
+      "explanation": "Le jaguar est l'un des rares predateurs capables de s'attaquer a un tapir adulte grace a sa morsure redoutable."
+    },
+    {
+      "animal_a": "Ours a lunettes",
+      "animal_b": "Puma",
+      "search_a": "spectacled bear animal",
+      "search_b": "cougar puma animal",
+      "percent_a": 65,
+      "percent_b": 35,
+      "explanation": "L'ours a lunettes est nettement plus lourd que le puma, ce qui lui donne l'avantage en confrontation directe."
+    },
+    {
+      "animal_a": "Glouton",
+      "animal_b": "Loup gris",
+      "search_a": "wolverine animal",
+      "search_b": "grey wolf animal",
+      "percent_a": 40,
+      "percent_b": 60,
+      "explanation": "Le glouton est reputee pour son courage et sa ferocite disproportionnee par rapport a sa taille, ce qui rend le combat plus serre qu'il n'y parait."
+    },
+    {
+      "animal_a": "Lynx boreal",
+      "animal_b": "Renne",
+      "search_a": "eurasian lynx animal",
+      "search_b": "reindeer animal",
+      "percent_a": 25,
+      "percent_b": 75,
+      "explanation": "Un renne adulte est bien trop grand et puissant pour un lynx, qui s'attaque plutot aux jeunes ou aux individus affaiblis."
+    },
+    {
+      "animal_a": "Gorille",
+      "animal_b": "Leopard",
+      "search_a": "western lowland gorilla",
+      "search_b": "leopard animal",
+      "percent_a": 78,
+      "percent_b": 22,
+      "explanation": "La force phenomenale du gorille et sa carrure imposante lui donnent un net avantage face au leopard."
+    },
+    {
+      "animal_a": "Suricate",
+      "animal_b": "Cobra du Cap",
+      "search_a": "meerkat animal",
+      "search_b": "cape cobra snake",
+      "percent_a": 45,
+      "percent_b": 55,
+      "explanation": "Les suricates savent harceler et parfois tuer un cobra en groupe, mais seul face a un serpent venimeux le risque reste enorme."
+    },
+    {
+      "animal_a": "Ours brun",
+      "animal_b": "Elan",
+      "search_a": "brown bear animal",
+      "search_b": "moose animal",
+      "percent_a": 60,
+      "percent_b": 40,
+      "explanation": "L'ours brun est capable de s'attaquer a un elan adulte grace a sa force brute, meme si les sabots de l'elan restent dangereux."
+    },
+    {
+      "animal_a": "Scorpion empereur",
+      "animal_b": "Mangouste",
+      "search_a": "emperor scorpion",
+      "search_b": "mongoose animal",
+      "percent_a": 30,
+      "percent_b": 70,
+      "explanation": "Le venin du scorpion empereur est relativement faible, ce qui laisse la mangouste largement favorite grace a sa rapidite."
+    },
+    {
+      "animal_a": "Dragon de Komodo",
+      "animal_b": "Buffle d'eau",
+      "search_a": "komodo dragon animal",
+      "search_b": "water buffalo animal",
+      "percent_a": 35,
+      "percent_b": 65,
+      "explanation": "Le buffle d'eau adulte est enorme et puissant ; le dragon de Komodo doit generalement compter sur la patience et son venin pour l'emporter, sans garantie de succes."
+    },
+    {
+      "animal_a": "Requin marteau",
+      "animal_b": "Otarie",
+      "search_a": "hammerhead shark",
+      "search_b": "sea lion animal",
+      "percent_a": 65,
+      "percent_b": 35,
+      "explanation": "Le requin marteau est un predateur bien equipe face a l'otarie, meme si celle-ci est agile dans l'eau."
+    },
+    {
+      "animal_a": "Otarie a fourrure",
+      "animal_b": "Orque",
+      "search_a": "fur seal animal",
+      "search_b": "orca killer whale",
+      "percent_a": 5,
+      "percent_b": 95,
+      "explanation": "L'orque est un predateur bien trop puissant et intelligent pour qu'une otarie ait une chance reelle."
+    },
+    {
+      "animal_a": "Poulpe",
+      "animal_b": "Homard",
+      "search_a": "octopus animal",
+      "search_b": "lobster animal",
+      "percent_a": 65,
+      "percent_b": 35,
+      "explanation": "Le poulpe est un predateur redoutable de crustaces, capable d'ouvrir la carapace d'un homard avec ses tentacules."
+    },
+    {
+      "animal_a": "Manchot empereur",
+      "animal_b": "Leopard de mer",
+      "search_a": "emperor penguin",
+      "search_b": "leopard seal animal",
+      "percent_a": 20,
+      "percent_b": 80,
+      "explanation": "Le phoque leopard est l'un des principaux predateurs des manchots empereurs pres des cotes antarctiques."
+    },
+    {
+      "animal_a": "Albatros voyageur",
+      "animal_b": "Petrel geant",
+      "search_a": "wandering albatross bird",
+      "search_b": "giant petrel bird",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Les petrels geants sont des charognards tres agressifs, mais l'albatros voyageur reste plus grand et impressionnant."
+    },
+    {
+      "animal_a": "Lievre arctique",
+      "animal_b": "Renard polaire",
+      "search_a": "arctic hare animal",
+      "search_b": "arctic fox animal",
+      "percent_a": 30,
+      "percent_b": 70,
+      "explanation": "Le renard polaire est un chasseur opportuniste bien adapte pour rattraper un lievre arctique isole."
+    },
+    {
+      "animal_a": "Bouquetin des Alpes",
+      "animal_b": "Aigle royal",
+      "search_a": "alpine ibex animal",
+      "search_b": "golden eagle bird",
+      "percent_a": 70,
+      "percent_b": 30,
+      "explanation": "Un bouquetin adulte est trop lourd pour un aigle royal, qui cible plutot les jeunes ou les individus affaiblis."
+    },
+    {
+      "animal_a": "Yack",
+      "animal_b": "Loup du Tibet",
+      "search_a": "yak animal",
+      "search_b": "tibetan wolf animal",
+      "percent_a": 75,
+      "percent_b": 25,
+      "explanation": "Le yack est un animal massif et puissant, largement hors de portee d'un loup isole."
+    },
+    {
+      "animal_a": "Casoar",
+      "animal_b": "Renard roux",
+      "search_a": "cassowary bird",
+      "search_b": "red fox animal",
+      "percent_a": 70,
+      "percent_b": 30,
+      "explanation": "Les griffes du casoar sont assez tranchantes pour blesser gravement un renard qui s'approcherait de trop pres."
+    },
+    {
+      "animal_a": "Autruche",
+      "animal_b": "Hyene tachetee",
+      "search_a": "ostrich bird",
+      "search_b": "spotted hyena",
+      "percent_a": 45,
+      "percent_b": 55,
+      "explanation": "La hyene tachetee possede une morsure tres puissante, mais un coup de patte d'autruche reste capable de la mettre hors combat."
+    },
+    {
+      "animal_a": "Blaireau du miel",
+      "animal_b": "Cobra du Cap",
+      "search_a": "honey badger animal",
+      "search_b": "cape cobra snake",
+      "percent_a": 60,
+      "percent_b": 40,
+      "explanation": "Le blaireau du miel est en partie resistant au venin et suffisamment tetu pour venir a bout d'un cobra."
+    },
+    {
+      "animal_a": "Aigle royal",
+      "animal_b": "Lievre d'Europe",
+      "search_a": "golden eagle bird",
+      "search_b": "european hare animal",
+      "percent_a": 85,
+      "percent_b": 15,
+      "explanation": "Le lievre d'Europe fait partie des proies habituelles de l'aigle royal, qui le repere facilement depuis les airs."
+    },
+    {
+      "animal_a": "Poisson-globe",
+      "animal_b": "Murene",
+      "search_a": "pufferfish fish",
+      "search_b": "moray eel",
+      "percent_a": 35,
+      "percent_b": 65,
+      "explanation": "La toxine du poisson-globe dissuade beaucoup de predateurs, mais une murene affamee et agressive peut passer outre."
+    },
+    {
+      "animal_a": "Marabout d'Afrique",
+      "animal_b": "Vautour fauve",
+      "search_a": "marabou stork bird",
+      "search_b": "griffon vulture bird",
+      "percent_a": 55,
+      "percent_b": 45,
+      "explanation": "Le marabout d'Afrique est reputee pour dominer les vautours autour des carcasses grace a son bec puissant et son agressivite."
+    },
+    {
+      "animal_a": "Chouette effraie",
+      "animal_b": "Rat",
+      "search_a": "barn owl bird",
+      "search_b": "rat rodent",
+      "percent_a": 90,
+      "percent_b": 10,
+      "explanation": "Le rat est l'une des proies favorites de la chouette effraie, un chasseur nocturne redoutablement silencieux."
+    },
+    {
+      "animal_a": "Ecureuil roux",
+      "animal_b": "Serpent ratier",
+      "search_a": "red squirrel animal",
+      "search_b": "rat snake animal",
+      "percent_a": 30,
+      "percent_b": 70,
+      "explanation": "Le serpent ratier est un grimpeur agile capable de surprendre un ecureuil jusque dans les arbres."
+    },
+    {
+      "animal_a": "Rat-taupe nu",
+      "animal_b": "Serpent corail",
+      "search_a": "naked mole rat",
+      "search_b": "coral snake animal",
+      "percent_a": 15,
+      "percent_b": 85,
+      "explanation": "Le venin du serpent corail est extremement puissant, ce qui laisse tres peu de chances au rat-taupe nu."
+    },
+    {
+      "animal_a": "Axolotl",
+      "animal_b": "Ecrevisse",
+      "search_a": "axolotl animal",
+      "search_b": "crayfish animal",
+      "percent_a": 40,
+      "percent_b": 60,
+      "explanation": "Les ecrevisses invasives s'attaquent parfois aux axolotls, notamment a leurs branchies exterieures tres vulnerables."
+    },
+    {
+      "animal_a": "Grenouille venimeuse",
+      "animal_b": "Serpent-liane",
+      "search_a": "poison dart frog",
+      "search_b": "vine snake animal",
+      "percent_a": 35,
+      "percent_b": 65,
+      "explanation": "Certains serpents-lianes ont developpe une tolerance partielle aux toxines des grenouilles venimeuses qu'ils chassent."
+    },
+    {
+      "animal_a": "Iguane marin",
+      "animal_b": "Crabe fantome",
+      "search_a": "marine iguana animal",
+      "search_b": "ghost crab animal",
+      "percent_a": 70,
+      "percent_b": 30,
+      "explanation": "L'iguane marin adulte est bien plus grand qu'un crabe fantome, qui s'attaque surtout aux jeunes iguanes."
+    },
+    {
+      "animal_a": "Loutre de mer",
+      "animal_b": "Oursin",
+      "search_a": "sea otter animal",
+      "search_b": "sea urchin animal",
+      "percent_a": 80,
+      "percent_b": 20,
+      "explanation": "La loutre de mer est un predateur tres efficace des oursins, qu'elle casse a l'aide d'une pierre."
+    },
+    {
+      "animal_a": "Chacal a chabraque",
+      "animal_b": "Serval",
+      "search_a": "side-striped jackal",
+      "search_b": "serval cat animal",
+      "percent_a": 45,
+      "percent_b": 55,
+      "explanation": "Le serval compense sa taille plus modeste par une agilite et des reflexes felins superieurs a ceux du chacal."
+    }
+  ]
+}
