@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Duel Sauvage teaser</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+  #c { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  #ov { position: absolute; inset: 0; pointer-events: none; font-family: "Anton", sans-serif; color: #fff; }
+  .t { position: absolute; left: 0; right: 0; text-align: center; white-space: nowrap; opacity: 0; will-change: transform, filter, opacity; }
+  #t1a { top: 440px; font-size: 64px; letter-spacing: 34px; }
+  #t1b { top: 530px; font: 600 26px "Exo 2", sans-serif; letter-spacing: 12px; color: #9cc8ff; }
+  #t2a { top: 700px; font-size: 120px; letter-spacing: 10px; color: #fff; }
+  #t2b { top: 820px; font-size: 150px; letter-spacing: 14px; color: #ffb35c; }
+  #vs { top: 330px; font-family: "Lilita One", sans-serif; font-size: 360px; line-height: 1; color: #ffcb05;
+        -webkit-text-stroke: 10px #2a75bb; paint-order: stroke fill; }
+  #t3b { top: 900px; font-size: 76px; letter-spacing: 16px; }
+  #count { top: 250px; font-size: 420px; line-height: 1; letter-spacing: 10px; }
+  #t4b { top: 700px; font-size: 80px; letter-spacing: 28px; }
+  #t4c { top: 815px; font: 700 28px "Exo 2", sans-serif; letter-spacing: 10px; color: #dfefff; }
+  #t5h { top: 90px; font: 700 30px "Exo 2", sans-serif; letter-spacing: 14px; color: #c9d3e6; }
+  .lab { position: absolute; transform: translate(-50%, 0); font-size: 44px; letter-spacing: 8px; opacity: 0; white-space: nowrap; }
+  .num { position: absolute; transform: translate(-50%, -100%); font: 700 40px "Exo 2", sans-serif; opacity: 0; white-space: nowrap; }
+  #t5v { top: 380px; font-size: 230px; line-height: 1; }
+  #t5w { top: 630px; font-size: 60px; letter-spacing: 20px; color: #7fd3f5; }
+  #logo { top: 330px; font-family: "Lilita One", sans-serif; color: #ffcb05; line-height: .86; }
+  #logo .l1 { display: block; font-size: 250px; letter-spacing: 12px; }
+  #logo .l2 { display: block; font-size: 170px; letter-spacing: 30px; }
+  #logo span { -webkit-text-stroke: 8px #2a75bb; paint-order: stroke fill; text-shadow: 10px 14px 0 #2a75bb; }
+  #tag { top: 760px; font: 700 40px "Exo 2", sans-serif; letter-spacing: 10px; }
+  #cta { top: 850px; }
+  #cta b { display: inline-block; background: #ee6b2f; font: 700 34px "Exo 2", sans-serif; letter-spacing: 4px; padding: 16px 40px; border-radius: 8px; box-shadow: 0 6px 0 #b84a17; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="ov">
+  <div class="t" id="t1a">DANS LA NATURE</div>
+  <div class="t" id="t1b">IL N'Y A QU'UNE SEULE RÈGLE</div>
+  <div class="t" id="t2a">SEUL LE PLUS FORT</div>
+  <div class="t" id="t2b">SURVIT.</div>
+  <div class="t" id="vs">VS</div>
+  <div class="t" id="t3b">QUI GAGNERAIT ?</div>
+  <div class="t" id="count">000</div>
+  <div class="t" id="t4b">ANIMAUX RÉELS</div>
+  <div class="t" id="t4c">MAMMIFÈRES · OISEAUX · REPTILES · POISSONS · INSECTES</div>
+  <div class="t" id="t5h">FACE-À-FACE DES STATS</div>
+  <div class="lab" id="lab0">ATTAQUE</div><div class="lab" id="lab1">DÉFENSE</div><div class="lab" id="lab2">AGILITÉ</div>
+  <div class="num" id="n0"></div><div class="num" id="n1"></div><div class="num" id="n2"></div>
+  <div class="num" id="n3"></div><div class="num" id="n4"></div><div class="num" id="n5"></div>
+  <div class="t" id="t5v">57 %</div>
+  <div class="t" id="t5w">POUR LE TIGRE</div>
+  <div class="t" id="logo"><span class="l1">DUEL</span><span class="l2">SAUVAGE</span></div>
+  <div class="t" id="tag">100 ANIMAUX · UN SEUL VAINQUEUR</div>
+  <div class="t" id="cta"><b>CHOISIS TON DUEL →</b></div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+</script>
+<script type="module" src="teaser.js"></script>
+</body>
+</html>
