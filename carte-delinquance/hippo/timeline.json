@@ -1,0 +1,598 @@
+{
+ "vo": [
+  {
+   "id": "h01",
+   "start": 0.9,
+   "end": 6.905,
+   "cap": "En Colombie, près de *200 hippopotames* vivent en liberté… à des milliers de kilomètres de l'*Afrique*."
+  },
+  {
+   "id": "h02",
+   "start": 7.305,
+   "end": 9.84,
+   "cap": "Et tout ça… à cause de *Pablo Escobar*."
+  },
+  {
+   "id": "h03",
+   "start": 10.44,
+   "end": 17.467,
+   "cap": "Dans les *années 80*, le baron de la drogue se fait construire un *zoo privé*, dans sa propriété : l'*Hacienda Nápoles*."
+  },
+  {
+   "id": "h04",
+   "start": 17.967,
+   "end": 24.621,
+   "cap": "Girafes, zèbres, éléphants… et *quatre hippopotames* venus d'Afrique : un mâle et trois femelles."
+  },
+  {
+   "id": "h05",
+   "start": 25.221,
+   "end": 30.194,
+   "cap": "En *1993*, Escobar est abattu par la police, à *Medellín*."
+  },
+  {
+   "id": "h06",
+   "start": 30.794,
+   "end": 36.276,
+   "cap": "Les autorités déplacent la plupart des animaux… sauf les hippopotames, *trop dangereux* à transporter."
+  },
+  {
+   "id": "h07",
+   "start": 36.876,
+   "end": 43.973,
+   "cap": "Abandonnés, ils rejoignent le fleuve *Magdalena*… et y trouvent le paradis : de l'eau toute l'année, et *aucun prédateur*."
+  },
+  {
+   "id": "h08",
+   "start": 44.373,
+   "end": 46.733,
+   "cap": "Résultat : la population *explose*."
+  },
+  {
+   "id": "h09",
+   "start": 47.133,
+   "end": 53.081,
+   "cap": "Au départ, ils étaient *quatre*. En *2023*, on en recense environ *170*."
+  },
+  {
+   "id": "h10",
+   "start": 53.781,
+   "end": 58.2,
+   "cap": "Et ils sont *dangereux* : l'hippopotame est l'un des animaux les plus *meurtriers* d'Afrique."
+  },
+  {
+   "id": "h11",
+   "start": 58.7,
+   "end": 63.901,
+   "cap": "Leurs excréments *polluent les rivières*, et ils menacent les espèces locales, comme le *lamantin*."
+  },
+  {
+   "id": "h12",
+   "start": 64.501,
+   "end": 68.77,
+   "cap": "En *2022*, la Colombie les déclare officiellement *espèce invasive*."
+  },
+  {
+   "id": "h13",
+   "start": 69.37,
+   "end": 76.671,
+   "cap": "Le gouvernement essaie tout : la *stérilisation*… puis l'envoi de *70 hippopotames* en *Inde* et au *Mexique*."
+  },
+  {
+   "id": "h14",
+   "start": 77.071,
+   "end": 78.812,
+   "cap": "Mais *aucun pays* ne les accepte."
+  },
+  {
+   "id": "h15",
+   "start": 79.412,
+   "end": 85.972,
+   "cap": "Alors, en *avril 2026*, la Colombie autorise l'*euthanasie* d'environ *80 hippopotames*."
+  },
+  {
+   "id": "h16",
+   "start": 86.572,
+   "end": 92.988,
+   "cap": "Une décision qui *divise* : pour les habitants de la région, ils sont devenus une *attraction*… et un *symbole*."
+  },
+  {
+   "id": "h17",
+   "start": 93.588,
+   "end": 99.966,
+   "cap": "Et selon certaines projections, sans intervention, ils pourraient être *plus de 1 000* d'ici *2035*."
+  },
+  {
+   "id": "h18",
+   "start": 100.766,
+   "end": 104.904,
+   "cap": "Et toi, tu ferais quoi des hippopotames d'Escobar ? Dis-le en commentaire !"
+  }
+ ],
+ "cue": {
+  "intro": [
+   3.6022499999999997,
+   5.4037500000000005,
+   7.205
+  ],
+  "flag": 7.005,
+  "title": 7.6049999999999995,
+  "k200": 0.6,
+  "kEscobar": 8.44575,
+  "napoles": [
+   10.24,
+   11.44
+  ],
+  "arc": [
+   21.293999999999997,
+   24.820999999999998
+  ],
+  "medellin": [
+   24.821,
+   25.821
+  ],
+  "river": [
+   36.476,
+   40.424499999999995
+  ],
+  "boom": [
+   43.973,
+   53.081
+  ],
+  "k170": 50.82076,
+  "invasive": [
+   64.101,
+   65.101
+  ],
+  "stampInv": 67.0624,
+  "mexico": [
+   69.07000000000001,
+   73.38555000000001
+  ],
+  "india": [
+   73.38555000000001,
+   77.07100000000001
+  ],
+  "refuse": 77.7674,
+  "back": [
+   79.012,
+   80.31200000000001
+  ],
+  "k80": 84.00399999999999,
+  "future": [
+   93.288,
+   99.966
+  ],
+  "k1000": 97.4148,
+  "outro": 100.46600000000001
+ },
+ "ticker": [
+  [
+   10.44,
+   10.45,
+   1981,
+   1981,
+   1
+  ],
+  [
+   25.221,
+   26.7129,
+   1981,
+   1993,
+   1
+  ],
+  [
+   47.133,
+   50.82076,
+   1993,
+   2023,
+   5
+  ],
+  [
+   64.501,
+   64.51100000000001,
+   2022,
+   2022,
+   1
+  ],
+  [
+   79.412,
+   81.38,
+   2022,
+   2026,
+   1
+  ],
+  [
+   93.588,
+   97.4148,
+   2026,
+   2035,
+   1
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "cri",
+   "t": 0.25,
+   "gain": 0.9
+  },
+  {
+   "name": "woosh",
+   "t": 14.647,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 17.717,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 30.444,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 40.629,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 53.431,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 58.35,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 86.222,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 100.316,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 3.502,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 5.404,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 7.005,
+   "gain": 0.55
+  },
+  {
+   "name": "pop",
+   "t": 7.605,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 8.446,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 11.24,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 21.494,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 24.821,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 27.956,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 36.476,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 44.573,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 50.821,
+   "gain": 0.6
+  },
+  {
+   "name": "cri",
+   "t": 53.981,
+   "gain": 0.75
+  },
+  {
+   "name": "impact",
+   "t": 56.874,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 64.101,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 67.062,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 69.07,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 73.386,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 77.767,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 79.012,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 84.004,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 93.288,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 97.415,
+   "gain": 0.6
+  },
+  {
+   "name": "cri",
+   "t": 101.166,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 25.345,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 25.594,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 25.843,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 26.091,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 26.34,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 26.589,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 47.748,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 48.362,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 48.977,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 49.592,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 50.206,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 50.821,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 79.904,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 80.396,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 80.888,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 81.38,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 94.013,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 94.438,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 94.864,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 95.289,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 95.714,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 96.139,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 96.564,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 96.99,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 97.415,
+   "gain": 0.45
+  }
+ ],
+ "photos": [
+  {
+   "img": "p1",
+   "a": 0.0,
+   "b": 3.902,
+   "z0": 1.18,
+   "z1": 1.04,
+   "px": 0.0,
+   "py": 0.02,
+   "gray": 0.0
+  },
+  {
+   "img": "p2",
+   "a": 14.797,
+   "b": 17.767,
+   "z0": 1.05,
+   "z1": 1.18,
+   "px": 0.0,
+   "py": -0.03,
+   "gray": 0.0
+  },
+  {
+   "img": "p3",
+   "a": 17.867,
+   "b": 21.294,
+   "z0": 1.06,
+   "z1": 1.16,
+   "px": 0.04,
+   "py": 0.0,
+   "gray": 0.0
+  },
+  {
+   "img": "p4",
+   "a": 30.594,
+   "b": 36.576,
+   "z0": 1.04,
+   "z1": 1.14,
+   "px": -0.03,
+   "py": 0.0,
+   "gray": 0.35
+  },
+  {
+   "img": "p5",
+   "a": 40.779,
+   "b": 44.273,
+   "z0": 1.05,
+   "z1": 1.15,
+   "px": 0.0,
+   "py": 0.02,
+   "gray": 0.0
+  },
+  {
+   "img": "p6",
+   "a": 53.581,
+   "b": 58.4,
+   "z0": 1.02,
+   "z1": 1.2,
+   "px": 0.0,
+   "py": -0.02,
+   "gray": 0.0
+  },
+  {
+   "img": "p7",
+   "a": 58.5,
+   "b": 64.201,
+   "z0": 1.04,
+   "z1": 1.14,
+   "px": 0.03,
+   "py": 0.0,
+   "gray": 0.0
+  },
+  {
+   "img": "p8",
+   "a": 86.372,
+   "b": 93.288,
+   "z0": 1.04,
+   "z1": 1.15,
+   "px": -0.03,
+   "py": 0.0,
+   "gray": 0.0
+  },
+  {
+   "img": "p1",
+   "a": 100.466,
+   "b": 107.104,
+   "z0": 1.04,
+   "z1": 1.12,
+   "px": 0.0,
+   "py": 0.0,
+   "gray": 0.0
+  }
+ ],
+ "duration": 107.104
+}
