@@ -3,7 +3,7 @@
   "private": true,
   "scripts": { "build": "node build.js", "render": "node render.js" },
   "dependencies": {
-    "@fontsource/anton": "^5", "@fontsource/inter": "^5",
+    "@fontsource/anton": "^5", "@fontsource/inter": "^5", "@fontsource/montserrat": "^5",
     "d3": "^7", "topojson-client": "^3", "world-atlas": "^2", "playwright-core": "^1.55"
   }
 }

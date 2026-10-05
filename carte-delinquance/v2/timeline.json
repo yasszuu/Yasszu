@@ -1,0 +1,290 @@
+{
+ "vo": [
+  {
+   "id": "hook",
+   "start": 0.35,
+   "end": 4.338,
+   "cap": "Quels sont les *départements* où l'on enregistre le plus de *crimes et délits* en France ?"
+  },
+  {
+   "id": "intro",
+   "start": 4.438,
+   "end": 8.98,
+   "cap": "Voici le classement *officiel 2024*, rapporté au nombre d'habitants."
+  },
+  {
+   "id": "n5",
+   "start": 9.43,
+   "end": 10.333,
+   "cap": "Numéro *5*"
+  },
+  {
+   "id": "d5",
+   "start": 10.533,
+   "end": 12.769,
+   "cap": "L'*Hérault* : *62* faits pour 1 000 habitants"
+  },
+  {
+   "id": "n4",
+   "start": 13.269,
+   "end": 14.184,
+   "cap": "Numéro *4*"
+  },
+  {
+   "id": "d4",
+   "start": 14.384,
+   "end": 16.281,
+   "cap": "Le *Rhône* : *70* pour 1 000"
+  },
+  {
+   "id": "n3",
+   "start": 16.781,
+   "end": 17.528,
+   "cap": "Numéro *3*"
+  },
+  {
+   "id": "d3",
+   "start": 17.731,
+   "end": 20.647,
+   "cap": "La *Seine-Saint-Denis* : près de *77* pour 1 000"
+  },
+  {
+   "id": "n2",
+   "start": 21.147,
+   "end": 21.822,
+   "cap": "Numéro *2*"
+  },
+  {
+   "id": "d2",
+   "start": 22.097,
+   "end": 24.198,
+   "cap": "Les *Bouches-du-Rhône* : *80* pour 1 000"
+  },
+  {
+   "id": "n1",
+   "start": 24.748,
+   "end": 25.491,
+   "cap": "Et numéro *1*..."
+  },
+  {
+   "id": "d1",
+   "start": 26.291,
+   "end": 28.492,
+   "cap": "*Paris* ! *116* faits pour 1 000 habitants"
+  },
+  {
+   "id": "why",
+   "start": 29.492,
+   "end": 34.315,
+   "cap": "Un record gonflé par les *millions de touristes* et de travailleurs qui passent chaque jour dans la capitale."
+  },
+  {
+   "id": "cta",
+   "start": 34.665,
+   "end": 38.02,
+   "cap": "Et toi, ton département est dans le classement ? *Dis-le en commentaire !*"
+  }
+ ],
+ "items": [
+  {
+   "rank": 5,
+   "code": "34",
+   "name": "Hérault",
+   "rate": 62.3,
+   "t0": 9.33,
+   "tHi": 10.483,
+   "tEnd": 13.119
+  },
+  {
+   "rank": 4,
+   "code": "69",
+   "name": "Rhône",
+   "rate": 70.5,
+   "t0": 13.169,
+   "tHi": 14.334,
+   "tEnd": 16.631
+  },
+  {
+   "rank": 3,
+   "code": "93",
+   "name": "Seine-Saint-Denis",
+   "rate": 76.7,
+   "t0": 16.681,
+   "tHi": 17.681,
+   "tEnd": 20.997
+  },
+  {
+   "rank": 2,
+   "code": "13",
+   "name": "Bouches-du-Rhône",
+   "rate": 80,
+   "t0": 21.047,
+   "tHi": 22.047,
+   "tEnd": 24.548
+  },
+  {
+   "rank": 1,
+   "code": "75",
+   "name": "Paris",
+   "rate": 116,
+   "t0": 24.598,
+   "tHi": 26.241,
+   "tEnd": 28.842
+  }
+ ],
+ "sfx": [
+  {
+   "name": "pop",
+   "t": 0.25,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 3.238,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 4.038,
+   "gain": 1.0
+  },
+  {
+   "name": "impact",
+   "t": 6.488,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 4.738,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 9.33,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 9.38,
+   "gain": 0.9
+  },
+  {
+   "name": "hit",
+   "t": 10.483,
+   "gain": 0.85
+  },
+  {
+   "name": "whoosh",
+   "t": 13.169,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 13.219,
+   "gain": 0.9
+  },
+  {
+   "name": "hit",
+   "t": 14.334,
+   "gain": 0.85
+  },
+  {
+   "name": "whoosh",
+   "t": 16.681,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 16.731,
+   "gain": 0.9
+  },
+  {
+   "name": "hit",
+   "t": 17.681,
+   "gain": 0.85
+  },
+  {
+   "name": "whoosh",
+   "t": 21.047,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 21.097,
+   "gain": 0.9
+  },
+  {
+   "name": "hit",
+   "t": 22.047,
+   "gain": 0.85
+  },
+  {
+   "name": "whoosh",
+   "t": 24.598,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 24.648,
+   "gain": 0.9
+  },
+  {
+   "name": "impact",
+   "t": 26.241,
+   "gain": 1.0
+  },
+  {
+   "name": "bell",
+   "t": 26.291,
+   "gain": 0.7
+  },
+  {
+   "name": "riser",
+   "t": 26.241,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh_long",
+   "t": 28.892,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 29.892,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 30.032,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 30.172,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 30.312,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 30.452,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 34.665,
+   "gain": 0.6
+  }
+ ],
+ "spinEnd": 4.138412698412698,
+ "zoom": [
+  4.138412698412698,
+  6.538412698412698
+ ],
+ "title": 4.738412698412698,
+ "final": 28.891655328798183,
+ "duration": 39.62
+}
