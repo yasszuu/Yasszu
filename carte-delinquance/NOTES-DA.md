@@ -19,3 +19,6 @@
 - **Sous-titres** : GROS (≈ 84 px), EN HAUT de l'écran, par groupes de 2–3 mots ; le titre n'apparaît que pendant l'accroche.
 - **Photos plein écran** : ponctuelles (~2 s), toujours amenées par une plongée « ultra-zoom » sur la carte + flash.
 - **Motion design carte** : multiplier zooms, focus (assombrir hors du pays), ultra-zooms, balayages le long d'un fleuve / d'une route.
+- **Pas d'ultra-zoom** au-delà de l'échelle régionale (imagerie Natural Earth ~1,8 km/pixel → flou). Pour une vraie plongée
+  « Google Maps », demander à l'utilisateur un clip Google Earth Studio (mention « Google Earth » visible).
+- **Pas de photo en ouverture** : la première minute d'accroche reste sur la carte ; les animaux y apparaissent en PNG détourés.

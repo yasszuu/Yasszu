@@ -84,7 +84,6 @@ def sfx(name, tt, gain=1.0): TL["sfx"].append({"name": name, "t": round(tt, 3), 
 def photo(img, a, b, z0=1.04, z1=1.14, px=0.0, py=0.0, gray=0.0): TL["photos"].append(dict(img=img, a=round(a,3), b=round(b,3), z0=z0, z1=z1, px=px, py=py, gray=gray))
 
 # séquences photo plein écran : courtes et ponctuelles (~2 s), toujours après une plongée sur la carte
-photo("p1", Ed("h01") - 0.2, Ed("h01") + 1.6, 1.12, 1.02, 0.0, 0.02)
 photo("p2", M("h03", 0.62), M("h03", 0.62) + 2.0, 1.04, 1.14, 0.0, -0.02)
 photo("p3", S("h04") - 0.1, S("h04") + 1.9, 1.05, 1.14, 0.03, 0.0)
 photo("p4", M("h06", 0.42), M("h06", 0.42) + 1.9, 1.04, 1.12, -0.02, 0.0, 0.35)
@@ -134,9 +133,9 @@ TL["ticker"] = [
 # ------------------------------------------------------------------ bruitages (vrais fichiers fournis)
 sfx("woosh", 0.55, 0.6)
 sfx("cri", Ed("h01") - 0.1, 0.9)
-for k in ("ultraNap", "ultraAband", "ultraRiv", "ultraRiv2", "ultraVill"): sfx("woosh", cue[k][0] + 0.05, 0.6)
+for k in ("ultraNap", "ultraAband", "ultraRiv", "ultraRiv2", "ultraVill"): sfx("woosh", cue[k][0] + 0.05, 0.35)
 sfx("woosh", cue["sweep"][0], 0.4)
-for p in TL["photos"][1:]:
+for p in TL["photos"]:
     sfx("woosh", p["a"] - 0.15, 0.7)                     # entrée de chaque séquence photo
 sfx("woosh", cue["intro"][0] - 0.1, 0.8); sfx("woosh", cue["intro"][1], 0.6)
 sfx("impact", cue["flag"], 0.55)

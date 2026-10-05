@@ -86,9 +86,9 @@ function camLerp(a, b, k, fly, ease=E){
   return {lon:a.lon + dl*e, lat:lerp(a.lat,b.lat,e), s};
 }
 const push = (c, k) => ({...c, s:c.s*(1 + 0.05*k)});
-const ULTRA_NAP = {lon:NAPOLES[0], lat:NAPOLES[1], s:COL.s*9};
+const ULTRA_NAP = {lon:NAPOLES[0], lat:NAPOLES[1] - 0.3, s:COL.s*3.6};      // zoom limité : l'imagerie reste nette
 const RIVPT = MAGDA[NAP_IDX + 25] || NAPOLES;
-const ULTRA_RIV = {lon:RIVPT[0], lat:RIVPT[1], s:COL.s*9};
+const ULTRA_RIV = {lon:RIVPT[0], lat:RIVPT[1] - 0.3, s:COL.s*3.6};
 const MOUTH = {lon:-74.9, lat:10.3, s:COL.s*3.4}, RIVMID = {lon:-74.4, lat:7.2, s:COL.s*3.4};
 const OUT = {lon:-72, lat:4, s:COL.s*0.62};
 const SHOTS = [
@@ -529,7 +529,7 @@ function overlay(t, pa){
   // --- textes cinétiques (un seul à la fois au centre)
   kin("200 HIPPOPOTAMES", W/2, 560, t, C.k200, {size:76, out:M("h01", 0.4)});
   kin("EN COLOMBIE", W/2, 660, t, C.k200 + 0.9, {size:80, color:Y1, out:M("h01", 0.4)});
-  kin("PABLO ESCOBAR", W/2, 600, t, C.kEscobar, {size:110, color:Y1, out:Ed("h02") + 0.2});
+  kin("PABLO ESCOBAR", W/2, 1480, t, C.kEscobar, {size:110, color:Y1, out:Ed("h02") + 0.2});
   kin("4 HIPPOPOTAMES", W/2, 560, t, C.arc[0] + 0.4, {size:84, out:C.medellin[0]});
   kin("1993", W/2, 660, t, M("h05", 0.45), {size:170, color:RED, out:Ed("h05") + 0.3});
   kin("4", W/2, 700, t, C.boom[0] + 0.8, {size:200, out:C.k170 - 0.15});
@@ -551,6 +551,7 @@ function overlay(t, pa){
   stamp(["REFUSÉ"], 760, t, C.refuse, C.back[0]);
   // --- stickers (dans l'océan, jamais sur le pays)
   for (let i = 0; i < 4; i++) sticker("hippo_profil", 190 + i*235, 1640, 140, t, C.arc[0] + 0.6 + i*0.15, C.medellin[0] - 0.2, {flip:i % 2 === 1});
+  sticker("hippo_profil", 210, 760, 300, t, Ed("h01") - 0.5, S("h03") - 0.3);
   sticker("hippo_bebe", 175, 720, 230, t, C.boom[0] + 0.5, Ed("h09"));
   sticker("hippo_gueule", 185, 730, 250, t, C.invasive[1], S("h13") - 0.3);
   // --- outro (sur la photo)
