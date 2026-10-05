@@ -83,29 +83,33 @@ cue = TL["cue"]
 def sfx(name, tt, gain=1.0): TL["sfx"].append({"name": name, "t": round(tt, 3), "gain": gain})
 def photo(img, a, b, z0=1.04, z1=1.14, px=0.0, py=0.0, gray=0.0): TL["photos"].append(dict(img=img, a=round(a,3), b=round(b,3), z0=z0, z1=z1, px=px, py=py, gray=gray))
 
-# séquences photo plein écran
-photo("p1", 0.0, M("h01", 0.5), 1.18, 1.04, 0.0, 0.02)
-photo("p2", M("h03", 0.62), Ed("h03") + 0.3, 1.05, 1.18, 0.0, -0.03)
-photo("p3", S("h04") - 0.1, M("h04", 0.5), 1.06, 1.16, 0.04, 0.0)
-photo("p4", S("h06") - 0.2, Ed("h06") + 0.3, 1.04, 1.14, -0.03, 0.0, 0.35)
-photo("p5", M("h07", 0.55), Ed("h07") + 0.3, 1.05, 1.15, 0.0, 0.02)
-photo("p6", S("h10") - 0.2, Ed("h10") + 0.2, 1.02, 1.2, 0.0, -0.02)
-photo("p7", S("h11") - 0.2, Ed("h11") + 0.3, 1.04, 1.14, 0.03, 0.0)
-photo("p8", S("h16") - 0.2, Ed("h16") + 0.3, 1.04, 1.15, -0.03, 0.0)
-photo("p1", S("h18") - 0.3, TL["duration"], 1.04, 1.12, 0.0, 0.0)
+# séquences photo plein écran : courtes et ponctuelles (~2 s), toujours après une plongée sur la carte
+photo("p1", Ed("h01") - 0.2, Ed("h01") + 1.6, 1.12, 1.02, 0.0, 0.02)
+photo("p2", M("h03", 0.62), M("h03", 0.62) + 2.0, 1.04, 1.14, 0.0, -0.02)
+photo("p3", S("h04") - 0.1, S("h04") + 1.9, 1.05, 1.14, 0.03, 0.0)
+photo("p4", M("h06", 0.42), M("h06", 0.42) + 1.9, 1.04, 1.12, -0.02, 0.0, 0.35)
+photo("p5", M("h07", 0.62), M("h07", 0.62) + 2.0, 1.04, 1.13, 0.0, 0.02)
+photo("p6", S("h10") + 0.2, S("h10") + 2.3, 1.02, 1.18, 0.0, -0.02)
+photo("p7", M("h11", 0.45), M("h11", 0.45) + 1.9, 1.04, 1.12, 0.02, 0.0)
+photo("p8", M("h16", 0.32), M("h16", 0.32) + 2.0, 1.04, 1.13, -0.02, 0.0)
 
 # repères carte
-cue["intro"] = [M("h01", 0.45), M("h01", 0.75), Ed("h01") + 0.3]       # Afrique zoomée → demi-tour → Colombie
-cue["flag"] = Ed("h01") + 0.1
-cue["title"] = S("h02") + 0.3
-cue["k200"] = 0.6
-cue["kEscobar"] = M("h02", 0.45)
-cue["napoles"] = [S("h03") - 0.2, S("h03") + 1.0]
-cue["arc"] = [M("h04", 0.5), Ed("h04") + 0.2]
+cue["intro"] = [0.6, M("h01", 0.42), M("h01", 0.72)]       # Afrique zoomée → recul + demi-tour → Colombie
+cue["flag"] = M("h01", 0.7)
+cue["title"] = 0.3
+cue["k200"] = M("h01", 0.15)
+cue["kEscobar"] = M("h02", 0.3)
+cue["napoles"] = [S("h03") - 0.2, S("h03") + 0.9]
+cue["ultraNap"] = [M("h03", 0.36), M("h03", 0.62)]          # plongée jusque dans le zoo → photo p2
+cue["arc"] = [S("h04") + 1.6, Ed("h04") + 0.2]
 cue["medellin"] = [S("h05") - 0.4, S("h05") + 0.6]
-cue["river"] = [S("h07") - 0.4, M("h07", 0.5)]
+cue["ultraAband"] = [S("h06"), M("h06", 0.42)]
+cue["river"] = [S("h07") - 0.4, S("h07") + 0.8]               # embouchure du Magdalena
+cue["sweep"] = [S("h07") + 0.8, M("h07", 0.5)]                 # balayage le long du fleuve
+cue["ultraRiv"] = [M("h07", 0.5), M("h07", 0.62)]
 cue["boom"] = [S("h08") - 0.4, Ed("h09")]
 cue["k170"] = M("h09", 0.62)
+cue["ultraRiv2"] = [S("h11"), M("h11", 0.45)]
 cue["invasive"] = [S("h12") - 0.4, S("h12") + 0.6]
 cue["stampInv"] = M("h12", 0.6)
 cue["mexico"] = [S("h13") - 0.3, M("h13", 0.55)]
@@ -113,7 +117,8 @@ cue["india"] = [M("h13", 0.55), Ed("h13") + 0.4]
 cue["refuse"] = M("h14", 0.4)
 cue["back"] = [S("h15") - 0.4, S("h15") + 0.9]
 cue["k80"] = M("h15", 0.7)
-cue["future"] = [S("h17") - 0.3, Ed("h17")]
+cue["ultraVill"] = [S("h16"), M("h16", 0.32)]
+cue["future"] = [M("h16", 0.32) + 2.0, S("h17") + 0.8]
 cue["k1000"] = M("h17", 0.6)
 cue["outro"] = S("h18") - 0.3
 
@@ -127,7 +132,10 @@ TL["ticker"] = [
 ]
 
 # ------------------------------------------------------------------ bruitages (vrais fichiers fournis)
-sfx("cri", 0.25, 0.9)
+sfx("woosh", 0.55, 0.6)
+sfx("cri", Ed("h01") - 0.1, 0.9)
+for k in ("ultraNap", "ultraAband", "ultraRiv", "ultraRiv2", "ultraVill"): sfx("woosh", cue[k][0] + 0.05, 0.6)
+sfx("woosh", cue["sweep"][0], 0.4)
 for p in TL["photos"][1:]:
     sfx("woosh", p["a"] - 0.15, 0.7)                     # entrée de chaque séquence photo
 sfx("woosh", cue["intro"][0] - 0.1, 0.8); sfx("woosh", cue["intro"][1], 0.6)
@@ -144,7 +152,7 @@ sfx("woosh", cue["mexico"][0], 0.6); sfx("woosh", cue["india"][0], 0.6)
 sfx("impact", cue["refuse"], 0.8)
 sfx("woosh", cue["back"][0], 0.7); sfx("impact", cue["k80"], 0.6)
 sfx("woosh", cue["future"][0], 0.6); sfx("impact", cue["k1000"], 0.6)
-sfx("cri", S("h18") + 0.4, 0.8)
+sfx("cri", S("h18") + 0.4, 0.7)
 last = -9
 for t0, t1, y0, y1, step in TL["ticker"]:
     if y1 == y0: continue

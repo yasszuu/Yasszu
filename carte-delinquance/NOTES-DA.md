@@ -14,3 +14,8 @@
 - **Symboles, icônes, schémas** (mini-animaux, bateau, virus, etc.) : ne pas les dessiner soi-même.
   Prévenir l'utilisateur AVANT, avec la liste exacte, pour qu'il les génère et les envoie (PNG détourés).
 - Ne pas empiler plusieurs textes cinétiques en même temps au même endroit (ex. « 600 millions / 100 millions / résistants »).
+- **Ouverture** : toujours un plan carte (jamais une photo en premier).
+- **Flou de vitesse** : fort en zoom avant, très léger en zoom arrière.
+- **Sous-titres** : GROS (≈ 84 px), EN HAUT de l'écran, par groupes de 2–3 mots ; le titre n'apparaît que pendant l'accroche.
+- **Photos plein écran** : ponctuelles (~2 s), toujours amenées par une plongée « ultra-zoom » sur la carte + flash.
+- **Motion design carte** : multiplier zooms, focus (assombrir hors du pays), ultra-zooms, balayages le long d'un fleuve / d'une route.
