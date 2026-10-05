@@ -20,8 +20,8 @@ SCRIPT = [
 
  ("a1", "Au dix-huitième siècle, le loup vivait sur presque tout le territoire.",
         "Au *XVIIIe siècle*, le loup vivait sur presque *tout le territoire*.", 0.7),
- ("a2", "Mais traqué, piégé, empoisonné, il recule partout...", "Mais *traqué*, *piégé*, *empoisonné*, il recule partout...", 0.2),
- ("a3", "et disparaît de France dans les années mille neuf cent trente.", "et *disparaît* de France dans les *années 1930*.", 0.1),
+ ("a2", "Mais traqué, piégé, empoisonné, il recule partout...", "Mais *traqué*, *piégé*, *empoisonné*… il recule partout.", 0.2),
+ ("a3", "et disparaît de France dans les années mille neuf cent trente.", "Et il *disparaît* de France dans les *années 1930*.", 0.1),
 
  ("b1", "Il ne survit plus qu'en Italie : à peine une centaine de loups, cachés dans les Apennins.",
         "Il ne survit plus qu'en *Italie* : à peine *une centaine*, cachés dans les *Apennins*.", 0.9),
@@ -39,7 +39,7 @@ SCRIPT = [
  ("d4", "Puis le Jura, en deux mille trois.", "Puis le *Jura* en *2003*.", 0.25),
  ("d5", "Et enfin, les Vosges.", "Et enfin, les *Vosges*.", 0.25),
  ("d6", "Aujourd'hui, il est signalé jusqu'en Bretagne et en Normandie.",
-        "Aujourd'hui, il est signalé jusqu'en *Bretagne* et en *Normandie*.", 0.5),
+        "Aujourd'hui, il est signalé jusqu'en *Bretagne*… et en *Normandie* !", 0.5),
 
  ("e1", "En deux mille vingt-cinq, l'Office français de la biodiversité estime leur nombre à environ mille quatre-vingts loups.",
         "En 2025, l'OFB estime leur nombre à environ *1 080 loups*.", 0.6),
@@ -70,7 +70,43 @@ def tts_all():
         sf.write(f"vo/{k}.wav", x, SR); out[k] = x
     return out
 
-clips = tts_all()
+def load_external():
+    """Voix ElevenLabs : soit VO_DIR (un mp3 par réplique, triés par nom),
+    soit VO_FILE (un seul mp3, découpé sur les pauses longues entre répliques)."""
+    import subprocess, glob
+    def read(p):
+        raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", p, "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"],
+                             capture_output=True, check=True).stdout
+        return np.frombuffer(raw, np.float32).copy()
+    def trim(x):
+        nz = np.where(np.abs(x) > 0.01)[0]; return x[max(nz[0]-300, 0): nz[-1]+2000]
+    ids = [k for k, *_ in SCRIPT]
+    if os.environ.get("VO_DIR"):
+        files = sorted(glob.glob(os.path.join(os.environ["VO_DIR"], "*.mp3")) + glob.glob(os.path.join(os.environ["VO_DIR"], "*.wav")))
+        assert len(files) == len(ids), f"{len(files)} fichiers pour {len(ids)} répliques"
+        return {k: trim(read(f)) for k, f in zip(ids, files)}
+    x = read(os.environ["VO_FILE"])
+    hop = int(0.02*SR); rms = np.sqrt(np.convolve(x**2, np.ones(hop)/hop, "same"))[::hop]
+    silent = rms < max(0.004, np.percentile(rms, 95)*0.03)
+    # pauses candidates, puis on garde les len(ids)-1 plus longues
+    runs, i = [], 0
+    while i < len(silent):
+        if silent[i]:
+            j = i
+            while j < len(silent) and silent[j]: j += 1
+            if i > 0 and j < len(silent): runs.append((j - i, i, j))
+            i = j
+        else: i += 1
+    cuts = sorted(sorted(runs, reverse=True)[:len(ids) - 1], key=lambda r: r[1])
+    assert len(cuts) == len(ids) - 1, f"seulement {len(cuts)+1} segments trouvés"
+    print("pause la plus courte retenue :", round(min(c[0] for c in cuts)*0.02, 2), "s")
+    bounds = [0] + [((a + b)//2)*hop for _, a, b in cuts] + [len(x)]
+    out = {k: trim(x[bounds[n]:bounds[n+1]]) for n, k in enumerate(ids)}
+    os.makedirs("vo", exist_ok=True)
+    for k, v in out.items(): sf.write(f"vo/{k}.wav", v, SR)
+    return out
+
+clips = load_external() if (os.environ.get("VO_FILE") or os.environ.get("VO_DIR")) else tts_all()
 dur = {k: len(v)/SR for k, v in clips.items()}
 
 # ------------------------------------------------------------------ timeline

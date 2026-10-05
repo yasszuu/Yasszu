@@ -7,7 +7,8 @@ Chapitres : accroche (globe) → 1. la disparition (XVIIIe → années 1930) →
 4. la reconquête (frise 1992 → 2025, départements, compteur) → 5. le conflit (prédation, déclassement 2025) → outro.
 
 ## Pipeline
-1. `python3 audio.py` – voix off (Piper `fr_FR-tom-medium`), timeline partagée, bruitages (hurlements synthétisés,
+1. `python3 audio.py` (ou `VO_FILE=voix.mp3 python3 audio.py` pour une voix ElevenLabs, voir `script-elevenlabs.txt`)
+   – – voix off (Piper `fr_FR-tom-medium`), timeline partagée, bruitages (hurlements synthétisés,
    pas, tampon, impacts…) et musique 84 BPM par sections
 2. `sh mix.sh` – mixage + normalisation -14 LUFS
 3. `node build.js` – page autonome `loup.html` (jouable avec le son)

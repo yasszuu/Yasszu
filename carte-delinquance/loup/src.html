@@ -31,7 +31,6 @@ const WORLD = __WORLD__, DEPS = __DEPS__, TL = __TL__;
 const TEX = {world:"__TEXWORLD__", eu:"__TEXEU__"};
 const IMG_SRC = __IMGS__;
 const EU_BOX = [-14, 24, 33, 60];
-const SOURCE = "Sources : OFB / Réseau Loup-Lynx, FERUS, ministère de l'Agriculture · carte simplifiée";
 
 const W = 1080, H = 1920, MAPY = 1080;
 const Y1 = "#ffd60a", Y2 = "#ffe45c", ORANGE = "#ff9f1c", RED = "#ff4433";
@@ -568,7 +567,6 @@ function overlay(t, yr){
     const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.toUpperCase(), c:w.hi ? Y1 : "#fff"}));
     richLine(segs, W/2, 1620, {size:56, weight:900, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:12});
   }
-  txt(SOURCE, W/2, H - 60, {size:20, weight:600, color:"rgba(255,255,255,.75)", alpha:prog(t, C.zoomFR[1], C.zoomFR[1] + 0.8), stroke:4});
 }
 // effectif estimé (points d'appui OFB : 2018 ≈ 430, 2022 ≈ 921, 2023 ≈ 1 104, 2024 ≈ 1 013, 2025 ≈ 1 082)
 function wolvesAt(y){
