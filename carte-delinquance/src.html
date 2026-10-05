@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carte Délinquance France</title>
+<style>
+@font-face{font-family:Anton;src:url(data:font/woff2;base64,__ANTON__) format("woff2");}
+@font-face{font-family:Inter;font-weight:400;src:url(data:font/woff2;base64,__INTER400__) format("woff2");}
+@font-face{font-family:Inter;font-weight:700;src:url(data:font/woff2;base64,__INTER700__) format("woff2");}
+:root{--bg:#04060b;--fg:#f4f6fb;--muted:#8a94a8;--accent:#ffd400;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#04060b;}}
+:root[data-theme="dark"]{--bg:#04060b;}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+canvas{height:100%;max-width:100%;aspect-ratio:9/16;object-fit:contain;display:block}
+#ctrl{position:fixed;left:16px;bottom:16px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+#ctrl button{background:#151b27;color:var(--fg);border:1px solid #2a3346;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+body.capture #ctrl{display:none}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1080" height="1920"></canvas></div>
+<div id="ctrl"><button id="replay">↺ Rejouer</button><span id="tc"></span></div>
+<script>__D3__</script>
+<script>__TOPOJSON__</script>
+<script>
+const WORLD = __WORLD__;
+const DEPS = __DEPS__;
+
+// ---- Données : SSMSI 2024, crimes et délits enregistrés pour 1 000 habitants ----
+const TOP = [
+  {rank:5, code:"34", name:"Hérault",           rate:62.3},
+  {rank:4, code:"69", name:"Rhône",             rate:70.5},
+  {rank:3, code:"93", name:"Seine-Saint-Denis", rate:76.7},
+  {rank:2, code:"13", name:"Bouches-du-Rhône",  rate:80},
+  {rank:1, code:"75", name:"Paris",             rate:116},
+];
+const SOURCE = "Source : SSMSI – crimes et délits enregistrés en 2024, pour 1 000 habitants";
+
+const W = 1080, H = 1920, MAPY = 980;
+const YELLOW = "#ffd400";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const proj = d3.geoOrthographic().clipAngle(90).translate([W/2, MAPY]).precision(0.4);
+const path = d3.geoPath(proj, ctx);
+const measure = d3.geoPath(proj);
+
+const countries = topojson.feature(WORLD, WORLD.objects.countries).features;
+const borders = topojson.mesh(WORLD, WORLD.objects.countries, (a,b) => a !== b);
+const france = countries.find(f => f.properties.name === "France");
+const others = {type:"FeatureCollection", features: countries.filter(f => f !== france)};
+const depByCode = Object.fromEntries(DEPS.features.map(f => [f.properties.code, f]));
+const depMesh = {type:"FeatureCollection", features: DEPS.features};
+const metro = {type:"FeatureCollection", features: DEPS.features};
+const graticule = d3.geoGraticule10();
+
+// ---- Caméra ----
+function fit(feature, center, padW, padH){
+  proj.rotate([-center[0], -center[1]]).scale(1).translate([0,0]);
+  const [[x0,y0],[x1,y1]] = measure.bounds(feature);
+  proj.translate([W/2, MAPY]);
+  return {lon:center[0], lat:center[1], s: Math.min(padW/(x1-x0), padH/(y1-y0))};
+}
+const FR = fit(metro, [2.6, 46.4], W*0.88, 1000);
+const IDF_CODES = ["75","92","93","94"];
+const idf = {type:"FeatureCollection", features: IDF_CODES.map(c => depByCode[c])};
+const IDF = fit(idf, d3.geoCentroid(idf), W*0.62, 620);
+TOP.forEach(d => {
+  d.f = depByCode[d.code];
+  d.c = d3.geoCentroid(d.f);
+  if (IDF_CODES.includes(d.code)) d.cam = IDF;
+  else { d.cam = fit(d.f, d.c, W*0.5, 560); d.cam.s = Math.min(d.cam.s, FR.s*3.2); }
+});
+
+const G0 = {lon:-95, lat:18, s:430}, G1 = {lon:-40, lat:30, s:430}, G2 = {lon:2.6, lat:46.4, s:430};
+const T_ITEM0 = 8.6, T_STEP = 2.6, T_FINAL = T_ITEM0 + T_STEP*TOP.length, DURATION = T_FINAL + 6;
+
+const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b, x));
+const prog = (t,a,b) => clamp((t-a)/(b-a));
+const lerp = (a,b,k) => a + (b-a)*k;
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.6);
+
+function camLerp(a, b, k, fly){
+  const e = E(k);
+  let s = Math.exp(lerp(Math.log(a.s), Math.log(b.s), e));
+  if (fly){
+    const dist = d3.geoDistance([a.lon,a.lat],[b.lon,b.lat]) * 180/Math.PI;
+    s *= 1 - clamp(dist/9, 0, 0.55) * Math.sin(Math.PI*e);
+  }
+  return {lon: lerp(a.lon,b.lon,e), lat: lerp(a.lat,b.lat,e), s};
+}
+function camera(t){
+  if (t < 2.6) return camLerp(G0, G1, d3.easeSinOut(prog(t,0,2.6))*0.999, false);
+  if (t < 5.0) return camLerp(G1, G2, prog(t,2.6,5.0), false);
+  if (t < 7.6) return camLerp(G2, FR, prog(t,5.0,7.6), false);
+  let prev = FR;
+  for (const d of TOP){
+    const i = TOP.indexOf(d), t0 = T_ITEM0 + i*T_STEP;
+    if (t < t0) return prev;
+    if (t < t0+1.1) return camLerp(prev, d.cam, prog(t,t0,t0+1.1), true);
+    prev = d.cam;
+  }
+  if (t < T_FINAL) return prev;
+  return camLerp(prev, FR, prog(t, T_FINAL, T_FINAL+1.4), true);
+}
+
+// ---- Étoiles (déterministes) ----
+const rnd = d3.randomLcg(7);
+const stars = d3.range(260).map(() => [rnd()*W, rnd()*H, rnd()*1.6+0.3, rnd()]);
+
+function text(str, x, y, {font, color="#f4f6fb", align="center", alpha=1, spacing=0, base="alphabetic"}={}){
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.font = font; ctx.fillStyle = color;
+  ctx.textAlign = align; ctx.textBaseline = base;
+  if (spacing) ctx.letterSpacing = spacing + "px";
+  ctx.fillText(str, x, y); ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+const fmt = v => v.toLocaleString("fr-FR", {maximumFractionDigits:1});
+
+function render(t){
+  const cam = camera(t);
+  proj.rotate([-cam.lon, -cam.lat]).scale(cam.s);
+  const zoomK = prog(cam.s, 430, 1600);        // 0 = globe, 1 = France
+  const focus = E(prog(t, 4.6, 7.6));          // mise en avant de la France
+  const depA  = E(prog(t, 6.8, 8.4));          // apparition des départements
+
+  // fond
+  const bg = ctx.createRadialGradient(W/2, MAPY, 100, W/2, MAPY, H*0.75);
+  bg.addColorStop(0, "#0b1324"); bg.addColorStop(1, "#03050a");
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.globalAlpha = 1 - zoomK;
+  for (const [x,y,r,p] of stars){
+    ctx.globalAlpha = (1-zoomK) * (0.35 + 0.65*Math.abs(Math.sin(t*1.3 + p*20)));
+    ctx.fillStyle = "#cfd8ff"; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+  }
+  ctx.restore();
+
+  // atmosphère
+  if (cam.s < 2000){
+    const g = ctx.createRadialGradient(W/2, MAPY, cam.s*0.92, W/2, MAPY, cam.s*1.18);
+    g.addColorStop(0, "rgba(90,150,255,0.45)"); g.addColorStop(1, "rgba(90,150,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  }
+  // océan
+  ctx.beginPath(); path({type:"Sphere"});
+  const oc = ctx.createRadialGradient(W/2 - cam.s*0.35, MAPY - cam.s*0.4, cam.s*0.1, W/2, MAPY, cam.s);
+  oc.addColorStop(0, "#14284a"); oc.addColorStop(1, "#08111f");
+  ctx.fillStyle = cam.s < 2500 ? oc : "#0a1527"; ctx.fill();
+  // graticule
+  ctx.beginPath(); path(graticule);
+  ctx.strokeStyle = `rgba(120,160,230,${0.13*(1-zoomK)})`; ctx.lineWidth = 1; ctx.stroke();
+
+  // terres
+  ctx.beginPath(); path(others);
+  ctx.fillStyle = d3.interpolateRgb("#2a3955", "#151d2c")(focus); ctx.fill();
+  ctx.beginPath(); path(borders);
+  ctx.strokeStyle = d3.interpolateRgb("#4a5d82", "#273248")(focus); ctx.lineWidth = 0.8; ctx.stroke();
+
+  // France
+  ctx.beginPath(); path(france);
+  ctx.fillStyle = d3.interpolateRgb("#2a3955", "#2d3d5c")(focus); ctx.fill();
+
+  // départements surlignés
+  const zoomRatio = cam.s / FR.s;
+  TOP.forEach((d, i) => {
+    const t0 = T_ITEM0 + i*T_STEP;
+    const h = EO(prog(t, t0+0.9, t0+1.4));
+    if (h <= 0) return;
+    const active = t < t0 + T_STEP && t >= t0;
+    const pulse = active ? Math.max(0, Math.sin(Math.PI*prog(t, t0+0.9, t0+2.0))) : 0;
+    ctx.save();
+    ctx.beginPath(); path(d.f);
+    ctx.shadowColor = YELLOW; ctx.shadowBlur = 18 + 40*pulse;
+    ctx.globalAlpha = h; ctx.fillStyle = YELLOW; ctx.fill();
+    ctx.restore();
+  });
+
+  // contours des départements
+  if (depA > 0){
+    ctx.save(); ctx.globalAlpha = depA;
+    ctx.beginPath(); path(depMesh);
+    ctx.strokeStyle = "rgba(160,180,215,0.42)"; ctx.lineWidth = clamp(0.7*Math.sqrt(zoomRatio), 0.7, 2); ctx.stroke();
+    ctx.restore();
+  }
+  // contour France lumineux
+  ctx.save(); ctx.beginPath(); path(france);
+  ctx.shadowColor = "rgba(255,255,255,0.6)"; ctx.shadowBlur = 14*focus;
+  ctx.strokeStyle = `rgba(235,242,255,${0.15 + 0.7*focus})`; ctx.lineWidth = 1 + 1.5*focus; ctx.stroke();
+  ctx.restore();
+
+  // repère sur la France pendant la rotation du globe
+  const pa = prog(t, 2.4, 3.2) * (1 - prog(t, 5.4, 6.4));
+  if (pa > 0){
+    const [px,py] = proj([2.6, 46.6]);
+    for (let k = 0; k < 2; k++){
+      const ph = ((t*0.9 + k*0.5) % 1);
+      ctx.save(); ctx.globalAlpha = pa*(1-ph); ctx.strokeStyle = YELLOW; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(px, py, 8 + ph*60, 0, 7); ctx.stroke(); ctx.restore();
+    }
+    ctx.save(); ctx.globalAlpha = pa; ctx.fillStyle = YELLOW; ctx.shadowColor = YELLOW; ctx.shadowBlur = 20;
+    ctx.beginPath(); ctx.arc(px, py, 8, 0, 7); ctx.fill(); ctx.restore();
+  }
+
+  // pastilles de rang sur la carte
+  TOP.forEach((d, i) => {
+    const t0 = T_ITEM0 + i*T_STEP;
+    const a = EB(prog(t, t0+1.0, t0+1.5));
+    if (a <= 0) return;
+    const [x,y] = proj(d.c);
+    // décalage pour Paris / 93 quand on est dézoomé
+    const off = {"75":[-95,-70], "93":[95,-90]}[d.code] || [0,0];
+    const k = clamp(1.6 - zoomRatio/2.5, 0, 1);
+    const bx = x + off[0]*k, by = y + off[1]*k;
+    if (k > 0.05){
+      ctx.save(); ctx.globalAlpha = a*k; ctx.strokeStyle = YELLOW; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(bx,by); ctx.stroke();
+      ctx.fillStyle = YELLOW; ctx.beginPath(); ctx.arc(x,y,4,0,7); ctx.fill(); ctx.restore();
+    }
+    const r = 26 * a;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 12;
+    ctx.fillStyle = "#0a0d14"; ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.fill();
+    ctx.shadowBlur = 0; ctx.lineWidth = 3; ctx.strokeStyle = YELLOW; ctx.stroke();
+    ctx.restore();
+    text(String(d.rank), bx, by+1, {font:`${Math.round(30*a)}px Anton`, color:YELLOW, base:"middle"});
+  });
+
+  drawOverlay(t);
+}
+
+function drawOverlay(t){
+  // intro
+  const ia = prog(t, 0.4, 1.2) * (1 - prog(t, 3.8, 4.6));
+  if (ia > 0){
+    text("TOUR DU MONDE DE LA DÉLINQUANCE", W/2, 230, {font:"700 30px Inter", color:"#9fb0d0", alpha:ia, spacing:6});
+    text("Cap sur la France", W/2, 1620, {font:"64px Anton", alpha:ia*EO(prog(t,1.0,2.0)), color:"#f4f6fb"});
+  }
+  // titre
+  const ta = EO(prog(t, 5.2, 6.4));
+  if (ta > 0){
+    const dy = (1-ta)*30;
+    text("LES DÉPARTEMENTS", W/2, 190+dy, {font:"84px Anton", alpha:ta});
+    text("LES PLUS CRIMINOGÈNES", W/2, 290+dy, {font:"84px Anton", color:YELLOW, alpha:ta});
+    text("DE FRANCE  ·  2024", W/2, 370+dy, {font:"700 34px Inter", color:"#9fb0d0", alpha:ta, spacing:5});
+  }
+  // carte par département (compte à rebours)
+  TOP.forEach((d, i) => {
+    const t0 = T_ITEM0 + i*T_STEP;
+    const a = EO(prog(t, t0+1.0, t0+1.5)) * (1 - prog(t, t0+T_STEP-0.25, t0+T_STEP));
+    if (a <= 0) return;
+    const y = 1560 + (1-a)*60;
+    ctx.save(); ctx.globalAlpha = a;
+    roundRect(70, y, W-140, 220, 22); ctx.fillStyle = "rgba(8,11,18,0.88)"; ctx.fill();
+    ctx.strokeStyle = "rgba(255,212,0,0.55)"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    text(`#${d.rank}`, 120, y+150, {font:"150px Anton", color:YELLOW, align:"left", alpha:a});
+    text(d.name.toUpperCase(), 330, y+92, {font:(d.name.length>12?"58px":"70px")+" Anton", align:"left", alpha:a});
+    text(`${fmt(d.rate)} crimes et délits`, 330, y+148, {font:"700 36px Inter", color:YELLOW, align:"left", alpha:a});
+    text("pour 1 000 habitants", 330, y+190, {font:"400 30px Inter", color:"#a9b4c8", align:"left", alpha:a});
+  });
+  // classement final
+  const fa = prog(t, T_FINAL+1.0, T_FINAL+1.8);
+  if (fa > 0){
+    const y0 = 1430, rowH = 74, maxR = d3.max(TOP, d => d.rate);
+    ctx.save(); ctx.globalAlpha = EO(fa);
+    roundRect(60, y0-30, W-120, rowH*5+50, 22); ctx.fillStyle = "rgba(8,11,18,0.88)"; ctx.fill();
+    ctx.restore();
+    [...TOP].sort((a,b) => a.rank-b.rank).forEach((d, j) => {
+      const ra = EO(prog(t, T_FINAL+1.1+j*0.12, T_FINAL+1.7+j*0.12));
+      const y = y0 + j*rowH;
+      text(String(d.rank), 105, y+46, {font:"44px Anton", color:YELLOW, alpha:ra});
+      text(d.name, 150, y+44, {font:"700 32px Inter", align:"left", alpha:ra});
+      const bw = 330 * (d.rate/maxR) * EO(prog(t, T_FINAL+1.4+j*0.12, T_FINAL+2.4+j*0.12));
+      ctx.save(); ctx.globalAlpha = ra; ctx.fillStyle = YELLOW;
+      roundRect(560, y+20, Math.max(bw,1), 30, 6); ctx.fill(); ctx.restore();
+      text(`${fmt(d.rate)} ‰`, 560 + bw + 14, y+46, {font:"700 30px Inter", align:"left", alpha:ra});
+    });
+  }
+  // source
+  const sa = prog(t, 6.0, 7.0);
+  if (sa > 0) text(SOURCE, W/2, H-48, {font:"400 23px Inter", color:"#7d889c", alpha:sa});
+}
+
+// ---- Lecture ----
+window.DURATION = DURATION;
+window.renderAt = render;
+window.ready = document.fonts.load("80px Anton").then(() => document.fonts.load("700 30px Inter")).then(() => document.fonts.load("30px Inter"));
+const capture = new URLSearchParams(location.search).has("capture");
+if (capture) document.body.classList.add("capture");
+else {
+  let start = null;
+  const tc = document.getElementById("tc");
+  document.getElementById("replay").onclick = () => start = null;
+  window.ready.then(() => {
+    const loop = now => {
+      if (start === null) start = now;
+      const t = Math.min((now - start)/1000, DURATION);
+      render(t); tc.textContent = t.toFixed(1) + " s / " + DURATION.toFixed(0) + " s";
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
+}
+</script>
+</body>
+</html>
