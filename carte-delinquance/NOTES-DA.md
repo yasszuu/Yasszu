@@ -24,3 +24,7 @@
 - **Pas de photo en ouverture** : la première minute d'accroche reste sur la carte ; les animaux y apparaissent en PNG détourés.
 - **Flou de mouvement très léger** sur les balayages/rotations du globe et les zooms (ne pas abuser) — l'image doit rester nette.
 - **Trajets dessinés sur la carte** : montrer l'origine et le parcours de l'animal (lignes animées pays → pays avec dates) avant d'arriver en France.
+- **Zoom maximum** : ouverture au niveau « continent » (comme la vidéo Afrique du Sud d'ishak-geo), lieu **entouré / pingé** — jamais de gros zoom pixelisé. Ailleurs, ne pas dépasser ~1,6× la vue France entière.
+- **Cri / bruit de l'animal uniquement dans l'intro** (sinon dérangeant).
+- **Pas de textes encadrés (« chips ») en bas de l'écran** : sous-titres en haut + textes cinétiques suffisent ; compteurs en texte simple.
+- **Animaux passagers clandestins** (bateau, pneu, camion…) : montrer clairement l'animal à l'intérieur (il vole/entre dans l'objet, puis reste visible sur le véhicule avec halo).

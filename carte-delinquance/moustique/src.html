@@ -99,16 +99,16 @@ function fit(feature, center, w, h){
 }
 const box = (a, b, c, d) => ({type:"Polygon", coordinates:[[[a,b],[a,d],[c,d],[c,b],[a,b]]]});
 const FR = fit(box(-5.2, 41.3, 9.7, 51.2), [2.4, 46.2], W*0.94, 1020);
-const MENT = {lon:7.45, lat:43.62, s:FR.s*3.0}, MENT0 = {...MENT, s:FR.s*3.3};
+const MENT0 = {lon:7.2, lat:44.0, s:1900}, MENT = {lon:7.3, lat:43.9, s:2150};      // vue large (niveau « continent »)
 const ASIA = fit(box(92, -9, 127, 24), [109, 8], W*0.9, 1000);
 const LANEV = {lon:70, lat:12, s:430};
 const ALBV = {lon:18.5, lat:40.6, s:FR.s*1.15};
 const USV = {lon:-91, lat:27, s:FR.s*0.7};
 const ITV = {lon:8.6, lat:43.9, s:FR.s*1.5};
-const COASTV = {lon:8.15, lat:43.95, s:FR.s*3.0};
-const RHV0 = {lon:5.0, lat:44.1, s:FR.s*2.0}, RHV1 = {lon:4.9, lat:46.0, s:FR.s*2.0};
+const COASTV = {lon:8.1, lat:44.0, s:FR.s*1.55};
+const RHV0 = {lon:5.0, lat:44.4, s:FR.s*1.5}, RHV1 = {lon:4.9, lat:46.0, s:FR.s*1.5};
 const SWV = {lon:0.6, lat:44.2, s:FR.s*1.7}, CENTV = {lon:2.4, lat:46.4, s:FR.s*1.6};
-const PARV = {lon:2.45, lat:48.75, s:FR.s*2.4};
+const PARV = {lon:2.45, lat:48.3, s:FR.s*1.6};
 const FRX = {...FR, s:FR.s*1.06}, OUT = {...FR, s:FR.s*0.8};
 
 function camLerp(a, b, k, fly, ease=E){
@@ -123,7 +123,7 @@ const push = (c, k) => ({...c, s:c.s*(1 + 0.05*k)});
 // caméra qui suit le bateau le long d'une route
 const shipK = (key, t) => E(prog(t, C[key][0] + 0.9, C[key][0] + 3.3));
 const roadK = t => Math.max(E(prog(t, C.rhone[0] + 0.6, Ed("m13") - 0.2))*0.62, 0.62 + E(prog(t, C.paris[0] - 0.1, Ed("m15")))*0.38*(t > C.paris[0] - 0.1));
-function truckCam(t){ const {p} = routeAt(RT.road, roadK(t)); return {lon:p[0] + 0.3, lat:p[1] - 0.5, s:FR.s*1.9}; }
+function truckCam(t){ const {p} = routeAt(RT.road, roadK(t)); return {lon:p[0] + 0.3, lat:p[1] - 0.6, s:FR.s*1.5}; }
 function follow(key, t, s){ const {p} = routeAt(RT[key], shipK(key, t)); return {lon:p[0], lat:p[1] - 3, s}; }
 
 // plans : [début, fin, caméra (objet ou fonction de t), vol ?]
@@ -145,7 +145,7 @@ const SHOTS = [
   [C.ita[0] + 0.9, C.ita[0] + 3.3, t => follow("ita", t, 720), false],
   [C.ita[0] + 3.3, C.ita[1], ITV, false],
   [C.coast[0], C.coast[0] + 1.0, COASTV, false],
-  [C.coast[0] + 1.0, C.coast[1], {...COASTV, lon:7.6, lat:43.75}, false],
+  [C.coast[0] + 1.0, C.coast[1], {...COASTV, lon:7.8, lat:43.9}, false],
   [C.cold[0], C.cold[0] + 1.0, FR, false],
   [C.rhone[0], C.rhone[0] + 0.6, RHV0, false],
   [C.rhone[0] + 0.6, C.rhone[0] + 1.2, t => truckCam(t), true],
@@ -349,14 +349,26 @@ function routeLine(r, k, alpha, color="#fff", w=7, dash=[16, 11]){
   ctx.beginPath(); path({type:"LineString", coordinates:pts}); ctx.stroke(); ctx.restore();
 }
 // image détourée posée SUR la carte (bateau, camion), orientée selon le cap
-function mapSprite(key, r, k, h, alpha){
+// passager clandestin : le moustique (dans son pneu pour le bateau) posé sur le véhicule + halo jaune
+function mapSprite(key, r, k, h, alpha, t, rider=0){
   const img = IMG[key]; if (!img || alpha <= 0) return;
   const {p, a, b} = routeAt(r, k), xy = vproj(p); if (!xy) return;
   const pa = proj(a), pb = proj(b), dir = pb && pa ? Math.sign(pb[0] - pa[0]) || 1 : 1;
   const w = h*img.width/img.height, bob = Math.sin(k*60)*2;
-  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(xy[0], xy[1] + bob); ctx.scale(dir > 0 ? -1 : 1, 1);
+  if (rider > 0) pulse(xy[0], xy[1] - h*0.4, t, alpha*rider, Y1, h*0.9);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(xy[0], xy[1] + bob); ctx.scale((key === "cargo" ? dir < 0 : dir > 0) ? -1 : 1, 1);
   ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
-  ctx.drawImage(img, -w/2, -h*0.85, w, h); ctx.restore();
+  ctx.drawImage(img, -w/2, -h*0.85, w, h);
+  if (rider > 0){
+    ctx.globalAlpha = alpha*Math.min(rider, 1);
+    if (key === "cargo"){ const ti = IMG.pneu, th = h*0.62; ctx.drawImage(ti, -w*0.12 - th*ti.width/ti.height/2, -h*0.85 - th*0.72, th*ti.width/ti.height, th); }
+    const mq = IMG.m_34, mh = h*(key === "cargo" ? 0.5 : 0.85), wig = Math.sin(t*14)*0.12;
+    ctx.save(); ctx.translate(key === "cargo" ? -w*0.12 : w*0.1, key === "cargo" ? -h*0.85 - h*0.62*0.3 : -h*1.0);
+    const gl2 = ctx.createRadialGradient(0, 0, 0, 0, 0, mh*0.7); gl2.addColorStop(0, "rgba(255,214,10,0.8)"); gl2.addColorStop(1, "rgba(255,214,10,0)");
+    ctx.shadowColor = "transparent"; ctx.fillStyle = gl2; ctx.fillRect(-mh, -mh, 2*mh, 2*mh); ctx.rotate(wig);
+    ctx.drawImage(mq, -mh*mq.width/mq.height/2, -mh/2, mh*mq.width/mq.height, mh); ctx.restore();
+  }
+  ctx.restore();
 }
 function label(str, lonlat, dx, dy, a, o={}){
   const p = vproj(lonlat); if (!p || a <= 0) return;
@@ -439,8 +451,10 @@ function renderMap(t){
   }
   // ---- Menton (hook)
   const mh = EB(prog(t, 0.5, 1.0)) * (1 - prog(t, C.intro[0] + 0.3, C.intro[0] + 0.8));
-  if (mh > 0){ const p = vproj(MENTON); if (p){ pulse(p[0], p[1], t, Math.min(mh, 1)); pin(p[0], p[1], mh, Y1, 15);
-    dashed(p[0], p[1], p[0] - 150, p[1] - 200, Math.min(mh, 1)); txt("MENTON", p[0] - 150, p[1] - 230, {size:58, scale:mh, stroke:12}); } }
+  if (mh > 0){ const p = vproj(MENTON); if (p){ pulse(p[0], p[1], t, Math.min(mh, 1), Y2, 110); pin(p[0], p[1], mh, Y1, 13);
+    ctx.save(); ctx.globalAlpha = Math.min(mh, 1); ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(p[0], p[1], 58*Math.max(mh, 0.01), -Math.PI/2, -Math.PI/2 + 2*Math.PI*Math.min(1, prog(t, 0.6, 1.2))); ctx.stroke(); ctx.restore();
+    dashed(p[0] - 42, p[1] - 42, p[0] - 170, p[1] - 200, Math.min(mh, 1)); txt("MENTON", p[0] - 170, p[1] - 230, {size:62, scale:mh, stroke:12}); } }
 
   // ---- Asie du Sud-Est
   const sa = prog(t, C.asia[1] - 0.6, C.asia[1]) * (1 - prog(t, C.lanes[0] + 1.0, C.lanes[0] + 1.6));
@@ -448,7 +462,7 @@ function renderMap(t){
     spotlight(SEASIA, sa*0.8);
     ctx.save(); ctx.beginPath(); path(SEASIA); ctx.fillStyle = `rgba(255,214,10,${0.32*sa})`; ctx.fill();
     ctx.strokeStyle = `rgba(255,255,255,${0.9*sa})`; ctx.lineWidth = 3; ctx.shadowColor = Y1; ctx.shadowBlur = 16; ctx.stroke(); ctx.restore();
-    const la = EB(prog(t, C.asia[1] - 0.2, C.asia[1] + 0.3))*(1 - prog(t, M("m07", 0.22) - 0.3, M("m07", 0.22)));
+    const la = EB(prog(t, C.asia[1] - 0.2, C.asia[1] + 0.3))*(1 - prog(t, M("m06", 0.5), M("m06", 0.6)));
     const p = vproj(ORIGIN); if (p && la > 0){ pulse(p[0], p[1], t, Math.min(la, 1)); pin(p[0], p[1], la, Y1, 14);
       txt("ASIE", p[0] + 30, p[1] - 160, {size:60, scale:la, stroke:12}); txt("DU SUD-EST", p[0] + 30, p[1] - 95, {size:60, color:Y1, scale:la, stroke:12}); }
   }
@@ -467,7 +481,7 @@ function renderMap(t){
     const ar = EB(prog(t, C[key][0] + 3.2, C[key][0] + 3.6))*al;
     const pd = vproj(dest); if (pd && ar > 0){ pulse(pd[0], pd[1], t, Math.min(ar, 1)); pin(pd[0], pd[1], ar, Y1, 14);
       txt(name, pd[0], pd[1] - 46, {size:52, scale:ar, stroke:11}); }
-    mapSprite("cargo", RT[key], k, 120, al*(1 - prog(t, C[key][0] + 3.4, C[key][0] + 3.8)));
+    mapSprite("cargo", RT[key], k, 150, al*(1 - prog(t, C[key][0] + 3.4, C[key][0] + 3.8)), t, 1);
     const ps = vproj(RT[key].pts[0]); if (ps) pin(ps[0], ps[1], al, "#fff", 10);
   };
   trip("alb", DURRES, "ALBANIE", 0, C.usa[0], al => { if (prog(t, C.alb[0] + 3.2, C.alb[0] + 3.6) > 0){ ctx.save(); ctx.beginPath(); path(albania);
@@ -487,7 +501,8 @@ function renderMap(t){
   const rOut = clamp(prog(t, C.rhone[0] + 0.5, C.rhone[0] + 0.8)) * (1 - prog(t, S("m16") - 0.2, S("m16") + 0.3));
   if (rOut > 0){
     routeLine(RT.road, rk, rOut, "#fff", 8, [18, 12]);
-    mapSprite("camion", RT.road, rk, 78, rOut);
+    truckXY = vproj(routeAt(RT.road, rk).p);
+    mapSprite("camion", RT.road, rk, 105, rOut, t, prog(t, M("m13", 0.38), M("m13", 0.45)));
     label("VALLÉE", [5.6, 44.95], 120, -20, EB(prog(t, M("m13", 0.2), M("m13", 0.3)))*rOut*(1 - prog(t, C.sw[0], C.sw[0] + 0.3)), {size:40});
     label("DU RHÔNE", [5.6, 44.95], 120, 30, EB(prog(t, M("m13", 0.2), M("m13", 0.3)))*rOut*(1 - prog(t, C.sw[0], C.sw[0] + 0.3)), {size:40, color:Y1});
   }
@@ -537,6 +552,26 @@ function drawPhotos(t){
   }
 }
 
+// image en vol (trajectoire en arc, taille qui diminue) : [x, y centre, hauteur]
+function flyer(key, a, b, t, t0, t1, o={}){
+  const img = IMG[key]; if (!img) return;
+  const {fade=true, wob=1} = o, k = E(prog(t, t0, t1));
+  const x = lerp(a[0], b[0], k), y = lerp(a[1], b[1], k) - Math.sin(Math.PI*k)*160*wob, h = lerp(a[2], b[2], k);
+  const w = h*img.width/img.height;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t*18)*0.08*wob); ctx.globalAlpha = fade ? 1 - prog(k, 0.85, 1) : 1;
+  ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+  ctx.drawImage(img, -w/2, -h/2, w, h); ctx.restore();
+}
+// moustique tapi dans le pneu (petits mouvements) + halo
+function inside(x, y, h, t, a){
+  if (a <= 0) return; const img = IMG.m_34, w = h*img.width/img.height;
+  pulse(x, y, t, a, Y1, h*0.9);
+  ctx.save(); ctx.globalAlpha = a*0.9; const g = ctx.createRadialGradient(x, y, 0, x, y, h*0.75);
+  g.addColorStop(0, "rgba(255,214,10,0.85)"); g.addColorStop(1, "rgba(255,214,10,0)"); ctx.fillStyle = g; ctx.fillRect(x - h, y - h, 2*h, 2*h); ctx.restore();
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(x + Math.sin(t*9)*3, y); ctx.rotate(Math.sin(t*13)*0.15);
+  ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 10; ctx.drawImage(img, -w/2, -h/2, w, h); ctx.restore();
+}
+let truckXY = null;
 // ------------------------------------------------------------------ sous-titres (groupes de 2-3 mots)
 const CAPS = TL.vo.filter(v => !["m01", "m02", "m03", "m21"].includes(v.id)).map(v => {
   const words = [];
@@ -591,23 +626,30 @@ function overlay(t, pa){
   kin("DENGUE", W/2, 640, t, M("m18", 0.3), {size:130, color:RED, out:M("m18", 0.62)});
   kin("CHIKUNGUNYA", W/2, 640, t, M("m18", 0.66), {size:110, color:RED, out:S("m19") + 0.4});
   kin("+ DE 800 CAS", W/2, 640, t, C.k800, {size:120, color:Y1, out:Ed("m19") + 0.3});
-  // --- étiquettes / chips
-  chip([{t:"EAU DE ", c:"#fff"}, {t:"PLUIE", c:CYAN}], 1380, onPh(t, "p_pneus"), 44);
-  chip([{t:"MENTON · ", c:"#fff"}, {t:"2004", c:Y1}], 1380, onPh(t, "p_menton"), 44);
-  chip([{t:"PAS SEULEMENT ", c:"#fff"}, {t:"DES PIQÛRES", c:RED}], 1380, onPh(t, "p_pique"), 38);
-  chip([{t:"ŒUFS ", c:"#fff"}, {t:"RÉSISTANTS AU FROID", c:ICE}], 1480, EB(prog(t, M("m12", 0.5), M("m12", 0.5) + 0.4))*(1 - prog(t, C.rhone[0], C.rhone[0] + 0.3))*mapA, 38);
-  chip([{t:"PLUS DE ", c:"#fff"}, {t:"4 SUR 5", c:Y1}], 1480, EB(prog(t, M("m16", 0.85), M("m16", 0.85) + 0.4))*(1 - prog(t, Ed("m16") + 0.3, Ed("m16") + 0.6))*mapA, 44);
-  chip([{t:"RECORD ", c:RED}, {t:"EN MÉTROPOLE", c:"#fff"}], 1480, EB(prog(t, C.k800 + 0.5, C.k800 + 0.9))*(1 - prog(t, Ed("m19") + 0.1, Ed("m19") + 0.4))*mapA, 40);
-  chip([{t:"LÀ POUR ", c:"#fff"}, {t:"RESTER", c:Y1}], 1480, EB(prog(t, M("m20", 0.4), M("m20", 0.4) + 0.4))*(1 - prog(t, C.outro, C.outro + 0.3))*mapA, 44);
-  // compteur de départements pendant la conquête
+  // --- compteur de départements (texte simple sous la frise, sans encadré)
   const nDep = DEPS.features.filter(f => f.properties.y && depFill(f, t) > 0.5).length;
-  const ca = EB(prog(t, C.rhone[0] + 0.3, C.rhone[0] + 0.7))*(1 - prog(t, C.k81 - 0.2, C.k81))*mapA*(t > C.rhone[0]);
-  chip([{t:String(nDep), c:Y1}, {t:nDep > 1 ? " DÉPARTEMENTS" : " DÉPARTEMENT", c:"#fff"}], 1600, ca, 44);
+  const ca = EO(prog(t, C.rhone[0] + 0.3, C.rhone[0] + 0.7))*(1 - prog(t, C.k81 - 0.3, C.k81))*mapA;
+  if (ca > 0) richLine([{t:String(nDep), c:Y1}, {t:nDep > 1 ? " DÉPARTEMENTS" : " DÉPARTEMENT", c:"#fff"}], W/2, 600, {size:54, alpha:ca, stroke:11});
   // --- stickers (dans la mer, jamais sur la France)
-  sticker("m_34", 330, 1720, 330, t, 0.35, C.intro[0] + 0.2, {rot:0.05});
-  sticker("m_cote", 300, 1650, 230, t, C.asia[1] - 0.2, M("m06", 0.55));
+  sticker("m_34", 300, 1760, 330, t, 0.35, C.intro[0] + 0.2, {rot:0.05});
+  // le moustique s'envole et se cache dans le pneu
+  const F0 = Ed("m06") - 0.7, F1 = F0 + 0.9, TIRE = [820, 1700 - 165];
+  if (t < F0) sticker("m_cote", 300, 1650, 230, t, C.asia[1] - 0.2, 1e9);
+  else if (t < F1) flyer("m_cote", [300, 1650 - 115, 230], TIRE.concat([46]), t, F0, F1);
   sticker("pneu", 820, 1700, 330, t, M("m06", 0.55), M("m07", 0.22) - 0.2);
-  sticker("cargo", 560, 1700, 300, t, M("m07", 0.22) + 2.1, C.alb[0] - 0.1);
+  if (t >= F1 && t < M("m07", 0.22)) inside(TIRE[0], TIRE[1] + 20, 120, t, 1 - E(prog(t, M("m07", 0.22) - 0.2, M("m07", 0.22) + 0.25)));
+  // puis le pneu (avec le moustique) est chargé sur le porte-conteneurs
+  const P = M("m07", 0.22), L0 = P + 2.6, L1 = P + 3.2, DECK = [500, 1700 - 300*0.62];
+  sticker("cargo", 560, 1700, 300, t, P + 2.1, C.alb[0] - 0.1);
+  const cOut = E(prog(t, C.alb[0] - 0.1, C.alb[0] + 0.35))*700;
+  if (t >= P + 2.0 && t < L0) { sticker("pneu", 820, 1700, 330, t, P + 2.0, 1e9); inside(820, 1700 - 145, 120, t, 1); }
+  else if (t >= L0 && t < L1) { const k = E(prog(t, L0, L1)); flyer("pneu", [820, 1700 - 165, 330], [DECK[0], DECK[1] - 55, 110], t, L0, L1, {fade:false, wob:0});
+    inside(lerp(820, DECK[0], k), lerp(1555, DECK[1] - 55, k), lerp(120, 60, k), t, 1); }
+  else if (t >= L1 && t < C.alb[0] + 0.4){ flyer("pneu", [DECK[0], DECK[1] - 55 + cOut, 110], [DECK[0], DECK[1] - 55 + cOut, 110], t, 0, 1, {fade:false, wob:0});
+    inside(DECK[0], DECK[1] - 55 + cOut, 60, t, 1); pulse(DECK[0], DECK[1] - 55 + cOut, t, 1 - prog(t, C.alb[0] - 0.1, C.alb[0] + 0.2), Y1, 90); }
+  // il se cache dans le camion (vole jusqu'au camion sur la carte)
+  const T0 = M("m13", 0.1), T1 = M("m13", 0.4);
+  if (t >= T0 && t < T1 && truckXY) flyer("m_cote", [170, 1350, 220], [truckXY[0], truckXY[1] - 60, 40], t, T0, T1);
   sticker("flocon", 165, 1360, 220, t, M("m12", 0.4), C.rhone[0]);
   sticker("m_dessus", 165, 1420, 280, t, C.virus[0] + 0.2, C.record[0] + 0.2);
   sticker("m_34", 190, 1400, 280, t, C.stay[0] + 0.1, DUR + 1, {rot:0.05});
@@ -617,7 +659,7 @@ function overlay(t, pa){
     txt("Il est déjà arrivé", W/2, 330, {size:72, weight:800, scale:oa, stroke:12});
     txt("dans ton département ?", W/2, 425, {size:72, weight:800, color:Y1, scale:oa, stroke:12});
     const na = EB(prog(t, C.outro + 2.4, C.outro + 2.9));
-    if (na > 0) chip([{t:"DIS-LE ", c:Y1}, {t:"EN COMMENTAIRE", c:"#fff"}], 560, na, 38);
+    if (na > 0) richLine([{t:"DIS-LE ", c:Y1}, {t:"EN COMMENTAIRE !", c:"#fff"}], W/2, 545, {size:56, scale:na, alpha:Math.min(na, 1), stroke:12});
   }
   // --- sous-titres : gros, en haut, par groupes de 2-3 mots
   let cur = null;
