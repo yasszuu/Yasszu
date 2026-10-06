@@ -22,3 +22,5 @@
 - **Pas d'ultra-zoom** au-delà de l'échelle régionale (imagerie Natural Earth ~1,8 km/pixel → flou). Pour une vraie plongée
   « Google Maps », demander à l'utilisateur un clip Google Earth Studio (mention « Google Earth » visible).
 - **Pas de photo en ouverture** : la première minute d'accroche reste sur la carte ; les animaux y apparaissent en PNG détourés.
+- **Flou de mouvement très léger** sur les balayages/rotations du globe et les zooms (ne pas abuser) — l'image doit rester nette.
+- **Trajets dessinés sur la carte** : montrer l'origine et le parcours de l'animal (lignes animées pays → pays avec dates) avant d'arriver en France.
