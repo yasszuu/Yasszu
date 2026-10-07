@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Sterne Arctique</title>
+<style>
+@font-face{font-family:M;font-weight:600;src:url(data:font/woff2;base64,__M600__) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(data:font/woff2;base64,__M800__) format("woff2");}
+@font-face{font-family:M;font-weight:900;src:url(data:font/woff2;base64,__M900__) format("woff2");}
+:root{--bg:#02040a;--fg:#fff;--muted:#9aa4b8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#02040a}}
+:root[data-theme="dark"]{--bg:#02040a}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:M,system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#c{height:100%;max-width:100%;aspect-ratio:9/16;display:block}
+#gl{display:none}
+#ctrl{position:fixed;left:16px;bottom:16px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+#ctrl button{background:#151b27;color:var(--fg);border:1px solid #2a3346;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+body.capture #ctrl{display:none}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1080" height="1920"></canvas></div>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div id="ctrl"><button id="play">▶ Lecture (son)</button><span id="tc"></span></div>
+<script>__D3__</script>
+<script>__TOPOJSON__</script>
+<script>
+const WORLD = __WORLD__, TL = __TL__;
+const TEX = {world:"__TEXWORLD__", eu:"__TEXWORLD__"};
+const IMG_SRC = __IMGS__;
+const EU_BOX = [0, 0.001, 0, 0.001];                     // pas de texture régionale (zoom continental max)
+
+const W = 1080, H = 1920, MAPY = 1080;
+const Y1 = "#ffd60a", Y2 = "#ffe45c", ORANGE = "#ff9f1c", RED = "#ff3b30", CYAN = "#3ec9ff", ICE = "#9fe3ff";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const proj = d3.geoOrthographic().clipAngle(90).translate([W/2, MAPY]).precision(0.3);
+const path = d3.geoPath(proj, ctx), measure = d3.geoPath(proj);
+const C = TL.cue, V = Object.fromEntries(TL.vo.map(v => [v.id, v]));
+const S = k => V[k].start, Ed = k => V[k].end, DUR = TL.duration, M = (k, f) => S(k) + (Ed(k) - S(k))*f;
+
+const countries = topojson.feature(WORLD, WORLD.objects.countries).features;
+const CTRY = n => countries.find(f => f.properties.name === n);
+const borders = topojson.mesh(WORLD, WORLD.objects.countries, (a,b) => a !== b);
+const greenland = CTRY("Greenland"), antarctica = CTRY("Antarctica"), uk = CTRY("United Kingdom");
+
+const IMG = {};
+const loadImg = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { IMG[k] = i; r(); }; i.src = src; });
+const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b, x));
+const prog = (t,a,b) => clamp((t-a)/(b-a));
+const lerp = (a,b,k) => a + (b-a)*k;
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EBig = d3.easeBackOut.overshoot(3);
+
+// ------------------------------------------------------------------ lieux & routes (Egevang et al. 2010 ; Newcastle Univ. 2016)
+const COLONY = [-20.5, 74.4], STOP = [-35, 47], SPLIT = [-21, 13], WEDDELL = [-28, -67], FARNE = [-1.65, 55.63];
+const R_OUT = [COLONY, [-24, 68], [-30, 58], STOP, [-30, 35], [-24, 22], SPLIT];
+const R_AFR = [SPLIT, [-18.5, 5], [-5, -5], [7, -18], [13, -30], [16, -40], [5, -55], [-12, -63], WEDDELL];
+const R_BRA = [SPLIT, [-28, 4], [-33, -8], [-38, -22], [-45, -38], [-45, -52], [-38, -62], WEDDELL];
+const R_BACK = [WEDDELL, [-18, -52], [-10, -35], [-8, -18], [-18, -2], [-35, 12], [-48, 25], [-50, 40], [-42, 54], [-30, 64], [-24, 70], COLONY];
+const R_G82 = [FARNE, [-8, 48], [-18, 30], [-20, 12], [-8, -2], [5, -18], [14, -32], [30, -42], [60, -46], [95, -48], [125, -50], [160, -60],
+  [-160, -70], [-130, -72], [-95, -71], [-60, -66], [-35, -55], [-25, -35], [-28, -12], [-32, 8], [-38, 25], [-30, 42], [-15, 52], FARNE];
+function densify(pts, step=1.0){
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length; i++){
+    const ip = d3.geoInterpolate(pts[i-1], pts[i]), n = Math.max(2, Math.ceil(d3.geoDistance(pts[i-1], pts[i])*180/Math.PI/step));
+    for (let j = 1; j <= n; j++) out.push(ip(j/n));
+  }
+  // lissage (moyenne glissante) pour des courbes douces
+  const sm = out.map((p, i) => { if (i === 0 || i === out.length - 1) return p; let x = 0, y = 0, c = 0;
+    for (let k = -3; k <= 3; k++){ const q = out[clamp(i + k, 0, out.length - 1)]; x += q[0]; y += q[1]; c++; } return [x/c, y/c]; });
+  const cum = [0]; for (let i = 1; i < sm.length; i++) cum.push(cum[i-1] + d3.geoDistance(sm[i-1], sm[i]));
+  return {pts:sm, cum, len:cum[cum.length-1]};
+}
+const RT = {out:densify(R_OUT), afr:densify(R_AFR), bra:densify(R_BRA), back:densify(R_BACK), g82:densify(R_G82, 1.5)};
+function routeAt(r, k){
+  const d = clamp(k)*r.len; let i = d3.bisectLeft(r.cum, d); i = Math.max(1, Math.min(r.pts.length - 1, i));
+  const f = (d - r.cum[i-1])/Math.max(1e-9, r.cum[i] - r.cum[i-1]);
+  return {p:d3.geoInterpolate(r.pts[i-1], r.pts[i])(clamp(f)), i, a:r.pts[i-1], b:r.pts[i]};
+}
+
+// ------------------------------------------------------------------ progression des tracés
+const kOut  = t => Math.max(E(prog(t, C.south[0] + 0.3, Ed("s07")))*0.32, t >= S("s09") - 0.3 ? 0.32 + E(prog(t, S("s09") - 0.3, C.stop[1]))*0.18 : 0,
+                            t >= C.split[0] ? 0.5 + E(prog(t, C.split[0], M("s10", 0.3)))*0.5 : 0);
+const kAfr  = t => E(prog(t, M("s10", 0.3), Ed("s10") + 0.4));
+const kBra  = t => E(prog(t, M("s10", 0.55), Ed("s10") + 0.8));
+const kBack = t => E(prog(t, C.north[0] + 0.3, Ed("s14")));
+const kG82  = t => E(prog(t, M("s15", 0.18), M("s15", 0.92)));
+
+// ------------------------------------------------------------------ caméras
+function fit(feature, center, w, h){
+  proj.rotate([-center[0], -center[1]]).scale(1).translate([0,0]);
+  const [[x0,y0],[x1,y1]] = measure.bounds(feature);
+  proj.translate([W/2, MAPY]);
+  return {lon:center[0], lat:center[1], s: Math.min(w/(x1-x0), h/(y1-y0))};
+}
+const GRN0 = {lon:-32, lat:70, s:1050}, GRN = {lon:-30, lat:69, s:1150};          // ouverture : niveau continent
+const ATL = {lon:-22, lat:5, s:400}, ATL2 = {lon:-28, lat:2, s:430};
+const GRNC = {lon:-24, lat:71, s:1300};
+const NATL = {lon:-32, lat:52, s:900}, MIDA = {lon:-22, lat:12, s:620}, SATL = {lon:-12, lat:-30, s:560};
+const ANT = {lon:-30, lat:-62, s:900}, ANTW = {lon:-25, lat:-55, s:620};
+const POLES = {lon:-25, lat:4, s:360};
+const UKV = {lon:-3, lat:54, s:1250}, G82V = {lon:40, lat:-35, s:380};
+const SPACE = {lon:-25, lat:20, s:150};
+
+function camLerp(a, b, k, fly, ease=E){
+  const e = ease(k);
+  let s = Math.exp(lerp(Math.log(a.s), Math.log(b.s), e));
+  if (fly){ const dist = d3.geoDistance([a.lon,a.lat],[b.lon,b.lat])*180/Math.PI;
+    s *= 1 - clamp(dist/14, 0, 0.45)*Math.sin(Math.PI*e); }
+  let dl = b.lon - a.lon; if (dl > 180) dl -= 360; if (dl < -180) dl += 360;
+  return {lon:a.lon + dl*e, lat:lerp(a.lat,b.lat,e), s};
+}
+const push = (c, k) => ({...c, s:c.s*(1 + 0.05*k)});
+// suivi de la sterne sur une route
+const g82Cam = t => { const {p} = routeAt(RT.g82, kG82(t)); const k = prog(t, M("s15", 0.18), M("s15", 0.4)); return {lon:p[0], lat:lerp(20, -38, E(k)), s:360}; };
+const follow = (rk, kf, s, dlat=-4) => t => { const {p} = routeAt(RT[rk], kf(t)); return {lon:p[0], lat:p[1] + dlat, s}; };
+const SHOTS = [
+  [C.preview[0], C.preview[0] + 1.6, ATL, true],
+  [C.globe[0], Ed("s03"), ATL2, false],
+  [C.green[0], C.green[0] + 1.3, GRNC, true],
+  [C.colony[0] - 0.4, C.colony[0], {...GRNC, s:GRNC.s*1.05}, false],
+  [C.south[0], C.south[0] + 0.6, follow("out", kOut, 820, -3), false],
+  [C.south[0] + 0.6, Ed("s07"), follow("out", kOut, 820, -3), false],
+  [C.anta[0], C.anta[0] + 1.8, ANT, true],
+  [M("s08", 0.75), Ed("s08") + 0.3, NATL, true],
+  [C.stop[0], C.stop[1], {...NATL, s:NATL.s*1.15}, false],
+  [C.split[0] - 0.2, C.split[0] + 0.8, MIDA, false],
+  [C.split[0] + 0.8, Ed("s10") + 0.4, SATL, false],
+  [C.arrive[0], C.arrive[1], ANT, false],
+  [C.summers[0], C.summers[0] + 1.2, POLES, true],
+  [C.north[0], C.north[0] + 0.8, ANTW, false],
+  [C.north[0] + 0.8, Ed("s14"), follow("back", kBack, 520, 0), false],
+  [C.farne[0], C.farne[0] + 1.0, UKV, true],
+  [M("s15", 0.18), M("s15", 0.18) + 0.8, t => g82Cam(t), false],
+  [M("s15", 0.18) + 0.8, M("s15", 0.92), t => g82Cam(t), false],
+  [C.life[0], C.life[0] + 1.2, ATL, true],
+  [C.moon[0], C.moon[0] + 1.0, SPACE, false],
+  [C.g100[0], C.g100[0] + 1.0, ATL, false],
+  [C.outro, C.outro + 2.0, {...ATL, s:ATL.s*0.92}, false],
+];
+function camera(t){
+  if (t < C.preview[0]) return camLerp(GRN0, GRN, prog(t, 0, C.preview[0]), false, d3.easeSinOut);
+  let prev = GRN, tPrev = C.preview[0];
+  for (const [a, b, cam, fly] of SHOTS){
+    const cb = typeof cam === "function" ? cam(Math.min(t, b)) : cam;
+    if (t < a) return push(prev, prog(t, tPrev, a)*0.6);
+    if (t < b){
+      if (typeof cam === "function" && a - tPrev <= 0.01) return cb;
+      return camLerp(a - tPrev > 0.01 ? push(prev, 0.6) : prev, cb, prog(t, a, b), fly);
+    }
+    prev = typeof cam === "function" ? cam(b) : cam; tPrev = b;
+  }
+  return push(prev, prog(t, tPrev, DUR));
+}
+function yearAt(t){
+  let seg = TL.ticker[0];
+  for (const s of TL.ticker) if (t >= s[0]) seg = s;
+  return {v: lerp(seg[2], seg[3], prog(t, seg[0], seg[1])), step: seg[4]};
+}
+const MOIS = ["JANV.", "FÉVR.", "MARS", "AVRIL", "MAI", "JUIN", "JUIL.", "AOÛT", "SEPT.", "OCT.", "NOV.", "DÉC."];
+const moisName = v => MOIS[((Math.round(v) - 1) % 12 + 12) % 12];
+
+const glc = document.getElementById("gl");
+const gl = glc.getContext("webgl2", {premultipliedAlpha:false, preserveDrawingBuffer:true, antialias:false});
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+uniform sampler2D uWorld, uEu;
+uniform vec3 uCam; uniform vec2 uC; uniform float uH, uShade, uSat; uniform vec4 uBox;
+out vec4 o;
+const float PI = 3.14159265359;
+void main(){
+  float px = gl_FragCoord.x, py = uH - gl_FragCoord.y;
+  float x = (px - uC.x)/uCam.z, y = (uC.y - py)/uCam.z;
+  float r2 = x*x + y*y;
+  float edge = 1.0 - smoothstep(1.0 - 2.0/uCam.z, 1.0, sqrt(r2));
+  if (r2 >= 1.0){ o = vec4(0); return; }
+  float z = sqrt(1.0 - r2), d = -uCam.y;
+  float X = z*cos(d) + y*sin(d), Z = y*cos(d) - z*sin(d);
+  float lon = mod(atan(x, X) + uCam.x + PI, 2.*PI) - PI, lat = asin(clamp(Z, -1., 1.));
+  vec2 uv = vec2((lon + PI)/(2.*PI), (PI/2. - lat)/PI), uv2 = vec2(fract(uv.x + .5), uv.y);
+  vec2 dx = dFdx(uv), dy = dFdy(uv), dx2 = dFdx(uv2), dy2 = dFdy(uv2);
+  if (abs(dx2.x) + abs(dy2.x) < abs(dx.x) + abs(dy.x)) { dx = dx2; dy = dy2; }
+  vec3 col = textureGrad(uWorld, uv, dx, dy).rgb;
+  vec2 euv = vec2((degrees(lon) - uBox.x)/(uBox.y - uBox.x), (uBox.w - degrees(lat))/(uBox.w - uBox.z));
+  float m = smoothstep(0., .03, euv.x) * smoothstep(1., .97, euv.x) * smoothstep(0., .04, euv.y) * smoothstep(1., .96, euv.y);
+  vec3 ce = textureGrad(uEu, clamp(euv, 0., 1.), dFdx(euv), dFdy(euv)).rgb;
+  col = mix(col, ce, m);
+  float l = dot(col, vec3(.299,.587,.114));
+  col = mix(vec3(l), col, 1.18*uSat);
+  col = clamp(((col - .5)*1.08 + .5)*.95, 0., 1.);
+  float light = mix(1.0, .35 + .75*pow(z, .6), uShade);
+  col = col*light + vec3(.35,.6,1.)*uShade*pow(1. - z, 3.)*.55;
+  o = vec4(col, edge);
+}`;
+function sh(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prg = gl.createProgram();
+gl.attachShader(prg, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prg, sh(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prg); gl.useProgram(prg);
+gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prg, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = n => gl.getUniformLocation(prg, n);
+function loadTex(src, unit){
+  return new Promise(res => { const img = new Image(); img.onload = () => {
+    gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img); gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const ext = gl.getExtension("EXT_texture_filter_anisotropic");
+    if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+    res(); }; img.src = src; });
+}
+gl.uniform1i(U("uWorld"), 0); gl.uniform1i(U("uEu"), 1);
+gl.uniform4f(U("uBox"), ...EU_BOX); gl.uniform1f(U("uH"), H); gl.uniform2f(U("uC"), W/2, MAPY);
+function drawGlobe(cam, shade, sat){
+  gl.viewport(0, 0, W, H); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform3f(U("uCam"), cam.lon*Math.PI/180, cam.lat*Math.PI/180, cam.s);
+  gl.uniform1f(U("uShade"), shade); gl.uniform1f(U("uSat"), sat);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+// ------------------------------------------------------------------ helpers
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", align="center", alpha=1, glow=null, stroke=0, scale=1, rot=0, base="alphabetic", spacing=0} = o;
+  if (alpha <= 0.003 || scale <= 0.001) return;
+  ctx.save(); ctx.globalAlpha *= Math.min(alpha, 1); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(scale, scale);
+  ctx.font = `${weight} ${size}px M`; ctx.textAlign = align; ctx.textBaseline = base;
+  if (spacing) ctx.letterSpacing = spacing + "px";
+  if (stroke){ ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(s, 0, 0); }
+  ctx.shadowColor = glow || "rgba(0,0,0,0.9)"; ctx.shadowBlur = glow ? 28 : 16; ctx.shadowOffsetY = glow ? 0 : 3;
+  ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+function richLine(segs, x, y, o={}){
+  const {size=56, weight=900, scale=1} = o;
+  ctx.font = `${weight} ${size}px M`;
+  const widths = segs.map(s => ctx.measureText(s.t).width), total = d3.sum(widths);
+  let cx = x - total*scale/2;
+  segs.forEach((s, i) => { txt(s.t, cx, y, {...o, align:"left", color:s.c}); cx += widths[i]*scale; });
+}
+function dashed(x0, y0, x1, y1, alpha, color="#fff", w=4){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.setLineDash([14, 10]); ctx.lineWidth = w; ctx.strokeStyle = color;
+  ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.restore();
+}
+// sticker : image détourée avec contour blanc (pré-calculé), entrée en ressort + flottement
+function sticker(key, cx, by, h, t, tin, tout, o={}){
+  const img = IMG[key]; if (!img) return;
+  const a = EBig(prog(t, tin, tin + 0.55)), out = E(prog(t, tout, tout + 0.45));
+  if (a <= 0 || out >= 1) return;
+  const {flip=false, gray=0, alpha=1, rot=-0.04} = o;
+  const w = h*img.width/img.height, fl = Math.sin((t - tin)*1.6)*6;
+  ctx.save();
+  ctx.translate(cx, by + out*700 + fl); ctx.rotate(rot*(1 - a) + Math.sin((t - tin)*0.9)*0.012);
+  ctx.scale(a*(flip ? -1 : 1), a);
+  ctx.globalAlpha = alpha*(1 - out*0.3);
+  ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
+  if (gray > 0) ctx.filter = `grayscale(${gray}) brightness(${1 - 0.35*gray})`;
+  ctx.drawImage(img, -w/2, -h, w, h);
+  ctx.restore();
+}
+function kin(str, x, y, t, t0, o={}){                // texte qui apparaît lettre par lettre (Montserrat)
+  const {size=120, color="#fff", out=1e9, step=0.045, rot=-0.03} = o;
+  const outK = prog(t, out, out + 0.3); if (t < t0 || outK >= 1) return;
+  ctx.save(); ctx.globalAlpha = 1 - outK; ctx.translate(x, y - 40*outK); ctx.rotate(rot); ctx.font = `900 ${size}px M`;
+  const chars = [...str], ws = chars.map(c => ctx.measureText(c).width), tot = d3.sum(ws);
+  let cx = -tot/2;
+  chars.forEach((c, i) => {
+    const a = EBig(prog(t, t0 + i*step, t0 + i*step + 0.26)), w = ws[i];
+    if (a > 0){
+      ctx.save(); ctx.translate(cx + w/2, -size*0.3*(1 - Math.min(a, 1))); ctx.scale(a, a);
+      ctx.lineJoin = "round"; ctx.lineWidth = size*0.14; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(c, -w/2, size*0.35);
+      ctx.shadowColor = color === "#fff" ? "rgba(0,0,0,.6)" : color; ctx.shadowBlur = color === "#fff" ? 10 : 26;
+      ctx.fillStyle = color; ctx.fillText(c, -w/2, size*0.35); ctx.restore();
+    }
+    cx += w;
+  });
+  ctx.restore();
+}
+function chip(textSegs, y, a, size=38){
+  if (a <= 0) return;
+  ctx.font = `900 ${size}px M`;
+  const w = d3.sum(textSegs, s => ctx.measureText(s.t).width) + 60;
+  ctx.save(); ctx.translate(W/2, y); ctx.scale(a, a); ctx.globalAlpha = Math.min(a, 1);
+  ctx.fillStyle = "rgba(0,0,0,0.62)"; ctx.strokeStyle = Y1; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.roundRect(-w/2, -size*0.95, w, size*1.75, size*0.9); ctx.fill(); ctx.stroke(); ctx.restore();
+  richLine(textSegs, W/2, y + size*0.32, {size, weight:900, scale:a, alpha:Math.min(a, 1)});
+}
+function pin(x, y, a, color=Y1, r=12){
+  ctx.save(); ctx.globalAlpha = Math.min(a, 1); ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 24;
+  ctx.beginPath(); ctx.arc(x, y, r*Math.max(a, 0.01), 0, 7); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.shadowBlur = 0; ctx.stroke(); ctx.restore();
+}
+function pulse(x, y, t, a, color=Y2, max=90){
+  for (let k = 0; k < 2; k++){ const ph = (t*0.8 + k*0.5) % 1;
+    ctx.save(); ctx.globalAlpha = (1 - ph)*a; ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 12 + ph*max, 0, 7); ctx.stroke(); ctx.restore(); }
+}
+function stamp(lines, y, t, t0, out){
+  const sa = prog(t, t0, t0 + 0.18), sOut = 1 - prog(t, out, out + 0.3);
+  if (sa <= 0 || sOut <= 0) return;
+  const sc = lerp(2.4, 1, d3.easeQuadIn(sa));
+  ctx.save(); ctx.translate(W/2, y); ctx.rotate(-0.1); ctx.scale(sc, sc); ctx.globalAlpha = sa*sOut;
+  ctx.strokeStyle = RED; ctx.lineWidth = 9; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 16;
+  ctx.strokeRect(-360, -100, 720, lines.length > 1 ? 210 : 170); ctx.restore();
+  lines.forEach((l, i) => txt(l, W/2, y + (i === 0 ? 30 : 100)*sc + (lines.length > 1 ? -10 : 10), {size:i === 0 ? 92 : 50, color:RED, scale:sc, rot:-0.1, alpha:sa*sOut, stroke:0}));
+}
+
+// ------------------------------------------------------------------ dessin : carte
+const rnd = d3.randomLcg(11);
+const stars = d3.range(420).map(() => [rnd()*W, rnd()*H, rnd()*1.7+0.3, rnd()]);
+const visible = p => d3.geoDistance(p, [-proj.rotate()[0], -proj.rotate()[1]]) < Math.PI/2 - 0.03;
+const vproj = p => visible(p) ? proj(p) : null;
+function routeLine(r, k, alpha, color="#fff", w=7, dash=[16, 11]){
+  if (k <= 0 || alpha <= 0) return;
+  const {p, i} = routeAt(r, k), pts = r.pts.slice(0, i).concat([p]);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.setLineDash(dash); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.shadowColor = "rgba(0,0,0,.85)"; ctx.shadowBlur = 10;
+  ctx.beginPath(); path({type:"LineString", coordinates:pts}); ctx.stroke(); ctx.restore();
+}
+// la sterne (image fournie) qui vole le long d'une route, orientée selon la direction à l'écran
+function ternSprite(r, k, h, alpha, t){
+  const img = IMG.sterne; if (!img || alpha <= 0) return;
+  const {p, a, b} = routeAt(r, k), xy = vproj(p); if (!xy) return;
+  const pa = proj(a), pb = proj(b), dir = pb && pa ? Math.sign(pb[0] - pa[0]) || 1 : 1;
+  const w = h*img.width/img.height, bob = Math.sin(t*5)*4;
+  pulse(xy[0], xy[1], t, alpha*0.8, Y1, 60);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(xy[0], xy[1] - h*0.25 + bob); ctx.scale(dir > 0 ? -1 : 1, 1); ctx.rotate(Math.sin(t*3)*0.04);
+  ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 10;
+  ctx.drawImage(img, -w/2, -h/2, w, h); ctx.restore();
+}
+function label(str, lonlat, dx, dy, a, o={}){
+  const p = vproj(lonlat); if (!p || a <= 0) return;
+  txt(str, p[0] + dx, p[1] + dy, {size:46, stroke:10, scale:Math.max(a, 0.001), alpha:Math.min(a, 1), ...o});
+}
+function capGlow(feature, a, color="255,214,10"){
+  if (a <= 0) return;
+  ctx.save(); ctx.beginPath(); path(feature); ctx.fillStyle = `rgba(${color},${0.45*a})`; ctx.fill();
+  ctx.strokeStyle = `rgba(255,255,255,${0.9*a})`; ctx.lineWidth = 3.5; ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 24; ctx.stroke(); ctx.restore();
+}
+// étiquette ancrée : épingle + trait pointillé + nom
+function place(name, ll, a, t, o={}){
+  const p = vproj(ll); if (!p || a <= 0) return;
+  const {dx=-140, dy=-190, color=Y1} = o;
+  pulse(p[0], p[1], t, Math.min(a, 1), color === RED ? RED : Y2); pin(p[0], p[1], a, color, 14);
+  dashed(p[0], p[1], p[0] + dx, p[1] + dy + 30, Math.min(a, 1)); txt(name, p[0] + dx, p[1] + dy, {size:52, scale:a, stroke:11});
+}
+
+function renderMap(t){
+  const cam = camera(t), camB = camera(Math.max(0, t - 1/30));
+  const dz = Math.log(cam.s/camB.s)*30, zoomSpeed = dz > 0 ? dz*0.4 : -dz*0.06;   // flou très léger
+  proj.rotate([-cam.lon, -cam.lat]).scale(cam.s);
+  const zk = prog(cam.s, 470, 1600);
+  const bg = ctx.createRadialGradient(W/2, MAPY, 50, W/2, MAPY, H*0.8);
+  bg.addColorStop(0, "#0a1630"); bg.addColorStop(1, "#010208");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  if (zk < 1){
+    for (const [x,y,r,p] of stars){ ctx.globalAlpha = (1-zk)*(0.3 + 0.7*Math.abs(Math.sin(t*1.1 + p*30)));
+      ctx.fillStyle = "#dfe6ff"; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(W/2, MAPY, cam.s*0.95, W/2, MAPY, cam.s*1.22);
+    g.addColorStop(0, `rgba(80,150,255,${0.55*(1-zk)})`); g.addColorStop(1, "rgba(80,150,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  drawGlobe(cam, 1 - zk, 0.9);
+  ctx.drawImage(glc, 0, 0);
+  const blur = clamp(zoomSpeed*0.3, 0, 0.45);
+  if (blur > 0.05) for (let i = 1; i <= 3; i++){
+    const k = 1 + blur*0.02*i; ctx.save(); ctx.globalAlpha = 0.2; ctx.translate(W/2, MAPY); ctx.scale(k, k); ctx.translate(-W/2, -MAPY); ctx.drawImage(glc, 0, 0); ctx.restore(); }
+  ctx.save(); ctx.beginPath(); path(borders); ctx.strokeStyle = `rgba(255,255,255,${0.12 + 0.12*zk})`; ctx.lineWidth = 1.3; ctx.stroke(); ctx.restore();
+
+  // ---- hook : Groenland + route complète en aperçu
+  capGlow(greenland, prog(t, 0.6, 1.4)*(1 - prog(t, C.preview[0], C.preview[0] + 0.6)) + prog(t, C.green[0] + 0.6, C.green[0] + 1.2)*(1 - prog(t, C.south[0], C.south[0] + 0.5)));
+  const pv = prog(t, C.preview[0] + 0.3, Ed("s02") - 0.3), pvOut = 1 - prog(t, C.green[0], C.green[0] + 0.5);
+  if (pv > 0 && pvOut > 0){
+    routeLine(RT.out, E(prog(pv, 0, 0.4)), pvOut, "#fff", 6); routeLine(RT.bra, E(prog(pv, 0.35, 0.6)), pvOut, "#fff", 6);
+    routeLine(RT.back, E(prog(pv, 0.55, 1)), pvOut, Y1, 7);
+    capGlow(antarctica, prog(pv, 0.5, 0.7)*pvOut, "120,200,255");
+  }
+  // ---- Groenland : colonie
+  const ga = EB(prog(t, C.green[0] + 0.9, C.green[0] + 1.3))*(1 - prog(t, C.south[0] + 0.4, C.south[0] + 0.8));
+  place("GROENLAND", COLONY, ga, t, {dx:-170, dy:-200});
+  // ---- trajet aller
+  const outA = clamp(prog(t, C.south[0], C.south[0] + 0.3)) * (1 - prog(t, C.summers[0] - 0.2, C.summers[0] + 0.3));
+  if (outA > 0){
+    routeLine(RT.out, kOut(t), outA, "#fff", 7);
+    routeLine(RT.afr, kAfr(t), outA, "#fff", 7); routeLine(RT.bra, kBra(t), outA, "#fff", 7);
+    const kk = kOut(t); if (kk < 1) ternSprite(RT.out, kk, 120, outA, t);
+    else { ternSprite(RT.afr, kAfr(t), 100, outA, t); ternSprite(RT.bra, kBra(t), 100, outA, t + 0.5); }
+  }
+  // ---- Antarctique (destination annoncée puis arrivée)
+  const an = EB(prog(t, M("s08", 0.4), M("s08", 0.55)))*(1 - prog(t, M("s08", 0.8), Ed("s08")))
+           + EB(prog(t, C.arrive[0] + 0.6, C.arrive[0] + 1.0))*(1 - prog(t, C.summers[0], C.summers[0] + 0.4));
+  capGlow(antarctica, Math.min(an, 1), "120,200,255"); place("ANTARCTIQUE", WEDDELL, an, t, {dx:150, dy:-220});
+  // ---- pause en Atlantique Nord
+  const st = EB(prog(t, C.stop[0] + 0.6, C.stop[0] + 1.0))*(1 - prog(t, C.split[0], C.split[0] + 0.4));
+  if (st > 0){ const p = vproj(STOP); if (p){ ctx.save(); ctx.globalAlpha = Math.min(st, 1); ctx.strokeStyle = Y1; ctx.lineWidth = 6; ctx.setLineDash([14, 10]);
+    ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(p[0], p[1], 120*Math.max(st, 0.01), 0, 7); ctx.stroke(); ctx.restore();
+    txt("PAUSE", p[0], p[1] - 150, {size:60, color:Y1, scale:st, stroke:12}); } }
+  // ---- séparation des routes
+  label("AFRIQUE", [5, 8], 0, 0, EB(prog(t, M("s10", 0.35), M("s10", 0.45)))*(1 - prog(t, C.arrive[0], C.arrive[0] + 0.4)), {size:52});
+  label("BRÉSIL", [-48, -10], 0, 0, EB(prog(t, M("s10", 0.6), M("s10", 0.7)))*(1 - prog(t, C.arrive[0], C.arrive[0] + 0.4)), {size:52});
+  // ---- deux étés par an : les deux pôles éclairés
+  const su = prog(t, C.summers[0] + 0.8, C.summers[0] + 1.4)*(1 - prog(t, C.north[0], C.north[0] + 0.5));
+  if (su > 0){ capGlow(greenland, su); capGlow(antarctica, su);
+    label("ÉTÉ", [-40, 72], 0, 0, EB(prog(t, C.summers[0] + 1.0, C.summers[0] + 1.4))*su, {size:56, color:Y1});
+    label("ÉTÉ", [-30, -72], 0, 0, EB(prog(t, C.summers[0] + 1.4, C.summers[0] + 1.8))*su, {size:56, color:Y1}); }
+  // ---- retour en S vers le nord (jaune)
+  const bA = clamp(prog(t, C.north[0], C.north[0] + 0.3))*(1 - prog(t, C.farne[0], C.farne[0] + 0.5));
+  if (bA > 0){ routeLine(RT.out, 1, bA*0.5, "#fff", 5); routeLine(RT.bra, 1, bA*0.5, "#fff", 5); routeLine(RT.afr, 1, bA*0.5, "#fff", 5);
+    routeLine(RT.back, kBack(t), bA, Y1, 9, [1, 0]); if (kBack(t) < 1) ternSprite(RT.back, kBack(t), 120, bA, t); }
+  // ---- record 2016 : Angleterre → tour du monde
+  const fa = EB(prog(t, C.farne[0] + 0.7, C.farne[0] + 1.1))*(1 - prog(t, M("s15", 0.25), M("s15", 0.35)));
+  place("ANGLETERRE", FARNE, fa, t, {dx:-150, dy:-200});
+  const gA = clamp(prog(t, M("s15", 0.15), M("s15", 0.2)))*(1 - prog(t, C.life[0] + 0.6, C.life[0] + 1.2));
+  if (gA > 0){ routeLine(RT.g82, kG82(t), gA, Y1, 9, [1, 0]); if (kG82(t) < 1) ternSprite(RT.g82, kG82(t), 110, gA, t); }
+
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.42, W/2, H/2, H*0.8);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.35)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+
+// ------------------------------------------------------------------ plans 3D (Blender) : images préchargées par prep(t)
+const CLIPF = {};
+const clipAt = t => TL.clips.find(c => t >= c.a && t < c.b);
+window.prep = async t => {
+  const c = clipAt(t); if (!c) return;
+  const f = Math.min(Math.floor((t - c.a)*30), Math.round((c.b - c.a)*30) - 1), key = c.name + f;
+  if (CLIPF[key]) return;
+  for (const k of Object.keys(CLIPF)) delete CLIPF[k];
+  await new Promise(r => { const i = new Image(); i.onload = () => { CLIPF[key] = i; r(); }; i.onerror = r;
+    i.src = `clips/${c.name}/${String(f).padStart(4, "0")}.jpg`; });
+};
+function clipAlpha(t){ const c = clipAt(t); return c ? Math.min(EO(prog(t, c.a, c.a + 0.3)), 1 - prog(t, c.b - 0.3, c.b)) : 0; }
+function drawClip(t){
+  const c = clipAt(t); if (!c) return;
+  const f = Math.min(Math.floor((t - c.a)*30), Math.round((c.b - c.a)*30) - 1), img = CLIPF[c.name + f]; if (!img) return;
+  const a = EO(prog(t, c.a, c.a + 0.3)), out = prog(t, c.b - 0.3, c.b);
+  const z = 1 + 0.18*(1 - a);                                         // plongée à l'entrée
+  ctx.save(); ctx.globalAlpha = a*(1 - out);
+  ctx.translate(W/2, H/2); ctx.scale(z, z); ctx.drawImage(img, -W/2, -H/2, W, H); ctx.restore();
+  const fl = Math.exp(-(t - c.a)*9);
+  if (fl > 0.02){ ctx.save(); ctx.fillStyle = `rgba(255,255,255,${0.5*fl})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  ctx.save(); ctx.globalAlpha = a*(1 - out); const g = ctx.createLinearGradient(0, 0, 0, H*0.25);
+  g.addColorStop(0, "rgba(0,0,0,0.45)"); g.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H*0.25); ctx.restore();
+}
+
+// ------------------------------------------------------------------ sous-titres (groupes de 2-3 mots)
+const CAPS = TL.vo.filter(v => !["s01", "s02", "s03", "s20"].includes(v.id)).map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){ const o = {hi:/\*/.test(w), w:w.replace(/\*/g, "")};
+    const p = words[words.length-1];
+    if (p && ((/^[:;!?…]$/.test(o.w)) || (/^\d+$/.test(p.w) && /^\d{3}/.test(o.w)))) { p.w += " " + o.w; p.hi = p.hi || o.hi; } else words.push(o); }
+  const groups = []; let cur = [];
+  for (const w of words){ const len = cur.map(x => x.w).join(" ").length + w.w.length + 1;
+    if (cur.length && len > 15){ groups.push(cur); cur = []; } cur.push(w); if (/[.,:!?…]$/.test(w.w)){ groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const tot = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4); let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4; const s = v.start + (v.end - v.start)*acc/tot; acc += l;
+    return {g, s, e:v.start + (v.end - v.start)*acc/tot}; });
+}).flat();
+
+// ------------------------------------------------------------------ rendu
+function render(t){
+  const ca = clipAlpha(t);
+  if (ca < 0.999) renderMap(t); else { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); }
+  drawClip(t);
+  overlay(t, ca);
+}
+const nfmt = v => Math.round(v).toLocaleString("fr-FR").replace(/ | /g, " ");
+function overlay(t, pa){
+  const mapA = 1 - pa;
+  // --- titre : seulement pendant l'accroche
+  const hd = EO(prog(t, C.title, C.title + 0.5)) * (1 - prog(t, S("s04") - 0.6, S("s04") - 0.2)) * mapA;
+  if (hd > 0){ txt("LA STERNE", W/2, 225, {size:108, alpha:hd, stroke:14}); txt("ARCTIQUE", W/2, 340, {size:116, color:Y1, alpha:hd, stroke:14, glow:"rgba(255,214,10,.45)"}); }
+  // --- frise des mois
+  const show = TL.ticker.some(s => t >= s[0] - 0.3 && t <= s[1] + 2.2) && t < Ed("s14") + 0.8;
+  const fa = (show ? 1 : 0) * mapA;
+  if (fa > 0){
+    const {v} = yearAt(t), y = 430, gap = 250;
+    ctx.save(); ctx.globalAlpha = fa; ctx.strokeStyle = Y1; ctx.lineWidth = 4; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.restore();
+    const base = Math.round(v);
+    for (let j = -3; j <= 3; j++){
+      const yv = base + j, x = W/2 + (yv - v)*gap; if (x < -150 || x > W + 150) continue;
+      const act = clamp(1 - Math.abs(yv - v));
+      ctx.save(); ctx.globalAlpha = fa; ctx.fillStyle = Y1; ctx.fillRect(x - 2, y - 14, 4, 28); ctx.restore();
+      txt(moisName(yv), x, y + 66 + act*16, {size:42 + act*34, color:act > 0.5 ? ORANGE : Y1, alpha:fa*(0.5 + 0.5*act), stroke:8, glow:act > 0.5 ? "rgba(255,159,28,0.6)" : null});
+    }
+  }
+  // --- compteur de kilomètres (texte simple)
+  const km = 35000*(0.55*kOut(t) + 0.45*Math.max(kAfr(t), kBra(t))) + 35900*kBack(t);
+  const kmA = EO(prog(t, C.south[0], C.south[0] + 0.4))*(1 - prog(t, C.farne[0] - 0.2, C.farne[0] + 0.2))*mapA;
+  if (kmA > 0) richLine([{t:nfmt(km), c:Y1}, {t:" KM", c:"#fff"}], W/2, 600, {size:58, alpha:kmA, stroke:12});
+  const g82A = EO(prog(t, M("s15", 0.18), M("s15", 0.25)))*(1 - prog(t, C.life[0], C.life[0] + 0.4))*mapA;
+  if (g82A > 0) richLine([{t:nfmt(96000*kG82(t)), c:Y1}, {t:" KM", c:"#fff"}], W/2, 520, {size:72, alpha:g82A, stroke:13});
+  // --- textes cinétiques (un seul bloc à la fois)
+  kin("100 GRAMMES", W/2, 620, t, M("s01", 0.15), {size:96, color:Y1, out:Ed("s01") - 0.1});
+  kin("+ DE 70 000 KM", W/2, 620, t, C.k70, {size:100, color:Y1, out:Ed("s03") - 0.3});
+  kin("JUIN", W/2, 640, t, M("s04", 0.25), {size:120, color:Y1, out:M("s04", 0.52)});
+  kin("2 ÉTÉS PAR AN", W/2, 1600, t, M("s13", 0.2), {size:100, color:Y1, out:Ed("s13") + 0.2});
+  kin("EN 10 MOIS", W/2, 640, t, M("s15", 0.88), {size:96, out:Ed("s15") + 0.3});
+  kin("30 ANS", W/2, 640, t, M("s16", 0.4), {size:150, color:Y1, out:Ed("s16") + 0.1});
+  kin("+ DE 2 MILLIONS", W/2, 600, t, M("s17", 0.5), {size:96, color:Y1, out:Ed("s17") + 0.2});
+  kin("DE KILOMÈTRES", W/2, 710, t, M("s17", 0.62), {size:76, out:Ed("s17") + 0.2});
+  kin("100 GRAMMES", W/2, 620, t, M("s19", 0.4), {size:110, color:Y1, out:Ed("s19") + 0.4});
+  // --- Terre → Lune : 3 allers-retours
+  const mo = EB(prog(t, C.moon[0] + 0.6, C.moon[0] + 1.1))*(1 - prog(t, C.moon[1], C.moon[1] + 0.4))*mapA;
+  if (mo > 0 && IMG.lune){
+    const L = IMG.lune, ms = 230*Math.min(mo, 1.1), mx = W/2 + 40, my = 520;
+    ctx.save(); ctx.shadowColor = "rgba(200,220,255,.5)"; ctx.shadowBlur = 50; ctx.globalAlpha = Math.min(mo, 1);
+    ctx.drawImage(L, mx - ms/2, my - ms/2, ms, ms); ctx.restore();
+    txt("LUNE", mx, my - ms/2 - 30, {size:46, alpha:Math.min(mo, 1), stroke:10});
+    for (let i = 0; i < 3; i++){
+      const k = E(prog(t, S("s18") + 0.25 + i*0.45, S("s18") + 0.9 + i*0.45)); if (k <= 0) continue;
+      const wdt = 60 + i*45, y0 = MAPY - 160, y1 = my + ms/2 - 10, n = 60;
+      ctx.save(); ctx.globalAlpha = Math.min(mo, 1); ctx.setLineDash([14, 10]); ctx.strokeStyle = Y1; ctx.lineWidth = 6; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+      ctx.beginPath();
+      for (let q = 0; q <= n*k; q++){ const a = q/n*2*Math.PI; const x = W/2 + (i % 2 ? -1 : 1)*Math.sin(a)*wdt + 20*Math.sin(a/2), y = lerp(y0, y1, (1 - Math.cos(a))/2);
+        q ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.stroke(); ctx.restore();
+    }
+    kin("× 3", W/2, 1420, t, S("s18") + 1.6, {size:170, color:Y1, out:C.moon[1]});
+  }
+  // --- stickers : la sterne (image fournie) — dans la mer, jamais sur un pays
+  sticker("sterne", 560, 1700, 300, t, 0.5, C.preview[0] + 0.4, {rot:0.03});
+  sticker("sterne", 300, 1680, 240, t, C.colony[0] + 0.2, C.south[0], {rot:0.03, flip:true});
+  sticker("sterne", W/2, 1560, 380, t, C.g100[0] + 0.2, C.outro + 0.1, {rot:0.03});
+  // --- outro
+  const oa = EB(prog(t, C.outro + 0.3, C.outro + 0.8));
+  if (oa > 0){
+    txt("Tu connaissais", W/2, 330, {size:74, weight:800, scale:oa, stroke:12});
+    txt("la sterne arctique ?", W/2, 425, {size:74, weight:800, color:Y1, scale:oa, stroke:12});
+    const na = EB(prog(t, C.outro + 2.0, C.outro + 2.5));
+    if (na > 0) richLine([{t:"DIS-LE ", c:Y1}, {t:"EN COMMENTAIRE !", c:"#fff"}], W/2, 545, {size:56, scale:na, alpha:Math.min(na, 1), stroke:12});
+  }
+  // --- sous-titres : gros, en haut, par groupes de 2-3 mots
+  let cur = null;
+  for (const g of CAPS) if (g.s <= t) cur = g;
+  if (cur && t <= cur.e + 0.25 && t >= S("s04") - 0.1){
+    const a = EB(prog(t, cur.s, cur.s + 0.15));
+    const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.replace(/[.,]+$/, "").toUpperCase(), c:w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 300, {size:84, weight:900, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:16});
+  }
+}
+
+// ------------------------------------------------------------------ lecture
+// ------------------------------------------------------------------ lecture
+window.DURATION = DUR;
+window.renderAt = render;
+window.ready = Promise.all([loadTex(TEX.world, 0), loadTex(TEX.eu, 1),
+  ...Object.entries(IMG_SRC).map(([k, s]) => loadImg(k, s)),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M"), document.fonts.load("600 60px M")]);
+if (new URLSearchParams(location.search).has("capture")) document.body.classList.add("capture");
+else window.ready.then(() => {
+  const audio = new Audio("__AUDIO__");
+  let start = null; render(0);
+  const tc = document.getElementById("tc");
+  document.getElementById("play").onclick = () => { audio.currentTime = 0; audio.play().catch(() => {}); start = performance.now(); };
+  const loop = now => {
+    if (start !== null){ const t = Math.min(audio.paused ? (now - start)/1000 : audio.currentTime, DUR);
+      render(t); tc.textContent = t.toFixed(1) + " s / " + DUR.toFixed(0) + " s"; }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>
