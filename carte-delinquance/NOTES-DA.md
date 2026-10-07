@@ -28,3 +28,4 @@
 - **Cri / bruit de l'animal uniquement dans l'intro** (sinon dérangeant).
 - **Pas de textes encadrés (« chips ») en bas de l'écran** : sous-titres en haut + textes cinétiques suffisent ; compteurs en texte simple.
 - **Animaux passagers clandestins** (bateau, pneu, camion…) : montrer clairement l'animal à l'intérieur (il vole/entre dans l'objet, puis reste visible sur le véhicule avec halo).
+- **Plans 3D Blender (style « maquette » validé, démo `demo-3d-arctique.mp4`)** : 2-3 plans par vidéo aux moments forts ; formes simples low-poly, couleurs franches, animal = forme 3D rouge vif sans détail ; caméra qui suit le sujet, profondeur de champ. Éviter la surexposition (lumière un peu plus douce que la démo).
