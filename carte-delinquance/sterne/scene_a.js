@@ -66,7 +66,7 @@ function fit(feature, center, w, h){
   proj.translate([W/2, MAPY]);
   return {lon:center[0], lat:center[1], s: Math.min(w/(x1-x0), h/(y1-y0))};
 }
-const GRN0 = {lon:-32, lat:70, s:1050}, GRN = {lon:-30, lat:69, s:1150};          // ouverture : niveau continent
+const GRN0 = {lon:-30, lat:70, s:1350}, GRN = {lon:-29, lat:69.5, s:1480};          // ouverture : niveau continent
 const ATL = {lon:-22, lat:5, s:400}, ATL2 = {lon:-28, lat:2, s:430};
 const GRNC = {lon:-24, lat:71, s:1300};
 const NATL = {lon:-32, lat:52, s:900}, MIDA = {lon:-22, lat:12, s:620}, SATL = {lon:-12, lat:-30, s:560};
@@ -87,31 +87,54 @@ const push = (c, k) => ({...c, s:c.s*(1 + 0.05*k)});
 // suivi de la sterne sur une route
 const g82Cam = t => { const {p} = routeAt(RT.g82, kG82(t)); const k = prog(t, M("s15", 0.18), M("s15", 0.4)); return {lon:p[0], lat:lerp(20, -38, E(k)), s:360}; };
 const follow = (rk, kf, s, dlat=-4) => t => { const {p} = routeAt(RT[rk], kf(t)); return {lon:p[0], lat:p[1] + dlat, s}; };
+// aperçu (hook) : la route se dessine, la caméra suit la tête du tracé — jamais la Terre entière
+const pvOut  = t => E(prog(t, C.preview[0] + 0.3, Ed("s02") - 0.2));
+const pvBra  = t => E(prog(t, M("s02", 0.55), S("s03") + 0.8));
+const pvBack = t => E(prog(t, S("s03") + 0.6, Ed("s03") - 0.1));
+function pvCam(t){
+  let p;
+  if (t < M("s02", 0.55) + 0.4) p = routeAt(RT.out, pvOut(t)).p;
+  else if (t < S("s03") + 0.8) p = routeAt(RT.bra, pvBra(t)).p;
+  else p = routeAt(RT.back, pvBack(t)).p;
+  return {lon:p[0], lat:p[1] - 3, s:1350};
+}
+const kLife = t => E(prog(t, C.life[0] + 0.4, Ed("s17")));
+const lifeCam = t => { const {p} = routeAt(RT.out, kLife(t)); return {lon:p[0], lat:p[1] - 2, s:1400}; };
+const SMIN = 1300;                                       // en dessous, on verrait le bord du globe / l'espace
+const GRNC2 = {lon:-23, lat:72.5, s:1650}, NATL2 = {lon:-33, lat:49, s:1550}, SPLITV = {lon:-17, lat:-4, s:1320};
+const ANT2 = {lon:-30, lat:-63, s:1450}, ANTB = {lon:-25, lat:-60, s:1500}, GRNS = {lon:-35, lat:70, s:1400};
+const UKV2 = {lon:-2, lat:55, s:1700}, NATL3 = {lon:-25, lat:58, s:1350};
 const SHOTS = [
-  [C.preview[0], C.preview[0] + 1.6, ATL, true],
-  [C.globe[0], Ed("s03"), ATL2, false],
-  [C.green[0], C.green[0] + 1.3, GRNC, true],
-  [C.colony[0] - 0.4, C.colony[0], {...GRNC, s:GRNC.s*1.05}, false],
-  [C.south[0], C.south[0] + 0.6, follow("out", kOut, 820, -3), false],
-  [C.south[0] + 0.6, Ed("s07"), follow("out", kOut, 820, -3), false],
-  [C.anta[0], C.anta[0] + 1.8, ANT, true],
-  [M("s08", 0.75), Ed("s08") + 0.3, NATL, true],
-  [C.stop[0], C.stop[1], {...NATL, s:NATL.s*1.15}, false],
-  [C.split[0] - 0.2, C.split[0] + 0.8, MIDA, false],
-  [C.split[0] + 0.8, Ed("s10") + 0.4, SATL, false],
-  [C.arrive[0], C.arrive[1], ANT, false],
-  [C.summers[0], C.summers[0] + 1.2, POLES, true],
-  [C.north[0], C.north[0] + 0.8, ANTW, false],
-  [C.north[0] + 0.8, Ed("s14"), follow("back", kBack, 520, 0), false],
-  [C.farne[0], C.farne[0] + 1.0, UKV, true],
-  [M("s15", 0.18), M("s15", 0.18) + 0.8, t => g82Cam(t), false],
+  [C.preview[0], C.preview[0] + 0.6, t => pvCam(t), false],
+  [C.preview[0] + 0.6, Ed("s03"), t => pvCam(t), false],
+  [C.green[0], C.green[0] + 1.3, GRNC2, true],
+  [C.colony[0] - 0.4, C.colony[0], {...GRNC2, s:GRNC2.s*1.06}, false],
+  [C.south[0], C.south[0] + 0.6, follow("out", kOut, 1450, -2), false],
+  [C.south[0] + 0.6, Ed("s07"), follow("out", kOut, 1450, -2), false],
+  [C.anta[0], C.anta[0] + 1.8, ANT2, true],                                  // grand balayage jusqu'à l'Antarctique
+  [M("s08", 0.75), Ed("s08") + 0.3, NATL2, true],                              // et retour en Atlantique Nord
+  [C.stop[0], C.stop[1], {...NATL2, s:NATL2.s*1.12}, false],
+  [C.split[0] - 0.2, C.split[0] + 0.8, SPLITV, false],
+  [C.split[0] + 0.8, Ed("s10") + 0.4, {...SPLITV, lat:-12, s:1300}, false],
+  [C.arrive[0], C.arrive[1], ANT2, false],
+  [C.summers[0], C.summers[0] + 0.9, ANTB, false],                            // été en Antarctique…
+  [M("s13", 0.45), M("s13", 0.45) + 1.4, GRNS, true],                          // …puis balayage jusqu'au Groenland
+  [C.north[0], C.north[0] + 0.8, follow("back", kBack, 1350, 0), true],
+  [C.north[0] + 0.8, Ed("s14"), follow("back", kBack, 1350, 0), false],
+  [C.farne[0], C.farne[0] + 1.0, UKV2, true],
+  [M("s15", 0.18), M("s15", 0.18) + 0.8, t => g82Cam(t), false],              // tour du monde : seule vue « espace » avec la Lune
   [M("s15", 0.18) + 0.8, M("s15", 0.92), t => g82Cam(t), false],
-  [C.life[0], C.life[0] + 1.2, ATL, true],
+  [C.life[0], C.life[0] + 1.2, t => lifeCam(t), false],
+  [C.life[0] + 1.2, Ed("s17") + 0.2, t => lifeCam(t), false],
   [C.moon[0], C.moon[0] + 1.0, SPACE, false],
-  [C.g100[0], C.g100[0] + 1.0, ATL, false],
-  [C.outro, C.outro + 2.0, {...ATL, s:ATL.s*0.92}, false],
+  [C.g100[0], C.g100[0] + 1.0, GRNC2, false],
+  [C.outro, C.outro + 2.0, {...GRNC2, s:GRNC2.s*0.9}, false],
 ];
-function camera(t){
+// zoom minimum imposé hors des deux plans « espace » (tour du monde 2016, Terre-Lune)
+const spaceOK = t => Math.max(prog(t, M("s15", 0.18), M("s15", 0.18) + 0.8)*(1 - prog(t, C.life[0], C.life[0] + 1.2)),
+                              prog(t, C.moon[0], C.moon[0] + 1.0)*(1 - prog(t, C.g100[0], C.g100[0] + 1.0)));
+function camera(t){ const c = camera0(t), m = SMIN*(1 - spaceOK(t)); return {...c, s:Math.max(c.s, m)}; }
+function camera0(t){
   if (t < C.preview[0]) return camLerp(GRN0, GRN, prog(t, 0, C.preview[0]), false, d3.easeSinOut);
   let prev = GRN, tPrev = C.preview[0];
   for (const [a, b, cam, fly] of SHOTS){

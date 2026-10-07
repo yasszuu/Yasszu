@@ -29,3 +29,5 @@
 - **Pas de textes encadrés (« chips ») en bas de l'écran** : sous-titres en haut + textes cinétiques suffisent ; compteurs en texte simple.
 - **Animaux passagers clandestins** (bateau, pneu, camion…) : montrer clairement l'animal à l'intérieur (il vole/entre dans l'objet, puis reste visible sur le véhicule avec halo).
 - **Plans 3D Blender (style « maquette » validé, démo `demo-3d-arctique.mp4`)** : 2-3 plans par vidéo aux moments forts ; formes simples low-poly, couleurs franches, animal = forme 3D rouge vif sans détail ; caméra qui suit le sujet, profondeur de champ. Éviter la surexposition (lumière un peu plus douce que la démo).
+- **Pas de Terre entière / d'espace visible** : rester à l'échelle pays/continent (globe plus grand que l'écran), beaucoup de mouvement
+  (caméra qui suit l'animal, balayages, zooms). Exception rare : illustrer un tour du monde ou la distance Terre-Lune.

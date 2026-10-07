@@ -64,11 +64,13 @@ function renderMap(t){
 
   // ---- hook : Groenland + route complète en aperçu
   capGlow(greenland, prog(t, 0.6, 1.4)*(1 - prog(t, C.preview[0], C.preview[0] + 0.6)) + prog(t, C.green[0] + 0.6, C.green[0] + 1.2)*(1 - prog(t, C.south[0], C.south[0] + 0.5)));
-  const pv = prog(t, C.preview[0] + 0.3, Ed("s02") - 0.3), pvOut = 1 - prog(t, C.green[0], C.green[0] + 0.5);
-  if (pv > 0 && pvOut > 0){
-    routeLine(RT.out, E(prog(pv, 0, 0.4)), pvOut, "#fff", 6); routeLine(RT.bra, E(prog(pv, 0.35, 0.6)), pvOut, "#fff", 6);
-    routeLine(RT.back, E(prog(pv, 0.55, 1)), pvOut, Y1, 7);
-    capGlow(antarctica, prog(pv, 0.5, 0.7)*pvOut, "120,200,255");
+  const pvA = clamp(prog(t, C.preview[0], C.preview[0] + 0.3))*(1 - prog(t, C.green[0], C.green[0] + 0.5));
+  if (pvA > 0){
+    routeLine(RT.out, pvOut(t), pvA, "#fff", 7); routeLine(RT.bra, pvBra(t), pvA, "#fff", 7);
+    routeLine(RT.back, pvBack(t), pvA, Y1, 8, [1, 0]);
+    capGlow(antarctica, prog(t, M("s02", 0.9), S("s03") + 0.4)*pvA, "120,200,255");
+    const k = t < S("s03") + 0.8 ? (t < M("s02", 0.55) + 0.4 ? ["out", pvOut(t)] : ["bra", pvBra(t)]) : ["back", pvBack(t)];
+    if (k[1] > 0 && k[1] < 1) ternSprite(RT[k[0]], k[1], 130, pvA, t);
   }
   // ---- Groenland : colonie
   const ga = EB(prog(t, C.green[0] + 0.9, C.green[0] + 1.3))*(1 - prog(t, C.south[0] + 0.4, C.south[0] + 0.8));
@@ -91,13 +93,13 @@ function renderMap(t){
     ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(p[0], p[1], 120*Math.max(st, 0.01), 0, 7); ctx.stroke(); ctx.restore();
     txt("PAUSE", p[0], p[1] - 150, {size:60, color:Y1, scale:st, stroke:12}); } }
   // ---- séparation des routes
-  label("AFRIQUE", [5, 8], 0, 0, EB(prog(t, M("s10", 0.35), M("s10", 0.45)))*(1 - prog(t, C.arrive[0], C.arrive[0] + 0.4)), {size:52});
+  label("AFRIQUE", [-6, 11], 0, 0, EB(prog(t, M("s10", 0.35), M("s10", 0.45)))*(1 - prog(t, C.arrive[0], C.arrive[0] + 0.4)), {size:52});
   label("BRÉSIL", [-48, -10], 0, 0, EB(prog(t, M("s10", 0.6), M("s10", 0.7)))*(1 - prog(t, C.arrive[0], C.arrive[0] + 0.4)), {size:52});
   // ---- deux étés par an : les deux pôles éclairés
-  const su = prog(t, C.summers[0] + 0.8, C.summers[0] + 1.4)*(1 - prog(t, C.north[0], C.north[0] + 0.5));
+  const su = prog(t, C.summers[0] + 0.2, C.summers[0] + 0.7)*(1 - prog(t, C.north[0], C.north[0] + 0.5));
   if (su > 0){ capGlow(greenland, su); capGlow(antarctica, su);
-    label("ÉTÉ", [-40, 72], 0, 0, EB(prog(t, C.summers[0] + 1.0, C.summers[0] + 1.4))*su, {size:56, color:Y1});
-    label("ÉTÉ", [-30, -72], 0, 0, EB(prog(t, C.summers[0] + 1.4, C.summers[0] + 1.8))*su, {size:56, color:Y1}); }
+    label("ÉTÉ", [-30, -70], 0, 0, EB(prog(t, C.summers[0] + 0.5, C.summers[0] + 0.9))*su, {size:84, color:Y1});
+    label("ÉTÉ", [-40, 72], 0, 0, EB(prog(t, M("s13", 0.45) + 1.0, M("s13", 0.45) + 1.4))*su, {size:84, color:Y1}); }
   // ---- retour en S vers le nord (jaune)
   const bA = clamp(prog(t, C.north[0], C.north[0] + 0.3))*(1 - prog(t, C.farne[0], C.farne[0] + 0.5));
   if (bA > 0){ routeLine(RT.out, 1, bA*0.5, "#fff", 5); routeLine(RT.bra, 1, bA*0.5, "#fff", 5); routeLine(RT.afr, 1, bA*0.5, "#fff", 5);
@@ -108,6 +110,9 @@ function renderMap(t){
   const gA = clamp(prog(t, M("s15", 0.15), M("s15", 0.2)))*(1 - prog(t, C.life[0] + 0.6, C.life[0] + 1.2));
   if (gA > 0){ routeLine(RT.g82, kG82(t), gA, Y1, 9, [1, 0]); if (kG82(t) < 1) ternSprite(RT.g82, kG82(t), 110, gA, t); }
 
+  // ---- toute une vie : la sterne redescend l'Atlantique pendant que le compteur s'envole
+  const lA = clamp(prog(t, C.life[0] + 0.3, C.life[0] + 0.7))*(1 - prog(t, C.moon[0], C.moon[0] + 0.4));
+  if (lA > 0){ routeLine(RT.out, kLife(t), lA, Y1, 9, [1, 0]); ternSprite(RT.out, kLife(t), 130, lA, t); }
   const vg = ctx.createRadialGradient(W/2, H/2, H*0.42, W/2, H/2, H*0.8);
   vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.35)");
   ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);

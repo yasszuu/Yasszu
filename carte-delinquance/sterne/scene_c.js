@@ -73,11 +73,14 @@ function overlay(t, pa){
   if (kmA > 0) richLine([{t:nfmt(km), c:Y1}, {t:" KM", c:"#fff"}], W/2, 600, {size:58, alpha:kmA, stroke:12});
   const g82A = EO(prog(t, M("s15", 0.18), M("s15", 0.25)))*(1 - prog(t, C.life[0], C.life[0] + 0.4))*mapA;
   if (g82A > 0) richLine([{t:nfmt(96000*kG82(t)), c:Y1}, {t:" KM", c:"#fff"}], W/2, 520, {size:72, alpha:g82A, stroke:13});
+  const lifeKm = d3.easeQuadIn(prog(t, S("s17") - 0.2, M("s17", 0.5)))*2100000;
+  const lkA = EO(prog(t, S("s17") - 0.3, S("s17")))*(1 - prog(t, M("s17", 0.45), M("s17", 0.5)))*mapA;
+  if (lkA > 0) richLine([{t:nfmt(lifeKm), c:Y1}, {t:" KM", c:"#fff"}], W/2, 520, {size:72, alpha:lkA, stroke:13});
   // --- textes cinétiques (un seul bloc à la fois)
   kin("100 GRAMMES", W/2, 620, t, M("s01", 0.15), {size:96, color:Y1, out:Ed("s01") - 0.1});
   kin("+ DE 70 000 KM", W/2, 620, t, C.k70, {size:100, color:Y1, out:Ed("s03") - 0.3});
   kin("JUIN", W/2, 640, t, M("s04", 0.25), {size:120, color:Y1, out:M("s04", 0.52)});
-  kin("2 ÉTÉS PAR AN", W/2, 1600, t, M("s13", 0.2), {size:100, color:Y1, out:Ed("s13") + 0.2});
+  kin("2 ÉTÉS PAR AN", W/2, 1600, t, M("s13", 0.2), {size:100, color:"#fff", out:Ed("s13") + 0.2});
   kin("EN 10 MOIS", W/2, 640, t, M("s15", 0.88), {size:96, out:Ed("s15") + 0.3});
   kin("30 ANS", W/2, 640, t, M("s16", 0.4), {size:150, color:Y1, out:Ed("s16") + 0.1});
   kin("+ DE 2 MILLIONS", W/2, 600, t, M("s17", 0.5), {size:96, color:Y1, out:Ed("s17") + 0.2});
