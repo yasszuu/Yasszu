@@ -13,14 +13,17 @@ ap.add_argument("--out", default="render")
 ap.add_argument("--res", type=int, nargs=2, default=[540, 960])
 ap.add_argument("--samples", type=int, default=24)
 ap.add_argument("--blend", default=None)
+ap.add_argument("--dump", default=None, help="simulate only and write motion JSON")
 ap.add_argument("--from-frame", type=int, default=1)
 args = ap.parse_args(sys.argv[1:])
 
 random.seed(4)
 FPS = 30
-END = 150
-CUT_START, CUT_LEN, CUT_GAP = 10, 9, 11
-RELEASE = CUT_START + args.cuts * CUT_GAP + 6
+ARRIVE = 26                      # melon reaches the apex of its throw
+CUT_START, CUT_LEN, CUT_GAP = ARRIVE + 2, 3, 3
+CUT_FRAMES = [CUT_START + i * CUT_GAP for i in range(args.cuts)]
+RELEASE = CUT_FRAMES[-1] + CUT_LEN + 3
+END = max(150, RELEASE + 95)
 R = 1.0                       # melon radius
 SQ = Vector((1.0, 1.0, 0.9))  # ellipsoid squash
 C = Vector((0, 0, 2.15))      # melon centre while hovering
@@ -120,16 +123,18 @@ r = ln.outputs["Value"]
 col = ramp(nt, r, [(0.0, (0.80, 0.03, 0.06)), (0.78, (0.85, 0.08, 0.10)),
                    (0.86, (0.95, 0.55, 0.50)), (0.885, (0.92, 0.95, 0.80)),
                    (0.955, (0.60, 0.85, 0.45)), (0.975, (0.05, 0.20, 0.04))])
-vor = nt.nodes.new("ShaderNodeTexVoronoi"); vor.inputs["Scale"].default_value = 5.5
+vor = nt.nodes.new("ShaderNodeTexVoronoi"); vor.inputs["Scale"].default_value = 6.5
 vor.inputs["Randomness"].default_value = 1.0
-nt.links.new(p, vor.inputs["Vector"])
-seed = math_node(nt, "LESS_THAN", vor.outputs["Distance"], 0.07)
-inband = math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", r, 0.35),
-                   math_node(nt, "LESS_THAN", r, 0.72))
+elong = nt.nodes.new("ShaderNodeVectorMath"); elong.operation = "MULTIPLY"
+nt.links.new(p, elong.inputs[0]); elong.inputs[1].default_value = (1.0, 1.0, 0.55)
+nt.links.new(elong.outputs[0], vor.inputs["Vector"])
+seed = math_node(nt, "LESS_THAN", vor.outputs["Distance"], 0.12)
+inband = math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", r, 0.3),
+                   math_node(nt, "LESS_THAN", r, 0.76))
 seedf = math_node(nt, "MULTIPLY", seed, inband)
 mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = "RGBA"
 nt.links.new(seedf, mix.inputs["Factor"])
-nt.links.new(col, mix.inputs[6]); mix.inputs[7].default_value = (0.01, 0.008, 0.006, 1)
+nt.links.new(col, mix.inputs[6]); mix.inputs[7].default_value = (0.004, 0.003, 0.002, 1)
 nt.links.new(mix.outputs[2], b.inputs["Base Color"])
 grain = nt.nodes.new("ShaderNodeTexNoise"); grain.inputs["Scale"].default_value = 60
 grain.inputs["Detail"].default_value = 8
@@ -157,7 +162,6 @@ nt.links.new(col, b.inputs["Base Color"])
 b.inputs["Roughness"].default_value = 0.55
 
 floor_mat = simple_mat("Studio", (0.055, 0.055, 0.06), rough=0.6)
-cutline_mat = simple_mat("CutLine", (0.55, 0.0, 0.02), rough=0.3, emit=0.4)
 steel = simple_mat("Steel", (0.85, 0.86, 0.9), rough=0.12, metal=1.0)
 handle_mat = simple_mat("Handle", (0.05, 0.05, 0.06), rough=0.4)
 juice_mat = simple_mat("Juice", (0.9, 0.15, 0.2), rough=0.05)
@@ -219,6 +223,7 @@ cam = bpy.data.objects.new("Cam", bpy.data.cameras.new("Cam")); link(cam)
 cam.location = (0, -11.0, 2.5)
 cam.rotation_euler = (Vector((0, 0, 2.05)) - cam.location).to_track_quat("-Z", "Y").to_euler()
 cam.data.lens = 50
+cam.data.clip_start = 0.05
 scn.camera = cam
 
 # title
@@ -296,92 +301,80 @@ for i, pb in enumerate(pieces):
     o["off"] = cen
     piece_objs.append(o)
 
-# ---------------------------------------------------------------- hover / rotation
-def spin(f):
-    """Melon local->world transform while hovering (slow turn + gentle bob)."""
-    t = (f - 1) / FPS
-    ang = 0.5 * t
-    bob = 0.04 * math.sin(t * 2.2)
-    return Matrix.Translation(C + Vector((0, 0, bob))) @ Matrix.Rotation(ang, 4, "Z") @ Matrix.Rotation(0.25, 4, "X")
+# ---------------------------------------------------------------- throw / hover
+THROW_FROM = Vector((0.6, -12.5, 1.2))    # behind the camera, low and slightly right
+TUMBLE_AXIS = Vector((1.0, 0.25, 0.3)).normalized()
+
+def melon_pose(f):
+    """Melon local->world transform: thrown from behind the camera, then hangs at the apex."""
+    if f <= ARRIVE:
+        t = (f - 1) / (ARRIVE - 1)
+        e = 1 - (1 - t) ** 3                       # fast launch, slow arrival
+        pos = THROW_FROM.lerp(C, e) + Vector((0, 0, 0.6 * math.sin(math.pi * e)))
+        ang = 4.0 * e
+    else:
+        dt = (f - ARRIVE) / FPS
+        pos = C + Vector((0, 0, -0.06 * dt * dt))  # slight sag at the apex
+        ang = 4.0 + 0.9 * dt
+    return Matrix.Translation(pos) @ Matrix.Rotation(ang, 4, TUMBLE_AXIS)
+
+GAP = 0.034   # width each incision opens to
+
+def side(o, i):
+    co, n = planes[i]
+    return 1.0 if (Vector(o["off"]) - co).dot(n) > 0 else -1.0
+
+def incision_offset(o, f):
+    off = Vector()
+    for i, s in enumerate(CUT_FRAMES):
+        k = min(max((f - (s + 1)) / 2.0, 0.0), 1.0)   # opens just after the blade passes
+        off += planes[i][1] * (side(o, i) * GAP * 0.5 * k)
+    return off
 
 for f in range(1, RELEASE + 1):
-    M = spin(f)
+    M = melon_pose(f)
     for o in piece_objs:
-        o.matrix_world = M @ Matrix.Translation(o["off"])
+        o.matrix_world = M @ Matrix.Translation(Vector(o["off"]) + incision_offset(o, f))
         o.keyframe_insert("location", frame=f)
         o.keyframe_insert("rotation_euler", frame=f)
 
-# ---------------------------------------------------------------- cut lines + knife
-def ell_hit(p0, d):
-    a = sum((d[i] / SQ[i]) ** 2 for i in range(3))
-    b = 2 * sum(p0[i] * d[i] / SQ[i] ** 2 for i in range(3))
-    c = sum((p0[i] / SQ[i]) ** 2 for i in range(3)) - R * R
-    return (-b + math.sqrt(b * b - 4 * a * c)) / (2 * a)
-
+# ---------------------------------------------------------------- knife (one fast slash per cut)
 def basis(n):
     u = n.cross(Vector((0, 0, 1)) if abs(n.z) < 0.9 else Vector((1, 0, 0))).normalized()
     return u, n.cross(u).normalized()
 
-# knife model (local: +X radial outward, origin on the cut line, Z = plane normal)
+# local: X = blade length, +Y = cutting edge / travel direction, Z = plane normal
 bm = bmesh.new()
 bmesh.ops.create_cube(bm, size=1)
 for v in bm.verts:
-    x = (v.co.x + 0.5)
-    v.co = Vector((-1.05 + x * 1.45, v.co.y * 0.17, v.co.z * 0.014))
-    if x < 0.5 and v.co.y > 0:  # taper toward tip
-        v.co.y = -0.03
+    x, y = v.co.x + 0.5, v.co.y + 0.5
+    v.co = Vector((-1.45 + x * 2.9, -0.24 + y * 0.24, v.co.z * 0.016))
+    if x < 0.5 and y > 0.5:
+        v.co.y -= 0.18                 # sloped tip
 kme = bpy.data.meshes.new("Blade"); bm.to_mesh(kme); bm.free()
 kme.materials.append(steel)
 knife = bpy.data.objects.new("Knife", kme); link(knife)
 knife.rotation_mode = "QUATERNION"
-prev_q = None
-bpy.ops.mesh.primitive_cylinder_add(radius=0.075, depth=0.7, location=(0.73, 0, 0), rotation=(0, math.pi / 2, 0))
+bpy.ops.mesh.primitive_cylinder_add(radius=0.08, depth=0.8, location=(1.85, -0.12, 0), rotation=(0, math.pi / 2, 0))
 hnd = bpy.context.object; hnd.data.materials.append(handle_mat); hnd.parent = knife
 bv = hnd.modifiers.new("b", "BEVEL"); bv.width = 0.03; bv.segments = 3
 
-cut_curves = []
-for i, (co, n) in enumerate(planes):
-    u, v = basis(n)
-    pts = []
-    N = 96
-    for k in range(N + 1):
-        th = 2 * math.pi * k / N
-        d = math.cos(th) * u + math.sin(th) * v
-        pts.append(co + d * (ell_hit(co, d) * 1.004))
-    cd = bpy.data.curves.new(f"Cut{i}", "CURVE"); cd.dimensions = "3D"
-    sp = cd.splines.new("POLY"); sp.points.add(len(pts) - 1)
-    for k, pnt in enumerate(pts):
-        sp.points[k].co = (*pnt, 1)
-    cd.bevel_depth = 0.011; cd.bevel_resolution = 2
-    cd.materials.append(cutline_mat)
-    co_ = bpy.data.objects.new(f"Cut{i}", cd); link(co_)
-    cut_curves.append((co_, pts, u, v, n))
-    s = CUT_START + i * CUT_GAP
-    cd.bevel_factor_end = 0.0; cd.keyframe_insert("bevel_factor_end", frame=s)
-    cd.bevel_factor_end = 1.0; cd.keyframe_insert("bevel_factor_end", frame=s + CUT_LEN)
-    co_.hide_render = True; co_.keyframe_insert("hide_render", frame=1)
-    co_.hide_render = False; co_.keyframe_insert("hide_render", frame=s)
-    co_.hide_render = True; co_.keyframe_insert("hide_render", frame=RELEASE + 1)
-
+slash_dir = [random.choice((-1, 1)) for _ in planes]
+prev_q = None
 for f in range(1, RELEASE + 2):
-    M = spin(f)
-    for co_, *_ in cut_curves:
-        co_.matrix_world = M
-        co_.keyframe_insert("location", frame=f); co_.keyframe_insert("rotation_euler", frame=f)
+    M = melon_pose(f)
     active = None
-    for i, (co_, pts, u, v, n) in enumerate(cut_curves):
-        s = CUT_START + i * CUT_GAP
-        if s - 2 <= f <= s + CUT_LEN + 2:
-            active = (i, co_, pts, u, v, n, s)
+    for i, s in enumerate(CUT_FRAMES):
+        if s <= f <= s + CUT_LEN - 1:
+            active = (i, s)
     if active:
-        i, co_, pts, u, v, n, s = active
-        t = min(max((f - s) / CUT_LEN, 0.0), 1.0)
-        t = t * t * (3 - 2 * t)
-        k = t * (len(pts) - 1)
-        p = pts[int(k)].lerp(pts[min(int(k) + 1, len(pts) - 1)], k - int(k))
-        radial = (p - planes[i][0]).normalized()
-        tang = n.cross(radial)
-        rot = Matrix((radial, tang, n)).transposed().to_4x4()
+        i, s = active
+        co, n = planes[i]
+        u, v = basis(n)
+        v = v * slash_dir[i]
+        t = (f - s) / (CUT_LEN - 1)
+        p = co + v * (-2.3 + 4.6 * t)
+        rot = Matrix((u, v, u.cross(v))).transposed().to_4x4()
         knife.matrix_world = M @ Matrix.Translation(p) @ rot
         q = knife.rotation_quaternion.copy()
         if prev_q is not None and q.dot(prev_q) < 0:
@@ -395,12 +388,6 @@ for f in range(1, RELEASE + 2):
     knife.keyframe_insert("hide_render", frame=f)
     hnd.hide_render = knife.hide_render
     hnd.keyframe_insert("hide_render", frame=f)
-
-for o in [knife, hnd] + [c[0] for c in cut_curves]:
-    if o.animation_data and o.animation_data.action:
-        for fc in o.animation_data.action.fcurves if hasattr(o.animation_data.action, "fcurves") else []:
-            for kp in fc.keyframe_points:
-                kp.interpolation = "CONSTANT" if fc.data_path == "hide_render" else "LINEAR"
 
 # ---------------------------------------------------------------- physics
 bpy.ops.rigidbody.world_add()
@@ -427,13 +414,23 @@ for o in piece_objs:
     o.rigid_body.kinematic = False
     o.rigid_body.keyframe_insert("kinematic", frame=RELEASE + 1)
 
-# outward burst
-bpy.ops.object.effector_add(type="FORCE", location=C)
+BURST_AT = melon_pose(RELEASE).translation.copy()
+bpy.ops.object.effector_add(type="FORCE", location=BURST_AT)
 fld = bpy.context.object
 fld.field.shape = "POINT"; fld.field.falloff_power = 0.0
-for f, s in ((RELEASE, 0), (RELEASE + 1, 40), (RELEASE + 4, 40), (RELEASE + 5, 0)):
+for f, s in ((RELEASE, 0), (RELEASE + 1, 32), (RELEASE + 4, 32), (RELEASE + 5, 0)):
     fld.field.strength = s
     fld.field.keyframe_insert("strength", frame=f)
+
+# camera shake on the burst
+cam.keyframe_insert("location", frame=RELEASE)
+base_loc = cam.location.copy()
+for k, f in enumerate(range(RELEASE + 1, RELEASE + 9)):
+    a = 0.05 * (1 - k / 8)
+    cam.location = base_loc + Vector((random.uniform(-a, a), 0, random.uniform(-a, a)))
+    cam.keyframe_insert("location", frame=f)
+cam.location = base_loc
+cam.keyframe_insert("location", frame=RELEASE + 9)
 
 # ---------------------------------------------------------------- juice particles
 def drop(name, mat, r):
@@ -452,18 +449,35 @@ def emitter(obj, inst, count, start, end, vel, rnd, size, life=60):
     ps.count = count; ps.frame_start = start; ps.frame_end = end; ps.lifetime = life
     ps.normal_factor = vel; ps.factor_random = rnd
     ps.render_type = "OBJECT"; ps.instance_object = inst
-    ps.particle_size = size; ps.size_random = 0.6
+    ps.particle_size = size; ps.size_random = 0.7
     ps.use_rotations = True
     obj.show_instancer_for_render = False
     return ps
 
-bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=0.85, location=C)
-burst = bpy.context.object; burst.name = "Burst"; burst.hide_render = False
+# big splash when it bursts
+bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=0.85, location=BURST_AT)
+burst = bpy.context.object; burst.name = "Burst"
 burst.scale = SQ
-emitter(burst, juice, 260, RELEASE, RELEASE + 3, 3.2, 1.6, 0.03, life=90)
+emitter(burst, juice, 320, RELEASE, RELEASE + 3, 3.0, 1.6, 0.032, life=90)
 
-# fine spray coming off the blade while cutting
-emitter(knife, spray, 220, CUT_START, RELEASE - 6, 0.6, 1.2, 0.012, life=25)
+# a squirt of juice along every incision: a thin open tube lying in the cut plane,
+# its outward-facing side spits droplets radially as the blade goes through
+for i, (co, n) in enumerate(planes):
+    rad = math.sqrt(max(R * R - co.length_squared, 0.05)) * 0.92
+    bm = bmesh.new()
+    bmesh.ops.create_cone(bm, cap_ends=False, segments=48, radius1=rad, radius2=rad, depth=0.03)
+    tme = bpy.data.meshes.new(f"Squirt{i}"); bm.to_mesh(tme); bm.free()
+    em = bpy.data.objects.new(f"Squirt{i}", tme); link(em)
+    rot = n.to_track_quat("Z", "Y").to_matrix().to_4x4()
+    for f in range(1, RELEASE + 2):
+        em.matrix_world = melon_pose(f) @ Matrix.Translation(co) @ rot
+        em.keyframe_insert("location", frame=f); em.keyframe_insert("rotation_euler", frame=f)
+    s = CUT_FRAMES[i]
+    emitter(em, juice, 90, s + 1, s + 3, 2.4, 0.9, 0.018, life=60)
+    emitter(em, spray, 60, s + 1, s + 2, 3.2, 1.2, 0.009, life=30)
+
+# fine mist coming off the blade itself
+emitter(knife, spray, 40 * len(planes), CUT_START, CUT_FRAMES[-1] + CUT_LEN, 0.5, 1.2, 0.01, life=20)
 
 for o in (cyc, board):
     o.modifiers.new("col", "COLLISION")
@@ -488,6 +502,20 @@ if args.blend:
 
 os.makedirs(args.out, exist_ok=True)
 r.filepath = os.path.join(os.path.abspath(args.out), "")
+if args.dump:
+    import json
+    track = {o.name: [] for o in piece_objs}
+    for f in range(1, END + 1):
+        scn.frame_set(f)
+        for o in piece_objs:
+            track[o.name].append(list(o.matrix_world.translation))
+    throw = []
+    for f in range(1, END + 1):
+        throw.append(list(melon_pose(min(f, RELEASE)).translation))
+    json.dump({"fps": FPS, "end": END, "arrive": ARRIVE, "cuts": CUT_FRAMES, "cut_len": CUT_LEN,
+               "release": RELEASE, "cam": list(base_loc), "melon": throw, "pieces": track},
+              open(args.dump, "w"))
+    sys.exit(0)
 if args.still is not None:
     # step the simulation forward so rigid-body state is valid
     last = max(args.still)
