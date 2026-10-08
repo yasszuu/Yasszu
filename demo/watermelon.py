@@ -15,15 +15,20 @@ ap.add_argument("--samples", type=int, default=24)
 ap.add_argument("--blend", default=None)
 ap.add_argument("--dump", default=None, help="simulate only and write motion JSON")
 ap.add_argument("--from-frame", type=int, default=1)
+ap.add_argument("--post", type=int, default=95, help="frames after the burst")
+ap.add_argument("--side", type=float, default=1.0, help="throw from the right (1) or left (-1)")
 args = ap.parse_args(sys.argv[1:])
 
 random.seed(4)
 FPS = 30
 ARRIVE = 26                      # melon reaches the apex of its throw
-CUT_START, CUT_LEN, CUT_GAP = ARRIVE + 2, 3, 3
+# cuts get denser as their number grows so even 100 cuts stay snappy
+CUT_GAP = 3 if args.cuts <= 10 else 2 if args.cuts <= 30 else 1
+CUT_START, CUT_LEN = ARRIVE + 2, CUT_GAP
 CUT_FRAMES = [CUT_START + i * CUT_GAP for i in range(args.cuts)]
 RELEASE = CUT_FRAMES[-1] + CUT_LEN + 3
-END = max(150, RELEASE + 95)
+END = RELEASE + args.post
+FULL_CUTS = 6        # cuts beyond this only split the biggest pieces they cross
 R = 1.0                       # melon radius
 SQ = Vector((1.0, 1.0, 0.9))  # ellipsoid squash
 C = Vector((0, 0, 2.15))      # melon centre while hovering
@@ -229,7 +234,7 @@ scn.camera = cam
 # title
 bpy.ops.object.text_add(location=(0, 0.0, 4.85), rotation=(math.radians(90), 0, 0))
 txt = bpy.context.object
-txt.data.body = f"{args.cuts} Cuts"
+txt.data.body = f"{args.cuts} Cut" + ("s" if args.cuts > 1 else "")
 txt.data.align_x = "CENTER"; txt.data.size = 0.62
 txt.data.extrude = 0.0
 txt.data.materials.append(text_mat)
@@ -243,13 +248,9 @@ def rand_unit():
         if 0.2 < v.length <= 1:
             return v.normalized()
 
-planes = []
+planes = []   # filled while splitting: (point, normal) in melon space
 base = [Vector((1, 0, 0.15)), Vector((0.3, 1, -0.2)), Vector((0.1, 0.25, 1)),
-        Vector((-0.8, 0.6, 0.45)), Vector((0.7, 0.55, -0.6))]
-for i in range(args.cuts):
-    n = (base[i] if i < len(base) else rand_unit()).normalized()
-    d = random.uniform(-0.18, 0.18)
-    planes.append((n * d, n))
+        Vector((-0.8, 0.6, 0.45)), Vector((0.7, 0.55, -0.6)), Vector((-0.5, -0.7, 0.5))]
 
 # ---------------------------------------------------------------- melon pieces
 bm = bmesh.new()
@@ -274,20 +275,40 @@ def half(src, co, no, keep_pos):
             f.smooth = False; f.material_index = 1
     return h
 
-pieces = [bm]
-for co, no in planes:
-    nxt = []
-    for pc in pieces:
-        for side in (True, False):
-            h = half(pc, co, no, side)
+def crosses(pc, co, no):
+    d = [(v.co - co).dot(no) for v in pc.verts]
+    return min(d) < -0.01 and max(d) > 0.01
+
+def centroid(pc):
+    return sum((v.co for v in pc.verts), Vector()) / len(pc.verts)
+
+# each piece carries the side (+1/-1) it ended up on for every cut that split it,
+# which is what opens the incisions later
+pieces = [(bm, {})]
+for i in range(args.cuts):
+    if i < FULL_CUTS:
+        n = (base[i] if i < len(base) else rand_unit()).normalized()
+        co = n * random.uniform(-0.18, 0.18)
+        targets = [p for p in pieces if crosses(p[0], co, n)]
+    else:
+        # a plane through the biggest remaining chunk, splitting up to 3 big pieces it crosses
+        pieces.sort(key=lambda p: -p[0].calc_volume())
+        n = rand_unit()
+        co = centroid(pieces[0][0]) + rand_unit() * 0.03
+        targets = [p for p in pieces if crosses(p[0], co, n)][:3]
+    planes.append((co, n))
+    for p in targets:
+        pieces.remove(p)
+        for keep_pos in (True, False):
+            h = half(p[0], co, n, keep_pos)
             if h is not None:
-                nxt.append(h)
-        pc.free()
-    pieces = nxt
+                pieces.append((h, {**p[1], i: 1.0 if keep_pos else -1.0}))
+        p[0].free()
 print("pieces:", len(pieces))
+piece_sides = {}
 
 piece_objs = []
-for i, pb in enumerate(pieces):
+for i, (pb, sides) in enumerate(pieces):
     bmesh.ops.recalc_face_normals(pb, faces=pb.faces[:])
     cen = sum((v.co for v in pb.verts), Vector()) / len(pb.verts)
     me = bpy.data.meshes.new(f"P{i}")
@@ -299,10 +320,11 @@ for i, pb in enumerate(pieces):
     me.materials.append(rind); me.materials.append(flesh)
     o = bpy.data.objects.new(f"Piece{i}", me); link(o)
     o["off"] = cen
+    piece_sides[o.name] = sides
     piece_objs.append(o)
 
 # ---------------------------------------------------------------- throw / hover
-THROW_FROM = Vector((0.6, -12.5, 1.2))    # behind the camera, low and slightly right
+THROW_FROM = Vector((0.6 * args.side, -12.5, 1.2))    # behind the camera, low and slightly right
 TUMBLE_AXIS = Vector((1.0, 0.25, 0.3)).normalized()
 
 def melon_pose(f):
@@ -318,17 +340,14 @@ def melon_pose(f):
         ang = 4.0 + 0.9 * dt
     return Matrix.Translation(pos) @ Matrix.Rotation(ang, 4, TUMBLE_AXIS)
 
-GAP = 0.034   # width each incision opens to
-
-def side(o, i):
-    co, n = planes[i]
-    return 1.0 if (Vector(o["off"]) - co).dot(n) > 0 else -1.0
+GAP = 0.034 if args.cuts <= 10 else 0.022   # width each incision opens to
 
 def incision_offset(o, f):
     off = Vector()
-    for i, s in enumerate(CUT_FRAMES):
+    for i, sgn in piece_sides[o.name].items():
+        s = CUT_FRAMES[i]
         k = min(max((f - (s + 1)) / 2.0, 0.0), 1.0)   # opens just after the blade passes
-        off += planes[i][1] * (side(o, i) * GAP * 0.5 * k)
+        off += planes[i][1] * (sgn * GAP * 0.5 * k)
     return off
 
 for f in range(1, RELEASE + 1):
@@ -355,6 +374,7 @@ kme = bpy.data.meshes.new("Blade"); bm.to_mesh(kme); bm.free()
 kme.materials.append(steel)
 knife = bpy.data.objects.new("Knife", kme); link(knife)
 knife.rotation_mode = "QUATERNION"
+knife.cycles.use_motion_blur = CUT_LEN >= 3   # fast flurries would smear between cuts
 bpy.ops.mesh.primitive_cylinder_add(radius=0.08, depth=0.8, location=(1.85, -0.12, 0), rotation=(0, math.pi / 2, 0))
 hnd = bpy.context.object; hnd.data.materials.append(handle_mat); hnd.parent = knife
 bv = hnd.modifiers.new("b", "BEVEL"); bv.width = 0.03; bv.segments = 3
@@ -372,7 +392,7 @@ for f in range(1, RELEASE + 2):
         co, n = planes[i]
         u, v = basis(n)
         v = v * slash_dir[i]
-        t = (f - s) / (CUT_LEN - 1)
+        t = (f - s) / 2 if CUT_LEN == 3 else (f - s + 0.5) / CUT_LEN
         p = co + v * (-2.3 + 4.6 * t)
         rot = Matrix((u, v, u.cross(v))).transposed().to_4x4()
         knife.matrix_world = M @ Matrix.Translation(p) @ rot
@@ -473,11 +493,12 @@ for i, (co, n) in enumerate(planes):
         em.matrix_world = melon_pose(f) @ Matrix.Translation(co) @ rot
         em.keyframe_insert("location", frame=f); em.keyframe_insert("rotation_euler", frame=f)
     s = CUT_FRAMES[i]
-    emitter(em, juice, 90, s + 1, s + 3, 2.4, 0.9, 0.018, life=60)
-    emitter(em, spray, 60, s + 1, s + 2, 3.2, 1.2, 0.009, life=30)
+    scale = min(1.0, 8 / args.cuts)
+    emitter(em, juice, max(15, int(90 * scale)), s + 1, s + 3, 2.4, 0.9, 0.018, life=60)
+    emitter(em, spray, max(10, int(60 * scale)), s + 1, s + 2, 3.2, 1.2, 0.009, life=30)
 
 # fine mist coming off the blade itself
-emitter(knife, spray, 40 * len(planes), CUT_START, CUT_FRAMES[-1] + CUT_LEN, 0.5, 1.2, 0.01, life=20)
+emitter(knife, spray, min(800, 40 * len(planes)), CUT_START, CUT_FRAMES[-1] + CUT_LEN, 0.5, 1.2, 0.01, life=20)
 
 for o in (cyc, board):
     o.modifiers.new("col", "COLLISION")
@@ -488,7 +509,12 @@ r.engine = "CYCLES"
 scn.cycles.device = "CPU"
 scn.cycles.samples = args.samples
 scn.cycles.use_denoising = True
-scn.cycles.max_bounces = 6
+scn.cycles.max_bounces = 4
+scn.cycles.diffuse_bounces = 2; scn.cycles.glossy_bounces = 2
+scn.cycles.transmission_bounces = 2; scn.cycles.transparent_max_bounces = 4
+scn.cycles.caustics_reflective = False; scn.cycles.caustics_refractive = False
+scn.cycles.denoising_prefilter = "FAST"
+r.use_persistent_data = True
 r.resolution_x, r.resolution_y = args.res
 r.resolution_percentage = 100
 r.use_motion_blur = True
@@ -513,6 +539,7 @@ if args.dump:
     for f in range(1, END + 1):
         throw.append(list(melon_pose(min(f, RELEASE)).translation))
     json.dump({"fps": FPS, "end": END, "arrive": ARRIVE, "cuts": CUT_FRAMES, "cut_len": CUT_LEN,
+               "side": args.side,
                "release": RELEASE, "cam": list(base_loc), "melon": throw, "pieces": track},
               open(args.dump, "w"))
     sys.exit(0)
@@ -528,6 +555,7 @@ else:
     # render frame by frame, stepping sequentially so the rigid-body sim is evaluated
     for f in range(1, END + 1):
         scn.frame_set(f)
-        if f >= args.from_frame:
-            r.filepath = os.path.join(os.path.abspath(args.out), f"{f:04d}.png")
+        out_png = os.path.join(os.path.abspath(args.out), f"{f:04d}.png")
+        if f >= args.from_frame and not os.path.exists(out_png):   # resumable
+            r.filepath = out_png
             bpy.ops.render.render(write_still=True)
