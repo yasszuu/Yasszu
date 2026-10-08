@@ -71,27 +71,89 @@ def sun(elev, rot, energy, color):
     l = bpy.data.lights.new("sun", "SUN"); l.energy = energy; l.color = color; l.angle = math.radians(2)
     o = bpy.data.objects.new("sun", l); col.objects.link(o); o.rotation_euler = Euler((math.radians(90 - elev), 0, math.radians(rot - 180)), "XYZ")
 
+def uw_world(top, bottom, p0=0.3, p1=0.75):
+    world = bpy.data.worlds.new("w"); sc.world = world; world.use_nodes = True; wn = world.node_tree
+    tc = wn.nodes.new("ShaderNodeTexCoord"); sp_ = wn.nodes.new("ShaderNodeSeparateXYZ"); rm = wn.nodes.new("ShaderNodeValToRGB")
+    rm.color_ramp.elements[0].position = p0; rm.color_ramp.elements[0].color = (*bottom, 1)
+    rm.color_ramp.elements[1].position = p1; rm.color_ramp.elements[1].color = (*top, 1)
+    mapr = wn.nodes.new("ShaderNodeMapRange"); mapr.inputs["From Min"].default_value = -1; mapr.inputs["From Max"].default_value = 1
+    wn.links.new(tc.outputs["Generated"], sp_.inputs[0]); wn.links.new(sp_.outputs["Z"], mapr.inputs["Value"]); wn.links.new(mapr.outputs["Result"], rm.inputs["Fac"])
+    wn.links.new(rm.outputs["Color"], wn.nodes["Background"].inputs["Color"]); wn.nodes["Background"].inputs["Strength"].default_value = 1.0
+    return world
+def glow_mat(name, color, strength, opacity):
+    m = bpy.data.materials.new(name); m.use_nodes = True; n = m.node_tree; n.nodes.remove(n.nodes["Principled BSDF"])
+    em = n.nodes.new("ShaderNodeEmission"); em.inputs["Color"].default_value = (*color, 1); em.inputs["Strength"].default_value = strength
+    tr = n.nodes.new("ShaderNodeBsdfTransparent"); mx = n.nodes.new("ShaderNodeMixShader"); mx.inputs[0].default_value = opacity
+    n.links.new(tr.outputs[0], mx.inputs[1]); n.links.new(em.outputs[0], mx.inputs[2]); n.links.new(mx.outputs[0], n.nodes["Material Output"].inputs["Surface"])
+    return m, em
+def ray_mat(color, strength):
+    RAY = bpy.data.materials.new("ray"); RAY.use_nodes = True; rn = RAY.node_tree; rn.nodes.remove(rn.nodes["Principled BSDF"])
+    em = rn.nodes.new("ShaderNodeEmission"); em.inputs["Color"].default_value = (*color, 1); em.inputs["Strength"].default_value = strength
+    tr = rn.nodes.new("ShaderNodeBsdfTransparent"); mx = rn.nodes.new("ShaderNodeMixShader"); tcr = rn.nodes.new("ShaderNodeTexCoord")
+    sx = rn.nodes.new("ShaderNodeSeparateXYZ"); gr = rn.nodes.new("ShaderNodeMapRange"); gr.inputs["To Min"].default_value = 1; gr.inputs["To Max"].default_value = 0.72
+    rn.links.new(tcr.outputs["Generated"], sx.inputs[0]); rn.links.new(sx.outputs["Z"], gr.inputs["Value"]); rn.links.new(gr.outputs["Result"], mx.inputs[0])
+    rn.links.new(em.outputs[0], mx.inputs[1]); rn.links.new(tr.outputs[0], mx.inputs[2]); rn.links.new(mx.outputs[0], rn.nodes["Material Output"].inputs["Surface"])
+    return RAY, em
+def rays(n, xr, yr, z, length, m, tilt=0.25, w=(0.05, 0.18)):
+    for k in range(n):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(rng.uniform(*xr), rng.uniform(*yr), z))
+        rb = bpy.context.object; rb.scale = (rng.uniform(*w), rng.uniform(*w), length); rb.rotation_euler = (rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt), 0)
+        rb.data.materials.append(m); rb.visible_shadow = False
+def specks(n, xr, yr, zr, rr, m):
+    vv, ff = [], []
+    for k in range(n):
+        c = np.array([rng.uniform(*xr), rng.uniform(*yr), rng.uniform(*zr)]); r = rng.uniform(*rr); b0 = len(vv)
+        for q in ([1, 1, 1], [-1, -1, 1], [-1, 1, -1], [1, -1, -1]): vv.append(tuple(c + r*np.array(q)))
+        ff += [[b0, b0+1, b0+2], [b0, b0+3, b0+1], [b0, b0+2, b0+3], [b0+1, b0+3, b0+2]]
+    return obj_from("specks", vv, ff, m, smooth=False)
+def strands(name, lines, bevel, m):
+    c = bpy.data.curves.new(name, "CURVE"); c.dimensions = "3D"; c.bevel_depth = bevel; c.bevel_resolution = 2
+    for pts in lines:
+        sp_ = c.splines.new("POLY"); sp_.points.add(len(pts) - 1)
+        for i, p in enumerate(pts): sp_.points[i].co = (*p, 1); sp_.points[i].radius = 1 - 0.7*i/len(pts)
+    o = bpy.data.objects.new(name, c); col.objects.link(o); c.materials.append(m); return o
+FISHES = []
 if SHOT == "sargasses":
-    # mer tropicale calme + nappes d'algues dorées jusqu'à l'horizon
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 40, 0)); w = bpy.context.object; w.scale = (300, 300, 1)
-    wm = mat("sea", (0.0, 0.05, 0.12), 0.06); nt = wm.node_tree; b = nt.nodes["Principled BSDF"]
-    tx = nt.nodes.new("ShaderNodeTexNoise"); tx.inputs["Scale"].default_value = 18; tx.inputs["Detail"].default_value = 3
-    bp = nt.nodes.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.1
-    nt.links.new(tx.outputs["Fac"], bp.inputs["Height"]); nt.links.new(bp.outputs["Normal"], b.inputs["Normal"]); w.data.materials.append(wm)
-    ALG = mat("algae", (0.42, 0.25, 0.03), 0.5, sss=0.2)
-    specs = []
-    for m_ in range(110):
-        cx, cy = (rng.uniform(-4, 4), rng.uniform(0.5, 12)) if m_ < 45 else (rng.uniform(-14, 14), rng.uniform(1.5, 60)); n = rng.integers(90, 220); L = rng.uniform(1.0, 4.0); ang = rng.uniform(-0.4, 0.4)
-        if abs(cx) < 0.55 and cy < 9: cx += 1.2*np.sign(cx + 1e-3)            # chenal libre pour l'anguille
-        for k in range(n):
-            u, v = rng.normal(0, L/2.5), rng.normal(0, 0.35)
-            x = cx + u*math.sin(ang) + v*math.cos(ang); y = cy + u*math.cos(ang) - v*math.sin(ang)
-            specs.append((x, y, 0.02, rng.uniform(0.035, 0.08), 0.6, int(rng.integers(1e6))))
-    fast_blobs("algae", specs, ALG, sub=2, jit=0.15)
-    world = sky(25, 160, 1.2); sun(25, 160, 3.0, (1.0, 0.95, 0.85)); EXPO = -1.7
-    def eel_at(t): return Vector((0.15*math.sin(t*0.7), 0.6 + 1.1*t, 0.012)), 0.0
+    # SOUS la « forêt flottante » : surface miroitante, rameaux d'algues dorées avec flotteurs, rayons, banc de poissons
+    world = uw_world((0.10, 0.48, 0.58), (0.0, 0.03, 0.07), 0.25, 0.8)
+    l = bpy.data.lights.new("top", "SUN"); l.energy = 2.2; l.color = (0.85, 0.95, 1.0); lo = bpy.data.objects.new("top", l); col.objects.link(lo); lo.rotation_euler = (0.2, 0.1, 0)
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 10, 0)); srf = bpy.context.object; srf.scale = (60, 60, 1)
+    SM = bpy.data.materials.new("surface"); SM.use_nodes = True; sn = SM.node_tree; sn.nodes.remove(sn.nodes["Principled BSDF"])
+    se = sn.nodes.new("ShaderNodeEmission"); se.inputs["Color"].default_value = (0.55, 0.9, 1.0, 1)
+    vo = sn.nodes.new("ShaderNodeTexVoronoi"); vo.feature = "SMOOTH_F1"; vo.inputs["Scale"].default_value = 3.5
+    sm_ = sn.nodes.new("ShaderNodeMapRange"); sm_.inputs["To Min"].default_value = 1.2; sm_.inputs["To Max"].default_value = 3.2
+    sn.links.new(vo.outputs["Distance"], sm_.inputs["Value"]); sn.links.new(sm_.outputs["Result"], se.inputs["Strength"]); sn.links.new(se.outputs[0], sn.nodes["Material Output"].inputs["Surface"])
+    srf.data.materials.append(SM); srf.visible_shadow = False
+    ALG = mat("algae", (0.62, 0.40, 0.05), 0.5, sss=0.35); BLAD = mat("bladder", (0.75, 0.52, 0.10), 0.35, sss=0.4)
+    lines, leaves, blads = [], [], []
+    for cl in range(70):
+        cx, cy = rng.uniform(-4.5, 4.5), rng.uniform(-1, 22)
+        for fr in range(int(rng.integers(10, 22))):
+            x, y, z = cx + rng.normal(0, 0.28), cy + rng.normal(0, 0.28), -0.01; L = rng.uniform(0.25, 0.85); pts = []
+            ph = rng.uniform(0, 6)
+            for i in range(9):
+                f = i/8; pts.append((x + 0.06*math.sin(ph + f*5), y + 0.06*math.cos(ph + f*4), z - L*f))
+            lines.append(pts)
+            for i in range(1, 9):
+                px, py, pz = pts[i]
+                if rng.random() < 0.8: leaves.append((px + rng.normal(0, 0.03), py + rng.normal(0, 0.03), pz, rng.uniform(0.018, 0.035), 0.3, int(rng.integers(1e6))))
+                if rng.random() < 0.45: blads.append((px + rng.normal(0, 0.025), py + rng.normal(0, 0.025), pz, rng.uniform(0.008, 0.016), 1.0, int(rng.integers(1e6))))
+    strands("fronds", lines, 0.006, ALG); fast_blobs("leaves", leaves, ALG, sub=1, jit=0.25); fast_blobs("bladders", blads, BLAD, sub=1, jit=0.05)
+    RAYM, RAYE = ray_mat((0.5, 0.85, 1.0), 0.9); rays(12, (-3, 3), (2, 14), -3, 8, RAYM, tilt=0.18, w=(0.03, 0.12))
+    specks(1200, (-3, 3), (-1, 14), (-4, -0.05), (0.002, 0.005), mat("plk", (0.8, 0.9, 1), 0.5, emit=(0.7, 0.9, 1), emit_s=0.8))
+    # banc de petits poissons (un seul objet, déplacé en bloc)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=5, radius=1); tpl = bpy.context.object
+    tv = np.array([v.co[:] for v in tpl.data.vertices]); tf = [list(p.vertices) for p in tpl.data.polygons]; bpy.data.objects.remove(tpl, do_unlink=True)
+    V, F = [], []
+    for k in range(180):
+        c = np.array([rng.normal(0, 0.45), rng.normal(0, 0.9), rng.normal(0, 0.18)]); v = tv*np.array([0.012, 0.045, 0.018])
+        b0 = len(V); V.extend((v + c).tolist()); F.extend([[b0 + i for i in f] for f in tf])
+    FISH = mat("fish", (0.75, 0.82, 0.88), 0.25); FISH.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.8
+    school = obj_from("school", V, F, FISH); FISHES.append(school)
+    EXPO = -0.9
+    def eel_at(t): return Vector((0.2*math.sin(t*0.7), 0.6 + 0.95*t, -0.95)), 0.0
     def cam_at(t, p):
-        k = t/DUR; return p + Vector((-1.0 + 1.4*k, -2.4, 0.95 - 0.15*k)), p + Vector((0.1, 2.2, -0.2))
+        k = t/DUR; m = p + Vector((0, -0.6, 0)); return m + Vector((1.7 - 0.5*k, -1.9 + 0.3*k, 0.75)), m + Vector((-0.1, 0.5, 0.05))
 elif SHOT == "riviere":
     # rivière en maquette : berges vertes, galets, eau claire ; l'anguille remonte le courant
     NX, NY = 220, 360; xs = np.linspace(-6, 6, NX); ys = np.linspace(-4, 30, NY); XX, YY = np.meshgrid(xs, ys)
@@ -159,6 +221,24 @@ else:
         bpy.ops.mesh.primitive_cube_add(size=1, location=(rng.uniform(-1.8, 1.8), rng.uniform(1.5, 7), -2))
         rb = bpy.context.object; rb.scale = (rng.uniform(0.05, 0.18), rng.uniform(0.05, 0.18), 14); rb.rotation_euler = (rng.uniform(-0.25, 0.25), rng.uniform(-0.25, 0.25), 0)
         rb.data.materials.append(RAY); rb.visible_shadow = False
+    JELLY = []
+    for k in range(12):
+        col_ = [(0.3, 0.9, 1.0), (0.7, 0.4, 1.0), (0.3, 1.0, 0.7)][k % 3]
+        jm, _ = glow_mat(f"jelly{k}", col_, 3.5, 0.32)
+        jy = 0.3 + k*0.6 + rng.uniform(-0.2, 0.2); jz = -0.93*jy + rng.uniform(-0.5, 0.5); jx = rng.choice([-1, 1])*rng.uniform(0.6, 1.4)
+        r = rng.uniform(0.06, 0.12)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=r, location=(jx, jy, jz)); bell = bpy.context.object
+        bm = bmesh.new(); bm.from_mesh(bell.data)
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -0.15*r], context="VERTS")
+        for v in bm.verts:
+            if v.co.z < 0.25*r: v.co.x *= 1.15; v.co.y *= 1.15                 # bord de la cloche évasé
+        bm.to_mesh(bell.data); bm.free()
+        for p in bell.data.polygons: p.use_smooth = True
+        bell.data.materials.append(jm)
+        lines = [[(jx + r*0.6*math.cos(a) + 0.03*math.sin(i*0.9 + a), jy + r*0.6*math.sin(a), jz - i*r*0.6) for i in range(10)] for a in np.linspace(0, 6.28, 7)[:-1]]
+        tm, _ = glow_mat(f"tent{k}", col_, 2.5, 0.45); tn = strands(f"tent{k}", lines, 0.0025, tm)
+        JELLY.append((bell, tn, rng.uniform(0, 6)))
+    TOPL = lo
     EXPO = -0.4
     def eel_at(t): return Vector((0.2*math.sin(t*0.8), 1.4*t, -1.3*t)), -0.7
     def cam_at(t, p):
@@ -174,6 +254,13 @@ def place(t):
     eel.location = p; eel.rotation_euler = (pitch*0.9 if SHOT == "abysse" else 0, 0, math.atan2(-d.x, d.y))
     c, tg = cam_at(t, p); cam.location = c; cam.rotation_euler = (c - tg).to_track_quat("Z", "Y").to_euler()
     if SHOT == "riviere": FLOW.inputs["Location"].default_value = (0, -0.6*t, 0)
+    if SHOT == "sargasses":
+        for f in FISHES: f.location = (1.4 - 0.25*t, 6.5 - 0.5*t, -0.55 + 0.05*math.sin(t*2)); f.rotation_euler = (0, 0, 0.15*math.sin(t*0.8))
+    if SHOT == "abysse":
+        k = t/DUR; sc.world.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.0 - 0.65*k
+        TOPL.data.energy = 0.8*(1 - 0.7*k)
+        for bell, tn, ph in JELLY:
+            sq = 1 + 0.12*math.sin(t*3 + ph); bell.scale = (sq, sq, 0.55/sq)
 
 # ------------------------------------------------------------------ rendu
 sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"; sc.cycles.samples = SAMPLES
@@ -182,10 +269,10 @@ sc.cycles.max_bounces = 6; sc.cycles.diffuse_bounces = 2; sc.cycles.glossy_bounc
 sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = 1080, 1920, SCALE
 sc.view_settings.view_transform = "Standard"; sc.view_settings.look = "None"; sc.view_settings.exposure = float(os.environ.get("EXPO", EXPO))
 sc.render.image_settings.file_format = "JPEG"; sc.render.image_settings.quality = 92
-if SHOT == "abysse":
-    sc.view_layers[0].use_pass_mist = True; world.mist_settings.start = 0.5; world.mist_settings.depth = 9; world.mist_settings.falloff = "LINEAR"
+if SHOT in ("abysse", "sargasses"):
+    sc.view_layers[0].use_pass_mist = True; world.mist_settings.start = 0.5; world.mist_settings.depth = 9 if SHOT == "abysse" else 12; world.mist_settings.falloff = "LINEAR"
     sc.use_nodes = True; ct = sc.node_tree; rl = ct.nodes["Render Layers"]; comp = ct.nodes["Composite"]
-    mx = ct.nodes.new("CompositorNodeMixRGB"); mx.inputs[2].default_value = (0.005, 0.04, 0.09, 1)
+    mx = ct.nodes.new("CompositorNodeMixRGB"); mx.inputs[2].default_value = (0.005, 0.04, 0.09, 1) if SHOT == "abysse" else (0.02, 0.16, 0.22, 1)
     ct.links.new(rl.outputs["Mist"], mx.inputs[0]); ct.links.new(rl.outputs["Image"], mx.inputs[1]); ct.links.new(mx.outputs[0], comp.inputs["Image"])
 os.makedirs(out, exist_ok=True)
 FR = [int(x) for x in os.environ["FRAMES"].split(",")] if os.environ.get("FRAMES") else range(f0, f1)
