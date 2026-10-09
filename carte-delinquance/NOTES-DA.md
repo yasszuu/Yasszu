@@ -31,3 +31,8 @@
 - **Plans 3D Blender (style « maquette » validé, démo `demo-3d-arctique.mp4`)** : 2-3 plans par vidéo aux moments forts ; formes simples low-poly, couleurs franches, animal = forme 3D rouge vif sans détail ; caméra qui suit le sujet, profondeur de champ. Éviter la surexposition (lumière un peu plus douce que la démo).
 - **Pas de Terre entière / d'espace visible** : rester à l'échelle pays/continent (globe plus grand que l'écran), beaucoup de mouvement
   (caméra qui suit l'animal, balayages, zooms). Exception rare : illustrer un tour du monde ou la distance Terre-Lune.
+- **Pas d'image / de sticker par-dessus les plans 3D** : les PNG fournis servent uniquement sur la carte ; dans la 3D, l'animal = forme rouge.
+- **Aucun texte penché** : tous les textes (sous-titres, textes cinétiques, étiquettes) bien droits.
+- **Pas de textes encadrés (« tampons »)** : une date ou un fait marquant = texte droit, même police (Montserrat), sans cadre.
+- **Accroche dynamique, jamais statique** : zooms/punchs de caméra, secousses sur les mots forts, entrées en mouvement des PNG dès la 1re seconde.
+- **Zone sûre TikTok** : aucune image ni texte important dans le bas de l'écran (~les 480 px du bas : pseudo, description) ni collé au bord droit (boutons) ; PNG centrés au milieu de l'écran.

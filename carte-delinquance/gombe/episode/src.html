@@ -32,8 +32,14 @@ const my = lat => { const r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) 
 const view = (lon, lat, z) => [mx(lon), my(lat), W/2**z];
 const GV = (z, lat=-4.66, lon=29.645) => view(lon, lat, z);
 const KEYS = [
-  [0.0,            view(20, 1, 3.9)],                 // Afrique entière (zoom max d'ouverture)
-  [S("s03") - 0.2, view(21.5, -0.5, 4.05)],
+  [0.0,            view(26, 3, 3.72)],                 // ouverture : poussée rapide sur l'Afrique (échelle continent)
+  [1.0,            view(28.5, -1.0, 3.98)],
+  [M("s01", 0.6),  view(29, -1.8, 4.04)],
+  [M("s01", 0.68), view(29.4, -3.0, 4.28)],            // punch sur « 4 ans plus tard »
+  [S("s02"),       view(29.5, -3.4, 4.32)],
+  [M("s02", 0.48), view(29.0, -2.4, 4.12)],
+  [M("s02", 0.56), view(29.6, -3.8, 4.42)],            // punch sur « 1re guerre »
+  [S("s03") - 0.2, view(29.8, -4.2, 4.48)],
   [Ed("s03") + 0.3, view(34.2, -6.3, 6.15)],          // Tanzanie
   [M("s04", 0.3),  view(33.4, -6.0, 6.35)],
   [M("s04", 0.97), GV(12.25)],                        // Gombe
@@ -113,7 +119,7 @@ function richLine(segs, x, y, o={}){
   segs.forEach((s, i) => { txt(s.t, cx, y, {...o, align:"left", color:s.c}); cx += widths[i]*scale; });
 }
 function kin(str, x, y, t, t0, o={}){
-  const {size=120, color="#fff", out=1e9, step=0.04, rot=-0.03} = o;
+  const {size=120, color="#fff", out=1e9, step=0.04, rot=0} = o;
   const outK = prog(t, out, out + 0.3); if (t < t0 || outK >= 1) return;
   ctx.save(); ctx.globalAlpha = 1 - outK; ctx.translate(x, y - 40*outK); ctx.rotate(rot); ctx.font = `900 ${size}px M`;
   const chars = [...str], ws = chars.map(c => ctx.measureText(c).width), tot = d3.sum(ws);
@@ -137,14 +143,12 @@ function pulse(x, y, t, a, color=RED, max=90){
   for (let k = 0; k < 2; k++){ const ph = (t*0.8 + k*0.5) % 1;
     ctx.save(); ctx.globalAlpha = (1 - ph)*a; ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, 14 + ph*max, 0, 7); ctx.stroke(); ctx.restore(); }
 }
-function stamp(lines, y, t, t0, out, color=RED){
-  const sa = prog(t, t0, t0 + 0.18), sOut = 1 - prog(t, out, out + 0.3);
+function fact(lines, y, t, t0, out, color=RED){             // fait marquant : texte droit, sans cadre
+  const sa = prog(t, t0, t0 + 0.22), sOut = 1 - prog(t, out, out + 0.3);
   if (sa <= 0 || sOut <= 0) return;
-  const sc = lerp(2.4, 1, d3.easeQuadIn(sa));
-  ctx.save(); ctx.translate(W/2, y); ctx.rotate(-0.08); ctx.scale(sc, sc); ctx.globalAlpha = sa*sOut;
-  ctx.strokeStyle = color; ctx.lineWidth = 9; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 16;
-  ctx.strokeRect(-400, -105, 800, lines.length > 1 ? 215 : 170); ctx.restore();
-  lines.forEach((l, i) => txt(l, W/2, y + (i === 0 ? 30 : 100)*sc + (lines.length > 1 ? -10 : 10), {size:i === 0 ? 84 : 52, color, scale:sc, rot:-0.08, alpha:sa*sOut, stroke:10}));
+  const sc = lerp(1.7, 1, EO(sa));
+  txt(lines[0], W/2, y, {size:92, color, scale:sc, alpha:sa*sOut, stroke:14, glow:color === RED ? "rgba(255,59,48,.45)" : "rgba(255,214,10,.45)"});
+  if (lines[1]) txt(lines[1], W/2, y + 78, {size:56, color:"#fff", scale:lerp(1.4, 1, EO(prog(t, t0 + 0.12, t0 + 0.34))), alpha:prog(t, t0 + 0.12, t0 + 0.3)*sOut, stroke:11});
 }
 function arrow(pts, k, alpha, color=Y1, w=10){
   if (k <= 0 || alpha <= 0) return;
@@ -167,12 +171,14 @@ function outlined(img, maxH=900, r=10){
 }
 function sticker(key, cx, by, h, t, tin, tout, o={}){
   const img = IMG[key]; if (!img) return;
-  const a = EBig(prog(t, tin, tin + 0.5)), out = E(prog(t, tout, tout + 0.4));
-  if (a <= 0 || out >= 1) return;
-  const {flip=false, rot=-0.03, alpha=1, shake=0} = o;
-  const w = h*img.width/img.height, fl = Math.sin((t - tin)*1.6)*6, sh = shake ? Math.sin(t*70)*shake : 0;
-  ctx.save(); ctx.translate(cx + sh, by + out*800 + fl); ctx.rotate(rot*(1 - a) + Math.sin((t - tin)*0.9)*0.012);
-  ctx.scale(a*(flip ? -1 : 1), a); ctx.globalAlpha = alpha;
+  const {flip=false, alpha=1, shake=0, fromX=null, slide=0.65, toX=null, toT=null, cut=false} = o;
+  if (cut && t >= tout) return;
+  const out = cut ? 0 : E(prog(t, tout, tout + 0.4)); if (t < tin || out >= 1) return;
+  let a = fromX === null ? EBig(prog(t, tin, tin + 0.45)) : 1, x = cx, bob = 0;
+  if (fromX !== null){ const k = prog(t, tin, tin + slide); x = lerp(fromX, cx, EO(k)); bob = k < 1 ? -Math.abs(Math.sin((t - tin)*11))*16 : 0; }
+  if (toX !== null && toT !== null) x = lerp(x, toX, EO(prog(t, toT, toT + 0.35)));
+  const w = h*img.width/img.height, fl = Math.sin((t - tin)*1.6)*5, sh = shake ? Math.sin(t*70)*shake*Math.exp(-(t - tin)*1.5) : 0;
+  ctx.save(); ctx.translate(x + sh, by + out*900 + fl + bob); ctx.scale(a*(flip ? -1 : 1), a); ctx.globalAlpha = alpha;
   ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
   ctx.drawImage(img, -w/2, -h, w, h); ctx.restore();
 }
@@ -216,7 +222,7 @@ function renderMap(t){
   if (op > 0){ pulse(gx, gy, t, op*EO(prog(t, 0.6, 1.1)), RED, 110); pin(gx, gy, op*EB(prog(t, 0.6, 1.0)), RED, 14);
     ctx.save(); ctx.globalAlpha = op*EO(prog(t, 0.8, 1.3)); ctx.strokeStyle = RED; ctx.lineWidth = 6; ctx.shadowColor = RED; ctx.shadowBlur = 20;
     ctx.beginPath(); ctx.arc(gx, gy, 62, -Math.PI/2, -Math.PI/2 + 6.283*EO(prog(t, 0.8, 1.6))); ctx.stroke(); ctx.restore();
-    txt("GOMBE", gx + 80, gy + 18, {size:48, align:"left", alpha:op*EO(prog(t, 1.0, 1.4)), stroke:10}); }
+    txt("GOMBE", gx, gy - 82, {size:48, align:"center", alpha:op*EO(prog(t, 1.0, 1.4)), stroke:10}); }
   // Tanzanie
   const tz = prog(t, S("s03") + 0.6, Ed("s03") + 0.2)*(1 - prog(CAM.z, 8.5, 10)), tzl = tz*(1 - prog(t, M("s04", 0.2), M("s04", 0.32)));
   if (tz > 0){
@@ -255,8 +261,8 @@ function renderMap(t){
     ctx.shadowColor = war > 0 ? RED : "rgba(0,0,0,.8)"; ctx.shadowBlur = 12 + 30*glow; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(lerp(x0, x1, EO(fr)), lerp(y0, y1, EO(fr))); ctx.stroke(); ctx.restore(); }
   // étiquettes des clans (sur le lac, alignées à droite)
   const lab = (s, lat, col, a, sc=1) => { if (a <= 0) return; const [x, y] = P(shoreLon(lat) - 0.006, lat); txt(s, x, y + 18, {size:54, color:col, align:"right", stroke:11, alpha:a, scale:sc}); };
-  lab("KASAKELA", -4.6, Y1, kasIn*(1 - prog(t, M("s11", 0.5), M("s11", 0.6))) + (t > S("s17") ? EO(prog(t, M("s17", 0.1), M("s17", 0.3)))*(1 - prog(t, M("s18", 0.7), M("s18", 0.8))) : 0));
-  lab("KAHAMA", -4.735, RED, EO(prog(t, M("s08", 0.85), Ed("s08")))*(1 - conquer)*(1 - prog(t, M("s11", 0.5), M("s11", 0.6))) + EO(prog(t, S("s16"), S("s16") + 0.3))*(1 - prog(t, Ed("s16"), Ed("s16") + 0.3)));
+  lab("KASAKELA", -4.6, Y1, kasIn*(1 - prog(t, M("s11", 0.0), M("s11", 0.06))) + (t > S("s17") ? EO(prog(t, M("s17", 0.1), M("s17", 0.3)))*(1 - prog(t, M("s18", 0.7), M("s18", 0.8))) : 0));
+  lab("KAHAMA", -4.735, RED, EO(prog(t, M("s08", 0.85), Ed("s08")))*(1 - conquer)*(1 - prog(t, M("s11", 0.0), M("s11", 0.06))) + EO(prog(t, S("s16"), S("s16") + 0.3))*(1 - prog(t, Ed("s16"), Ed("s16") + 0.3)));
   lab("KALANDE", -4.85, VIO, EO(prog(t, M("s18", 0.45), M("s18", 0.6))));
   // ---- membres : points (♂ gros, ♀ petits)
   const memA = EO(prog(t, S("s08") - 0.1, S("s08") + 0.3))*(1 - prog(t, M("s17", 0.3), M("s17", 0.5)));
@@ -321,19 +327,25 @@ function yearAt(t){ let v = null;
   return v; }
 
 // ------------------------------------------------------------------ rendu
+const HITS = () => [[M("s01", 0.62), 0.07, 0], [M("s01", 0.78), 0.06, 16], [M("s02", 0.25), 0.04, 0], [M("s02", 0.5), 0.07, 16], [S("s03"), 0.06, 8]];
 function render(t){
   const ca = clipAlpha(t);
+  let p = 0, sx = 0, sy = 0;
+  for (const [ti, amp, sh] of HITS()) if (t >= ti){ const d = t - ti; p += amp*Math.exp(-d*7); sx += sh*Math.exp(-d*6)*Math.sin(d*47); sy += sh*0.7*Math.exp(-d*6)*Math.cos(d*39); }
+  const sc = 1 + p + 0.03*(1 - prog(t, S("s03"), S("s04")));          // marge pour que la secousse ne montre jamais de bord
+  ctx.save(); ctx.translate(W/2 + sx, H/2 + sy); ctx.scale(sc, sc); ctx.translate(-W/2, -H/2);
   if (ca < 0.999) renderMap(t); else { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); }
   drawClip(t);
   overlay(t, ca);
+  ctx.restore();
 }
 function overlay(t, pa){
   const mapA = 1 - pa;
   // ---- accroche
-  sticker("calme", 330, 1720, 560, t, 0.35, M("s01", 0.58), {flip:true, alpha:mapA});
-  sticker("calme", 760, 1720, 560, t, 0.55, M("s01", 0.58), {alpha:mapA});
-  sticker("enerve", 330, 1730, 600, t, M("s01", 0.6), S("s02") + 1.2, {shake:6, alpha:mapA});
-  sticker("enerve", 760, 1730, 600, t, M("s01", 0.62), S("s02") + 1.2, {flip:true, shake:6, alpha:mapA});
+  sticker("calme", 255, 1330, 420, t, 0.15, M("s01", 0.6), {flip:true, alpha:mapA, fromX:-260, slide:0.8, cut:true});
+  sticker("calme", 815, 1330, 420, t, 0.3, M("s01", 0.6), {alpha:mapA, fromX:W + 260, slide:0.8, cut:true});
+  sticker("enerve", 255, 1340, 450, t, M("s01", 0.6), S("s02") + 1.2, {shake:9, alpha:mapA, toX:300, toT:M("s01", 0.78)});
+  sticker("enerve", 815, 1340, 450, t, M("s01", 0.6), S("s02") + 1.2, {flip:true, shake:9, alpha:mapA, toX:770, toT:M("s01", 0.78)});
   const fl = Math.exp(-Math.max(0, t - M("s01", 0.62))*7)*(t > M("s01", 0.62) ? 1 : 0);
   if (fl > 0.02){ ctx.save(); ctx.fillStyle = `rgba(255,40,30,${0.35*fl})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
   kin("ENSEMBLE", W/2, 560, t, M("s01", 0.05), {size:110, out:M("s01", 0.55)});
@@ -350,16 +362,16 @@ function overlay(t, pa){
     for (let j = -2; j <= 2; j++){ const v = base + j, x = W/2 + (v - yv)*gap; if (x < -200 || x > W + 200) continue; const act = clamp(1 - Math.abs(v - yv));
       txt(String(v), x, y, {size:44 + act*40, color:act > 0.5 ? Y1 : "#fff", alpha:ya*(0.35 + 0.65*act), stroke:9, glow:act > 0.5 ? "rgba(255,214,10,.45)" : null}); } }
   // ---- Jane Goodall
-  sticker("goodall", 300, 1760, 470, t, M("s05", 0.25), M("s06", 0.95), {rot:0.03, alpha:mapA});
+  sticker("goodall", 380, 1330, 400, t, M("s05", 0.25), M("s06", 0.95), {alpha:mapA, fromX:-400});
   const ja = EO(prog(t, M("s05", 0.35), M("s05", 0.5)))*(1 - prog(t, M("s06", 0.9), Ed("s06")))*mapA;
-  if (ja > 0) txt("JANE GOODALL", 300, 1290, {size:50, alpha:ja, stroke:10});
-  sticker("goodall", W/2, 1780, 560, t, S("s19") + 0.1, S("s20") - 0.2, {rot:0.03, alpha:mapA});
+  if (ja > 0) txt("JANE GOODALL", 380, 905, {size:50, alpha:ja, stroke:10});
+  sticker("goodall", W/2 - 60, 1160, 380, t, S("s19") + 0.1, S("s20") - 0.2, {alpha:mapA});
   kin("PLUS PACIFIQUES ?", W/2, 600, t, M("s06", 0.45), {size:86, color:"#fff", out:Ed("s06") + 0.2});
   // ---- compteurs (texte simple, pas de cases)
   kin("CHAMP DE BATAILLE", W/2, 600, t, M("s10", 0.6), {size:84, color:RED, out:Ed("s10") + 0.2});
-  stamp(["7 JANVIER 1974", "LE PREMIER RAID"], 780, t, M("s11", 0.05), M("s11", 0.6), Y1);
-  if (mapA > 0.5) stamp(["1ER MEURTRE", "JAMAIS OBSERVÉ"], 780, t, M("s13", 0.15), Ed("s13") + 0.1, RED);
-  sticker("peur", 290, 1760, 440, t, M("s12", 0.05), M("s12", 0.55), {alpha:mapA, rot:0.03});
+  fact(["7 JANVIER 1974", "LE PREMIER RAID"], 700, t, M("s11", 0.05), M("s11", 0.6), Y1);
+  if (mapA > 0.5) fact(["1ER MEURTRE", "JAMAIS OBSERVÉ"], 700, t, M("s13", 0.15), Ed("s13") + 0.1, RED);
+  sticker("peur", 220, 1300, 340, t, M("s12", 0.05), M("s12", 0.55), {alpha:mapA, fromX:-300});
   // mâles de Kahama : 6 pastilles qui tombent
   const hA = EO(prog(t, S("s16") - 0.1, S("s16") + 0.3))*(1 - prog(t, M("s17", 0.2), M("s17", 0.5)))*mapA;
   if (hA > 0){ txt("MÂLES DE KAHAMA", W/2, 560, {size:46, weight:800, alpha:hA, stroke:9});
@@ -378,7 +390,7 @@ function overlay(t, pa){
     txt("chimpanzés font la guerre ?", W/2, 405, {size:66, weight:800, color:Y1, scale:oa, stroke:12});
     const na = EB(prog(t, M("s20", 0.45), M("s20", 0.55)));
     if (na > 0) richLine([{t:"DIS-LE ", c:Y1}, {t:"EN COMMENTAIRE !", c:"#fff"}], W/2, 525, {size:56, scale:na, alpha:Math.min(na, 1), stroke:12}); }
-  sticker("enerve", W/2, 1800, 620, t, S("s20") + 0.4, DUR + 1, {alpha:mapA});
+  sticker("enerve", W/2, 1340, 500, t, S("s20") + 0.4, DUR + 1, {alpha:mapA, shake:6});
   // ---- sous-titres
   let cur = null;
   for (const g of CAPS) if (g.s <= t) cur = g;
