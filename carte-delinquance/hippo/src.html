@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les Hippos d'Escobar</title>
+<style>
+@font-face{font-family:M;font-weight:600;src:url(data:font/woff2;base64,__M600__) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(data:font/woff2;base64,__M800__) format("woff2");}
+@font-face{font-family:M;font-weight:900;src:url(data:font/woff2;base64,__M900__) format("woff2");}
+:root{--bg:#02040a;--fg:#fff;--muted:#9aa4b8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#02040a}}
+:root[data-theme="dark"]{--bg:#02040a}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:M,system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#c{height:100%;max-width:100%;aspect-ratio:9/16;display:block}
+#gl{display:none}
+#ctrl{position:fixed;left:16px;bottom:16px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+#ctrl button{background:#151b27;color:var(--fg);border:1px solid #2a3346;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+body.capture #ctrl{display:none}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1080" height="1920"></canvas></div>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div id="ctrl"><button id="play">▶ Lecture (son)</button><span id="tc"></span></div>
+<script>__D3__</script>
+<script>__TOPOJSON__</script>
+<script>
+const WORLD = __WORLD__, TL = __TL__, RIVERS = __RIVERS__;
+const TEX = {world:"__TEXWORLD__", eu:"__TEXEU__"};
+const IMG_SRC = __IMGS__;
+const EU_BOX = [-83, -65, -6, 15];                     // texture régionale haute résolution : Colombie
+
+const W = 1080, H = 1920, MAPY = 1080;
+const Y1 = "#ffd60a", Y2 = "#ffe45c", ORANGE = "#ff9f1c", RED = "#ff3b30", CYAN = "#3ec9ff";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const proj = d3.geoOrthographic().clipAngle(90).translate([W/2, MAPY]).precision(0.3);
+const path = d3.geoPath(proj, ctx), measure = d3.geoPath(proj);
+const C = TL.cue, V = Object.fromEntries(TL.vo.map(v => [v.id, v]));
+const S = k => V[k].start, Ed = k => V[k].end, DUR = TL.duration, M = (k, f) => S(k) + (Ed(k) - S(k))*f;
+
+const countries = topojson.feature(WORLD, WORLD.objects.countries).features;
+const CTRY = n => countries.find(f => f.properties.name === n);
+const colombia = CTRY("Colombia"), mexico = CTRY("Mexico"), india = CTRY("India");
+const borders = topojson.mesh(WORLD, WORLD.objects.countries, (a,b) => a !== b);
+
+const IMG = {};
+const loadImg = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { IMG[k] = i; r(); }; i.src = src; });
+const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b, x));
+const prog = (t,a,b) => clamp((t-a)/(b-a));
+const lerp = (a,b,k) => a + (b-a)*k;
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EBig = d3.easeBackOut.overshoot(3);
+
+// ------------------------------------------------------------------ lieux
+const NAPOLES = [-74.73, 5.93], MEDELLIN = [-75.57, 6.25], BOGOTA = [-74.07, 4.71];
+const AFRICA = [20, 2], MEXPT = [-99.1, 19.4], INDPT = [72.6, 23.0];          // Gujarat (parc prévu)
+// Magdalena (sud → nord) puis Cauca
+const MAGDA = RIVERS.Magdalena.flat(), CAUCA = RIVERS.Cauca[0];
+MAGDA.sort((a, b) => a[1] - b[1]);
+const NAP_IDX = d3.minIndex(MAGDA, p => d3.geoDistance(p, NAPOLES));
+
+// ------------------------------------------------------------------ caméras
+function fit(feature, center, w, h){
+  proj.rotate([-center[0], -center[1]]).scale(1).translate([0,0]);
+  const [[x0,y0],[x1,y1]] = measure.bounds(feature);
+  proj.translate([W/2, MAPY]);
+  return {lon:center[0], lat:center[1], s: Math.min(w/(x1-x0), h/(y1-y0))};
+}
+const box = (a, b, c, d) => ({type:"Polygon", coordinates:[[[a,b],[a,d],[c,d],[c,b],[a,b]]]});
+const COL = fit(box(-79.2, -4.3, -66.8, 12.6), [-73.6, 4.3], W*0.9, 920);
+const NAP = {lon:-74.8, lat:5.6, s:COL.s*3.2};
+const MED = {lon:-75.3, lat:5.9, s:COL.s*2.8};
+const MAG = fit(box(-77, 5.0, -73.4, 11.3), [-75.1, 8.1], W*0.86, 940);
+const AFR0 = {lon:22, lat:3, s:2200}, GLB = {lon:-35, lat:8, s:470};
+const ATL = {lon:-28, lat:6, s:400};
+const MEXV = {lon:-86, lat:13, s:640};
+const INDV = {lon:62, lat:17, s:470};
+
+function camLerp(a, b, k, fly, ease=E){
+  const e = ease(k);
+  let s = Math.exp(lerp(Math.log(a.s), Math.log(b.s), e));
+  if (fly){ const dist = d3.geoDistance([a.lon,a.lat],[b.lon,b.lat])*180/Math.PI;
+    s *= 1 - clamp(dist/14, 0, 0.4)*Math.sin(Math.PI*e); }
+  let dl = b.lon - a.lon; if (dl > 180) dl -= 360; if (dl < -180) dl += 360;
+  return {lon:a.lon + dl*e, lat:lerp(a.lat,b.lat,e), s};
+}
+const push = (c, k) => ({...c, s:c.s*(1 + 0.05*k)});
+const ULTRA_NAP = {lon:NAPOLES[0], lat:NAPOLES[1] - 0.3, s:COL.s*3.6};      // zoom limité : l'imagerie reste nette
+const RIVPT = MAGDA[NAP_IDX + 25] || NAPOLES;
+const ULTRA_RIV = {lon:RIVPT[0], lat:RIVPT[1] - 0.3, s:COL.s*3.6};
+const MOUTH = {lon:-74.9, lat:10.3, s:COL.s*3.4}, RIVMID = {lon:-74.4, lat:7.2, s:COL.s*3.4};
+const OUT = {lon:-72, lat:4, s:COL.s*0.62};
+const SHOTS = [
+  [C.napoles[0], C.napoles[1], NAP, true],
+  [C.ultraNap[0], C.ultraNap[1], ULTRA_NAP, false],
+  [C.arc[0] - 0.4, C.arc[0] + 0.6, ATL, false],
+  [C.medellin[0], C.medellin[1], MED, true],
+  [M("h05", 0.45), M("h05", 0.6), {...MED, s:MED.s*1.35}, false],
+  [C.ultraAband[0], C.ultraAband[1], ULTRA_NAP, false],
+  [C.river[0], C.river[1], MOUTH, true],
+  [C.sweep[0], C.sweep[1], RIVMID, false],
+  [C.ultraRiv[0], C.ultraRiv[1], ULTRA_RIV, false],
+  [C.boom[0], C.boom[0] + 0.9, COL, false],
+  [C.k170 - 0.1, C.k170 + 0.3, {...COL, s:COL.s*1.12}, false],
+  [Ed("h09") + 0.1, S("h10") + 0.2, MED, true],
+  [C.ultraRiv2[0], C.ultraRiv2[1], ULTRA_RIV, false],
+  [C.invasive[0], C.invasive[1], COL, false],
+  [C.mexico[0], C.mexico[0] + 1.3, MEXV, true],
+  [C.india[0], C.india[1], INDV, false],
+  [C.back[0], C.back[1], COL, true],
+  [C.k80 - 0.1, C.k80 + 0.3, {...COL, s:COL.s*1.12}, false],
+  [C.ultraVill[0], C.ultraVill[1], ULTRA_NAP, false],
+  [C.future[0], C.future[0] + 1.0, MOUTH, true],
+  [C.future[0] + 1.0, Ed("h17") - 0.2, RIVMID, false],
+  [C.outro, C.outro + 2.0, OUT, false],
+];
+function camera(t){
+  const [i0, i1, i2] = C.intro;
+  if (t < i0) return AFR0;
+  if (t < i1){
+    const k = prog(t, i0, i1);
+    const s = Math.exp(lerp(Math.log(AFR0.s), Math.log(GLB.s), d3.easeCubicInOut(Math.min(1, k*1.3))));
+    return {lon:lerp(AFR0.lon, GLB.lon, d3.easeSinInOut(k)), lat:lerp(AFR0.lat, GLB.lat, d3.easeSinInOut(k)), s};
+  }
+  if (t < i2) return camLerp(GLB, COL, prog(t, i1, i2), false);
+  let prev = COL, tPrev = i2;
+  for (const [a, b, cam, fly] of SHOTS){
+    if (t < a) return push(prev, prog(t, tPrev, a)*0.6);
+    if (t < b) return camLerp(push(prev, 0.6), cam, prog(t, a, b), fly);
+    prev = cam; tPrev = b;
+  }
+  return push(prev, prog(t, tPrev, DUR));
+}
+function yearAt(t){
+  let seg = TL.ticker[0];
+  for (const s of TL.ticker) if (t >= s[0]) seg = s;
+  return {v: lerp(seg[2], seg[3], prog(t, seg[0], seg[1])), step: seg[4]};
+}
+const glc = document.getElementById("gl");
+const gl = glc.getContext("webgl2", {premultipliedAlpha:false, preserveDrawingBuffer:true, antialias:false});
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+uniform sampler2D uWorld, uEu;
+uniform vec3 uCam; uniform vec2 uC; uniform float uH, uShade, uSat; uniform vec4 uBox;
+out vec4 o;
+const float PI = 3.14159265359;
+void main(){
+  float px = gl_FragCoord.x, py = uH - gl_FragCoord.y;
+  float x = (px - uC.x)/uCam.z, y = (uC.y - py)/uCam.z;
+  float r2 = x*x + y*y;
+  float edge = 1.0 - smoothstep(1.0 - 2.0/uCam.z, 1.0, sqrt(r2));
+  if (r2 >= 1.0){ o = vec4(0); return; }
+  float z = sqrt(1.0 - r2), d = -uCam.y;
+  float X = z*cos(d) + y*sin(d), Z = y*cos(d) - z*sin(d);
+  float lon = mod(atan(x, X) + uCam.x + PI, 2.*PI) - PI, lat = asin(clamp(Z, -1., 1.));
+  vec2 uv = vec2((lon + PI)/(2.*PI), (PI/2. - lat)/PI), uv2 = vec2(fract(uv.x + .5), uv.y);
+  vec2 dx = dFdx(uv), dy = dFdy(uv), dx2 = dFdx(uv2), dy2 = dFdy(uv2);
+  if (abs(dx2.x) + abs(dy2.x) < abs(dx.x) + abs(dy.x)) { dx = dx2; dy = dy2; }
+  vec3 col = textureGrad(uWorld, uv, dx, dy).rgb;
+  vec2 euv = vec2((degrees(lon) - uBox.x)/(uBox.y - uBox.x), (uBox.w - degrees(lat))/(uBox.w - uBox.z));
+  float m = smoothstep(0., .03, euv.x) * smoothstep(1., .97, euv.x) * smoothstep(0., .04, euv.y) * smoothstep(1., .96, euv.y);
+  vec3 ce = textureGrad(uEu, clamp(euv, 0., 1.), dFdx(euv), dFdy(euv)).rgb;
+  col = mix(col, ce, m);
+  float l = dot(col, vec3(.299,.587,.114));
+  col = mix(vec3(l), col, 1.18*uSat);
+  col = clamp(((col - .5)*1.08 + .5)*.95, 0., 1.);
+  float light = mix(1.0, .35 + .75*pow(z, .6), uShade);
+  col = col*light + vec3(.35,.6,1.)*uShade*pow(1. - z, 3.)*.55;
+  o = vec4(col, edge);
+}`;
+function sh(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prg = gl.createProgram();
+gl.attachShader(prg, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prg, sh(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prg); gl.useProgram(prg);
+gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prg, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = n => gl.getUniformLocation(prg, n);
+function loadTex(src, unit){
+  return new Promise(res => { const img = new Image(); img.onload = () => {
+    gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img); gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const ext = gl.getExtension("EXT_texture_filter_anisotropic");
+    if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+    res(); }; img.src = src; });
+}
+gl.uniform1i(U("uWorld"), 0); gl.uniform1i(U("uEu"), 1);
+gl.uniform4f(U("uBox"), ...EU_BOX); gl.uniform1f(U("uH"), H); gl.uniform2f(U("uC"), W/2, MAPY);
+function drawGlobe(cam, shade, sat){
+  gl.viewport(0, 0, W, H); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform3f(U("uCam"), cam.lon*Math.PI/180, cam.lat*Math.PI/180, cam.s);
+  gl.uniform1f(U("uShade"), shade); gl.uniform1f(U("uSat"), sat);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ------------------------------------------------------------------ dessin : helpers
+const rnd = d3.randomLcg(11);
+const stars = d3.range(320).map(() => [rnd()*W, rnd()*H, rnd()*1.7+0.3, rnd()]);
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", align="center", alpha=1, glow=null, stroke=0, scale=1, rot=0, base="alphabetic", spacing=0} = o;
+  if (alpha <= 0.003 || scale <= 0.001) return;
+  ctx.save(); ctx.globalAlpha *= Math.min(alpha, 1); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(scale, scale);
+  ctx.font = `${weight} ${size}px M`; ctx.textAlign = align; ctx.textBaseline = base;
+  if (spacing) ctx.letterSpacing = spacing + "px";
+  if (stroke){ ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(s, 0, 0); }
+  ctx.shadowColor = glow || "rgba(0,0,0,0.9)"; ctx.shadowBlur = glow ? 28 : 16; ctx.shadowOffsetY = glow ? 0 : 3;
+  ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+function richLine(segs, x, y, o={}){
+  const {size=56, weight=900, scale=1} = o;
+  ctx.font = `${weight} ${size}px M`;
+  const widths = segs.map(s => ctx.measureText(s.t).width), total = d3.sum(widths);
+  let cx = x - total*scale/2;
+  segs.forEach((s, i) => { txt(s.t, cx, y, {...o, align:"left", color:s.c}); cx += widths[i]*scale; });
+}
+function dashed(x0, y0, x1, y1, alpha, color="#fff", w=4){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.setLineDash([14, 10]); ctx.lineWidth = w; ctx.strokeStyle = color;
+  ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.restore();
+}
+// sticker : image détourée avec contour blanc (pré-calculé), entrée en ressort + flottement
+function sticker(key, cx, by, h, t, tin, tout, o={}){
+  const img = IMG[key]; if (!img) return;
+  const a = EBig(prog(t, tin, tin + 0.55)), out = E(prog(t, tout, tout + 0.45));
+  if (a <= 0 || out >= 1) return;
+  const {flip=false, gray=0, alpha=1, rot=-0.04} = o;
+  const w = h*img.width/img.height, fl = Math.sin((t - tin)*1.6)*6;
+  ctx.save();
+  ctx.translate(cx, by + out*700 + fl); ctx.rotate(rot*(1 - a) + Math.sin((t - tin)*0.9)*0.012);
+  ctx.scale(a*(flip ? -1 : 1), a);
+  ctx.globalAlpha = alpha*(1 - out*0.3);
+  ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
+  if (gray > 0) ctx.filter = `grayscale(${gray}) brightness(${1 - 0.35*gray})`;
+  ctx.drawImage(img, -w/2, -h, w, h);
+  ctx.restore();
+}
+function paw(x, y, ang, s, alpha){
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang + Math.PI/2); ctx.scale(s, s); ctx.globalAlpha = alpha;
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 6;
+  ctx.beginPath(); ctx.ellipse(0, 4, 6.5, 5.5, 0, 0, 7); ctx.fill();
+  for (const [dx, dy, r] of [[-7,-4,2.6],[-2.6,-9,2.8],[2.6,-9,2.8],[7,-4,2.6]]){ ctx.beginPath(); ctx.ellipse(dx, dy, r, r*1.25, 0, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+function sheep(x, y, s, alpha){
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = alpha;
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 8;
+  for (const [dx, dy, r] of [[-12,0,11],[0,-6,12],[12,0,11],[0,5,12],[-6,6,10],[7,6,10]]){ ctx.beginPath(); ctx.arc(dx, dy, r, 0, 7); ctx.fill(); }
+  ctx.fillStyle = "#e9e9e9"; ctx.fillRect(-12, 12, 4, 12); ctx.fillRect(8, 12, 4, 12);
+  ctx.fillStyle = "#222"; ctx.beginPath(); ctx.ellipse(22, -4, 8, 6, 0.3, 0, 7); ctx.fill();
+  ctx.restore();
+}
+const nf = v => Math.round(v).toLocaleString("fr-FR");
+function spotlight(feature, k){
+  if (k <= 0) return;
+  ctx.save(); ctx.beginPath(); path({type:"Sphere"}); path(feature);
+  ctx.fillStyle = `rgba(2,6,18,${0.45*k})`; ctx.fill("evenodd"); ctx.restore();
+}
+function polyline(pts, n){
+  ctx.beginPath(); let started = false;
+  for (let i = 0; i < n; i++){ const p = proj(pts[i]); if (!p) continue;
+    if (!started){ ctx.moveTo(p[0], p[1]); started = true; } else ctx.lineTo(p[0], p[1]); }
+}
+
+
+
+
+// ------------------------------------------------------------------ sous-titres (groupes de 2-3 mots)
+const CAPS = TL.vo.filter(v => !["h01", "h02", "h18"].includes(v.id)).map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){ const o = {hi:/\*/.test(w), w:w.replace(/\*/g, "")};
+    const p = words[words.length-1];
+    if (p && ((/^[:;!?…]$/.test(o.w)) || (/^\d+$/.test(p.w) && /^\d{3}/.test(o.w)))) { p.w += " " + o.w; p.hi = p.hi || o.hi; } else words.push(o); }
+  const groups = []; let cur = [];
+  for (const w of words){ const len = cur.map(x => x.w).join(" ").length + w.w.length + 1;
+    if (cur.length && len > 15){ groups.push(cur); cur = []; } cur.push(w); if (/[.,:!?…]$/.test(w.w)){ groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const tot = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4); let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4; const s = v.start + (v.end - v.start)*acc/tot; acc += l;
+    return {g, s, e:v.start + (v.end - v.start)*acc/tot}; });
+}).flat();
+const WORDS = TL.vo.filter(v => v.id !== "h18").map(v => {
+  const ws = v.cap.split(/\s+/).map(w => ({hi:/\*/.test(w), w:w.replace(/\*/g, "").replace(/[.,:;…!?]+$/, "")})).filter(w => w.w);
+  const merged = [];
+  for (const w of ws){ const p = merged[merged.length-1];
+    if (p && /^\d+$/.test(p.w) && /^\d{3}$/.test(w.w)) { p.w += " " + w.w; p.hi = p.hi || w.hi; } else merged.push({...w}); }
+  const tot = d3.sum(merged, w => w.w.length + 3); let acc = 0;
+  return merged.map(w => { const s = v.start + (v.end - v.start)*acc/tot; acc += w.w.length + 3; return {...w, s, e:v.start + (v.end - v.start)*acc/tot}; });
+}).flat();
+
+// drapeau colombien (bandes : jaune 1/2, bleu 1/4, rouge 1/4)
+const FLAG = document.createElement("canvas"); FLAG.width = 900; FLAG.height = 600;
+(f => { f.fillStyle = "#FCD116"; f.fillRect(0, 0, 900, 300); f.fillStyle = "#003893"; f.fillRect(0, 300, 900, 150);
+        f.fillStyle = "#CE1126"; f.fillRect(0, 450, 900, 150); })(FLAG.getContext("2d"));
+
+// ------------------------------------------------------------------ helpers
+function kin(str, x, y, t, t0, o={}){                // texte qui apparaît lettre par lettre (Montserrat)
+  const {size=120, color="#fff", out=1e9, step=0.045, rot=-0.03} = o;
+  const outK = prog(t, out, out + 0.3); if (t < t0 || outK >= 1) return;
+  ctx.save(); ctx.globalAlpha = 1 - outK; ctx.translate(x, y - 40*outK); ctx.rotate(rot); ctx.font = `900 ${size}px M`;
+  const chars = [...str], ws = chars.map(c => ctx.measureText(c).width), tot = d3.sum(ws);
+  let cx = -tot/2;
+  chars.forEach((c, i) => {
+    const a = EBig(prog(t, t0 + i*step, t0 + i*step + 0.26)), w = ws[i];
+    if (a > 0){
+      ctx.save(); ctx.translate(cx + w/2, -size*0.3*(1 - Math.min(a, 1))); ctx.scale(a, a);
+      ctx.lineJoin = "round"; ctx.lineWidth = size*0.14; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(c, -w/2, size*0.35);
+      ctx.shadowColor = color === "#fff" ? "rgba(0,0,0,.6)" : color; ctx.shadowBlur = color === "#fff" ? 10 : 26;
+      ctx.fillStyle = color; ctx.fillText(c, -w/2, size*0.35); ctx.restore();
+    }
+    cx += w;
+  });
+  ctx.restore();
+}
+function chip(textSegs, y, a, size=38){
+  if (a <= 0) return;
+  ctx.font = `900 ${size}px M`;
+  const w = d3.sum(textSegs, s => ctx.measureText(s.t).width) + 60;
+  ctx.save(); ctx.translate(W/2, y); ctx.scale(a, a); ctx.globalAlpha = Math.min(a, 1);
+  ctx.fillStyle = "rgba(0,0,0,0.62)"; ctx.strokeStyle = Y1; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.roundRect(-w/2, -size*0.95, w, size*1.75, size*0.9); ctx.fill(); ctx.stroke(); ctx.restore();
+  richLine(textSegs, W/2, y + size*0.32, {size, weight:900, scale:a, alpha:Math.min(a, 1)});
+}
+function pin(x, y, a, color=Y1, r=12){
+  ctx.save(); ctx.globalAlpha = Math.min(a, 1); ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 24;
+  ctx.beginPath(); ctx.arc(x, y, r*Math.max(a, 0.01), 0, 7); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.shadowBlur = 0; ctx.stroke(); ctx.restore();
+}
+function pulse(x, y, t, a, color=Y2, max=90){
+  for (let k = 0; k < 2; k++){ const ph = (t*0.8 + k*0.5) % 1;
+    ctx.save(); ctx.globalAlpha = (1 - ph)*a; ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 12 + ph*max, 0, 7); ctx.stroke(); ctx.restore(); }
+}
+function stamp(lines, y, t, t0, out){
+  const sa = prog(t, t0, t0 + 0.18), sOut = 1 - prog(t, out, out + 0.3);
+  if (sa <= 0 || sOut <= 0) return;
+  const sc = lerp(2.4, 1, d3.easeQuadIn(sa));
+  ctx.save(); ctx.translate(W/2, y); ctx.rotate(-0.1); ctx.scale(sc, sc); ctx.globalAlpha = sa*sOut;
+  ctx.strokeStyle = RED; ctx.lineWidth = 9; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 16;
+  ctx.strokeRect(-360, -100, 720, lines.length > 1 ? 210 : 170); ctx.restore();
+  lines.forEach((l, i) => txt(l, W/2, y + (i === 0 ? 30 : 100)*sc + (lines.length > 1 ? -10 : 10), {size:i === 0 ? 92 : 50, color:RED, scale:sc, rot:-0.1, alpha:sa*sOut, stroke:0}));
+}
+// arc géodésique en pointillés (traçage progressif)
+// point visible sur la face avant du globe ?
+const visible = p => d3.geoDistance(p, [-proj.rotate()[0], -proj.rotate()[1]]) < Math.PI/2 - 0.03;
+const vproj = p => visible(p) ? proj(p) : null;
+function geoArc(a, b, k, alpha, color="#fff", w=6){
+  if (k <= 0 || alpha <= 0) return null;
+  const ip = d3.geoInterpolate(a, b), n = 80, pts = d3.range(Math.floor(n*k) + 1).map(i => ip(i/n));
+  if (pts.length < 2) return null;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.setLineDash([16, 11]); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = "round";
+  ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8; ctx.beginPath(); path({type:"LineString", coordinates:pts}); ctx.stroke(); ctx.restore();
+  return vproj(pts[pts.length - 1]);
+}
+function riverLine(pts, i0, i1, color, width, alpha, glow=24){
+  if (alpha <= 0 || i1 - i0 < 1) return;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = color; ctx.lineWidth = width;
+  ctx.shadowColor = color; ctx.shadowBlur = glow; ctx.beginPath(); let st = false;
+  for (let i = Math.max(0, Math.round(i0)); i <= Math.min(pts.length - 1, Math.round(i1)); i++){ const p = proj(pts[i]); if (!p) continue; st ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); st = true; }
+  ctx.stroke(); ctx.restore();
+}
+
+// ------------------------------------------------------------------ séquences photo plein écran
+const PH = n => TL.photos.find(p => p.img === n);
+const onPh = (t, n) => { const p = PH(n); return EB(prog(t, p.a + 0.25, p.a + 0.6))*(1 - prog(t, p.b - 0.3, p.b)); };
+function photoAlpha(t){                                        // opacité de la photo active (0..1)
+  let best = 0;
+  for (const p of TL.photos){ const a = Math.min(EO(prog(t, p.a, p.a + 0.35)), 1 - prog(t, p.b - 0.35, p.b)); best = Math.max(best, a); }
+  return best;
+}
+function drawPhotos(t){
+  for (const p of TL.photos){
+    if (t < p.a || t > p.b) continue;
+    const img = IMG[p.img]; if (!img) continue;
+    const a = EO(prog(t, p.a, p.a + 0.35)), out = prog(t, p.b - 0.35, p.b), k = prog(t, p.a, p.b);
+    const z = lerp(p.z0, p.z1, d3.easeSinInOut(k)) * (1 + 0.22*(1 - a));           // plongée à l'entrée
+    const base = Math.max(W/img.width, H/img.height)*z, w = img.width*base, h = img.height*base;
+    const x = (W - w)/2 + p.px*W*k, y = (H - h)/2 + p.py*H*k;
+    ctx.save(); ctx.globalAlpha = a*(1 - out);
+    if (p.gray) ctx.filter = `grayscale(${p.gray}) contrast(1.05)`;
+    ctx.drawImage(img, x, y, w, h);
+    const fl = Math.exp(-(t - p.a)*9);
+    if (fl > 0.02){ ctx.save(); ctx.fillStyle = `rgba(255,255,255,${0.55*fl})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+    if (a < 1){                                                                   // flou de vitesse à l'entrée
+      for (let i = 1; i <= 4; i++){ const s = 1 + (1 - a)*0.05*i; ctx.globalAlpha = a*(1 - out)*0.25;
+        ctx.drawImage(img, W/2 - (W/2 - x)*s, H/2 - (H/2 - y)*s, w*s, h*s); }
+    }
+    ctx.restore();
+    // dégradés haut/bas pour la lisibilité des textes
+    ctx.save(); ctx.globalAlpha = a*(1 - out);
+    let g = ctx.createLinearGradient(0, H*0.62, 0, H); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.65)");
+    ctx.fillStyle = g; ctx.fillRect(0, H*0.62, W, H*0.38);
+    g = ctx.createLinearGradient(0, 0, 0, H*0.25); g.addColorStop(0, "rgba(0,0,0,0.45)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H*0.25); ctx.restore();
+  }
+}
+
+// ------------------------------------------------------------------ rendu
+function render(t){
+  const pa = photoAlpha(t);
+  if (pa < 0.999) renderMap(t); else { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); }
+  drawPhotos(t);
+  overlay(t, pa);
+}
+function renderMap(t){
+  const cam = camera(t), camB = camera(Math.max(0, t - 1/30));
+  const dz = Math.log(cam.s/camB.s)*30, zoomSpeed = dz > 0 ? dz*0.65 : -dz*0.12;
+  proj.rotate([-cam.lon, -cam.lat]).scale(cam.s);
+  const zk = prog(cam.s, 470, 1600);
+  const bg = ctx.createRadialGradient(W/2, MAPY, 50, W/2, MAPY, H*0.8);
+  bg.addColorStop(0, "#0a1630"); bg.addColorStop(1, "#010208");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  if (zk < 1){
+    for (const [x,y,r,p] of stars){ ctx.globalAlpha = (1-zk)*(0.3 + 0.7*Math.abs(Math.sin(t*1.1 + p*30)));
+      ctx.fillStyle = "#dfe6ff"; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(W/2, MAPY, cam.s*0.95, W/2, MAPY, cam.s*1.22);
+    g.addColorStop(0, `rgba(80,150,255,${0.55*(1-zk)})`); g.addColorStop(1, "rgba(80,150,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  drawGlobe(cam, 1 - zk, 0.9);
+  ctx.drawImage(glc, 0, 0);
+  const blur = clamp(zoomSpeed*0.5, 0, 1.0);
+  if (blur > 0.04) for (let i = 1; i <= 6; i++){
+    const k = 1 + blur*0.035*i; ctx.save(); ctx.globalAlpha = 0.22; ctx.translate(W/2, MAPY); ctx.scale(k, k); ctx.translate(-W/2, -MAPY); ctx.drawImage(glc, 0, 0); ctx.restore(); }
+  ctx.save(); ctx.beginPath(); path(borders); ctx.strokeStyle = `rgba(255,255,255,${0.12 + 0.12*zk})`; ctx.lineWidth = 1.3; ctx.stroke(); ctx.restore();
+
+  // ---- Colombie : drapeau au premier zoom, puis contour
+  const fa = EB(prog(t, C.flag - 0.1, C.flag + 0.4)) * (1 - prog(t, C.napoles[0], C.napoles[0] + 0.6));
+  if (fa > 0){
+    const [[x0, y0], [x1, y1]] = measure.bounds(colombia), cx = (x0 + x1)/2, cy = (y0 + y1)/2, s = Math.min(fa, 1.12);
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-cx, -cy);
+    ctx.beginPath(); path(colombia); ctx.save(); ctx.clip(); ctx.globalAlpha = Math.min(fa, 1);
+    ctx.drawImage(FLAG, x0 - 10, y0 - 10, x1 - x0 + 20, y1 - y0 + 20); ctx.restore();
+    ctx.globalAlpha = Math.min(fa, 1); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 16; ctx.stroke();
+    ctx.restore();
+  }
+  const spot = 0.35*prog(t, C.flag, C.flag + 0.6);
+  if (spot > 0){ ctx.save(); ctx.beginPath(); path({type:"Sphere"}); path(colombia); ctx.fillStyle = `rgba(2,6,18,${spot})`; ctx.fill("evenodd"); ctx.restore(); }
+  const ca = prog(t, C.napoles[0], C.napoles[0] + 0.6);
+  if (ca > 0){ ctx.save(); ctx.beginPath(); path(colombia); ctx.strokeStyle = `rgba(255,255,255,${0.85*ca})`; ctx.lineWidth = 3.5;
+    ctx.shadowColor = "rgba(255,255,255,.8)"; ctx.shadowBlur = 12; ctx.stroke(); ctx.restore(); }
+
+  // ---- Hacienda Nápoles
+  const na = EB(prog(t, C.napoles[1] - 0.3, C.napoles[1] + 0.2)) * (1 - prog(t, M("h03", 0.62), M("h03", 0.62) + 0.3));
+  if (na > 0){ const [x, y] = proj(NAPOLES); pulse(x, y, t, Math.min(na, 1)); pin(x, y, na, Y1, 14);
+    dashed(x, y, x + 150, y - 190, Math.min(na, 1));
+    txt("HACIENDA NÁPOLES", x + 150, y - 250, {size:46, scale:na, stroke:10}); }
+  // ---- 4 hippos : Afrique → Colombie
+  const ak = prog(t, C.arc[0] + 0.5, C.arc[1] - 0.3), aOut = 1 - prog(t, C.medellin[0], C.medellin[0] + 0.4);
+  if (ak > 0 && aOut > 0){
+    geoArc(AFRICA, NAPOLES, E(ak), aOut, "#fff", 6);
+    const pA = vproj(AFRICA), pC = vproj(NAPOLES);
+    if (pA) { pin(pA[0], pA[1], aOut, "#fff", 11); txt("AFRIQUE", pA[0], pA[1] - 32, {size:38, alpha:aOut, stroke:8}); }
+    if (pC) { pin(pC[0], pC[1], aOut*prog(ak, 0.85, 1), Y1, 13); txt("COLOMBIE", pC[0], pC[1] - 32, {size:38, alpha:aOut*prog(ak, 0.85, 1), stroke:8}); }
+  }
+  // ---- Medellín 1993
+  const me = EB(prog(t, C.medellin[1] - 0.3, C.medellin[1] + 0.2)) * (1 - prog(t, S("h06") - 0.2, S("h06") + 0.2));
+  if (me > 0){ const [x, y] = proj(MEDELLIN); pulse(x, y, t, Math.min(me, 1), RED); pin(x, y, me, RED, 14);
+    dashed(x, y, x - 130, y + 170, Math.min(me, 1)); txt("MEDELLÍN", x - 130, y + 230, {size:50, scale:me, stroke:10}); }
+  // ---- fleuve Magdalena + Cauca
+  const rk = prog(t, C.river[0] + 0.3, C.sweep[1]);
+  const rOut = 1 - prog(t, C.invasive[0], C.invasive[0] + 0.5) + prog(t, C.future[0], C.future[0] + 0.5);
+  if (rk > 0 && rOut > 0){
+    const k = E(rk);
+    riverLine(MAGDA, 0, Math.round(MAGDA.length*k), CYAN, 9, clamp(rOut), 22);
+    riverLine(CAUCA, 0, Math.round(CAUCA.length*k), CYAN, 6, clamp(rOut)*0.8, 16);
+    const la = EB(prog(t, C.river[1] - 0.3, C.river[1] + 0.3))*clamp(rOut)*(1 - prog(t, C.outro, C.outro + 0.5))*clamp(1 - prog(t, C.boom[0] - 0.6, C.boom[0]) + prog(t, C.future[0], C.future[0] + 0.5));
+    const lp = proj(MAGDA[Math.round(MAGDA.length*0.62)]);
+    const labOut = 1 - prog(t, C.boom[0] - 0.6, C.boom[0]) + prog(t, C.future[0], C.future[0] + 0.5);
+    if (lp && la > 0){ txt("FLEUVE", lp[0] + 120, lp[1] - 20, {size:40, scale:la, stroke:9}); txt("MAGDALENA", lp[0] + 120, lp[1] + 30, {size:50, color:CYAN, scale:la, stroke:10}); }
+    const [nx, ny] = proj(NAPOLES); pin(nx, ny, clamp(rOut), Y1, 11);
+    // zone occupée par les hippos : s'étend le long du fleuve depuis Nápoles
+    const spread = Math.max(prog(t, C.boom[0] + 0.6, C.k170 + 0.4)*0.45, prog(t, C.future[0] + 0.8, C.k1000 + 0.3)*0.95);
+    if (spread > 0){
+      const half = Math.round(MAGDA.length*0.5*spread);
+      riverLine(MAGDA, NAP_IDX - half*0.6, NAP_IDX + half, Y1, 26, 0.75*clamp(rOut), 30);
+    }
+  }
+  // ---- Mexique / Inde
+  const mk = prog(t, C.mexico[0] + 1.0, C.india[0]), refused = t >= C.refuse;
+  const mOut = 1 - prog(t, C.back[0], C.back[0] + 0.4);
+  if (mk > 0 && mOut > 0){
+    const col = refused ? RED : "#fff";
+    geoArc(NAPOLES, MEXPT, E(mk), mOut, col, 6);
+    const pm = vproj(MEXPT); if (pm){ pin(pm[0], pm[1], mOut*prog(mk, 0.8, 1), refused ? RED : Y1, 12);
+      txt("MEXIQUE", pm[0], pm[1] - 70, {size:44, alpha:mOut*prog(mk, 0.8, 1), stroke:9}); txt("10", pm[0], pm[1] - 26, {size:40, color:Y1, alpha:mOut*prog(mk, 0.8, 1), stroke:8}); }
+    const ik = prog(t, C.india[0] + 0.1, C.india[1] - 0.2);
+    if (ik > 0){ geoArc(NAPOLES, INDPT, E(ik), mOut, col, 6);
+      const pi = vproj(INDPT); if (pi){ pin(pi[0], pi[1], mOut*prog(ik, 0.85, 1), refused ? RED : Y1, 12);
+        txt("INDE", pi[0], pi[1] - 70, {size:44, alpha:mOut*prog(ik, 0.85, 1), stroke:9}); txt("60", pi[0], pi[1] - 26, {size:40, color:Y1, alpha:mOut*prog(ik, 0.85, 1), stroke:8}); } }
+  }
+
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.42, W/2, H/2, H*0.8);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.35)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+function overlay(t, pa){
+  const mapA = 1 - pa;
+  // --- titre (2 lignes) : seulement sur les plans carte
+  const hd = EO(prog(t, C.title, C.title + 0.5)) * (1 - prog(t, S("h03") - 0.4, S("h03"))) * mapA;
+  if (hd > 0){
+    txt("LES HIPPOS", W/2, 225, {size:104, alpha:hd, stroke:14});
+    txt("D'ESCOBAR", W/2, 330, {size:104, color:Y1, alpha:hd, stroke:14, glow:"rgba(255,214,10,.45)"});
+  }
+  // --- frise
+  const show = TL.ticker.some(s => t >= s[0] - 0.3 && t <= s[1] + 2.2);
+  const fa = (show ? 1 : 0) * mapA;
+  if (fa > 0){
+    const {v, step} = yearAt(t), y = 420, gap = 250;
+    ctx.save(); ctx.globalAlpha = fa; ctx.strokeStyle = Y1; ctx.lineWidth = 4; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.restore();
+    const base = Math.round(v/step)*step;
+    for (let j = -3; j <= 3; j++){
+      const yv = base + j*step, x = W/2 + (yv - v)/step*gap;
+      if (x < -150 || x > W + 150) continue;
+      const act = clamp(1 - Math.abs(yv - v)/step);
+      ctx.save(); ctx.globalAlpha = fa; ctx.fillStyle = Y1; ctx.fillRect(x - 2, y - 14, 4, 28); ctx.restore();
+      txt(String(yv), x, y + 66 + act*16, {size:46 + act*40, color:act > 0.5 ? ORANGE : Y1, alpha:fa*(0.5 + 0.5*act), stroke:8, glow:act > 0.5 ? "rgba(255,159,28,0.6)" : null});
+    }
+  }
+  // --- textes cinétiques (un seul à la fois au centre)
+  kin("200 HIPPOPOTAMES", W/2, 560, t, C.k200, {size:76, out:M("h01", 0.4)});
+  kin("EN COLOMBIE", W/2, 660, t, C.k200 + 0.9, {size:80, color:Y1, out:M("h01", 0.4)});
+  kin("PABLO ESCOBAR", W/2, 1480, t, C.kEscobar, {size:110, color:Y1, out:Ed("h02") + 0.2});
+  kin("4 HIPPOPOTAMES", W/2, 560, t, C.arc[0] + 0.4, {size:84, out:C.medellin[0]});
+  kin("1993", W/2, 660, t, M("h05", 0.45), {size:170, color:RED, out:Ed("h05") + 0.3});
+  kin("4", W/2, 700, t, C.boom[0] + 0.8, {size:200, out:C.k170 - 0.15});
+  kin("≈ 170", W/2, 700, t, C.k170, {size:200, color:Y1, out:Ed("h09") + 0.2});
+  kin("80 HIPPOPOTAMES", W/2, 660, t, C.k80, {size:80, color:RED, out:Ed("h15") + 0.3});
+  kin("+ DE 1 000", W/2, 660, t, C.k1000, {size:150, color:Y1, out:Ed("h17") + 0.3});
+  // --- étiquettes / chips
+  chip([{t:"ANNÉES ", c:"#fff"}, {t:"80", c:Y1}], 1380, onPh(t, "p2"), 40);
+  chip([{t:"ZOO ", c:"#fff"}, {t:"PRIVÉ", c:Y1}], 1380, onPh(t, "p3"), 40);
+  chip([{t:"1 MÂLE ", c:"#fff"}, {t:"+ 3 FEMELLES", c:Y1}], 1420, EB(prog(t, M("h04", 0.7), M("h04", 0.7) + 0.4))*(1 - prog(t, C.medellin[0], C.medellin[0] + 0.3)), 40);
+  chip([{t:"ABANDONNÉS", c:Y1}], 1380, onPh(t, "p4"), 44);
+  chip([{t:"AUCUN ", c:"#fff"}, {t:"PRÉDATEUR", c:Y1}], 1380, onPh(t, "p5"), 44);
+  chip([{t:"L'UN DES PLUS ", c:"#fff"}, {t:"MEURTRIERS", c:RED}, {t:" D'AFRIQUE", c:"#fff"}], 1380, onPh(t, "p6"), 34);
+  chip([{t:"LAMANTIN ", c:"#fff"}, {t:"MENACÉ", c:RED}], 1380, onPh(t, "p7"), 44);
+  chip([{t:"AVRIL 2026 · ", c:"#fff"}, {t:"EUTHANASIE", c:RED}], 1300, EB(prog(t, M("h15", 0.3), M("h15", 0.3) + 0.4))*(1 - prog(t, Ed("h15"), Ed("h15") + 0.3))*mapA, 40);
+  chip([{t:"UNE ", c:"#fff"}, {t:"ATTRACTION", c:Y1}, {t:"… ET UN ", c:"#fff"}, {t:"SYMBOLE", c:Y1}], 1380, onPh(t, "p8"), 36);
+  chip([{t:"D'ICI ", c:"#fff"}, {t:"2035", c:Y1}], 1300, EB(prog(t, C.k1000 + 0.3, C.k1000 + 0.7))*(1 - prog(t, Ed("h17"), Ed("h17") + 0.3))*mapA, 40);
+  stamp(["ESPÈCE", "INVASIVE"], 980, t, C.stampInv, S("h13") - 0.4);
+  stamp(["REFUSÉ"], 760, t, C.refuse, C.back[0]);
+  // --- stickers (dans l'océan, jamais sur le pays)
+  for (let i = 0; i < 4; i++) sticker("hippo_profil", 190 + i*235, 1640, 140, t, C.arc[0] + 0.6 + i*0.15, C.medellin[0] - 0.2, {flip:i % 2 === 1});
+  sticker("hippo_profil", 210, 760, 300, t, Ed("h01") - 0.5, S("h03") - 0.3);
+  sticker("hippo_bebe", 175, 720, 230, t, C.boom[0] + 0.5, Ed("h09"));
+  sticker("hippo_gueule", 185, 730, 250, t, C.invasive[1], S("h13") - 0.3);
+  // --- outro (sur la photo)
+  const oa = EB(prog(t, C.outro + 0.3, C.outro + 0.8));
+  if (oa > 0){
+    txt("Et toi, tu ferais quoi", W/2, 380, {size:68, weight:800, scale:oa, stroke:12});
+    txt("des hippos d'Escobar ?", W/2, 470, {size:68, weight:800, color:Y1, scale:oa, stroke:12});
+    const na = EB(prog(t, C.outro + 2.4, C.outro + 2.9));
+    if (na > 0) chip([{t:"DIS-LE ", c:Y1}, {t:"EN COMMENTAIRE", c:"#fff"}], 595, na, 36);
+  }
+  // --- sous-titres : gros, en haut, par groupes de 2-3 mots
+  let cur = null;
+  for (const g of CAPS) if (g.s <= t) cur = g;
+  if (cur && t <= cur.e + 0.25 && t >= S("h03") - 0.1){
+    const a = EB(prog(t, cur.s, cur.s + 0.15));
+    const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.toUpperCase(), c:w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 300, {size:84, weight:900, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:16});
+  }
+}
+
+// ------------------------------------------------------------------ lecture
+window.DURATION = DUR;
+window.renderAt = render;
+window.ready = Promise.all([loadTex(TEX.world, 0), loadTex(TEX.eu, 1),
+  ...Object.entries(IMG_SRC).map(([k, s]) => loadImg(k, s)),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M"), document.fonts.load("600 60px M")]);
+if (new URLSearchParams(location.search).has("capture")) document.body.classList.add("capture");
+else window.ready.then(() => {
+  const audio = new Audio("__AUDIO__");
+  let start = null; render(0);
+  const tc = document.getElementById("tc");
+  document.getElementById("play").onclick = () => { audio.currentTime = 0; audio.play().catch(() => {}); start = performance.now(); };
+  const loop = now => {
+    if (start !== null){ const t = Math.min(audio.paused ? (now - start)/1000 : audio.currentTime, DUR);
+      render(t); tc.textContent = t.toFixed(1) + " s / " + DUR.toFixed(0) + " s"; }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>

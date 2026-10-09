@@ -1,0 +1,841 @@
+{
+ "vo": [
+  {
+   "id": "r01",
+   "start": 0.4,
+   "end": 5.574,
+   "cap": "En *1859*, un homme relâche *24 lapins* en Australie."
+  },
+  {
+   "id": "r02",
+   "start": 5.924,
+   "end": 9.218,
+   "cap": "Aujourd'hui, ils sont environ *200 millions*."
+  },
+  {
+   "id": "r03",
+   "start": 9.718,
+   "end": 14.206,
+   "cap": "Voici comment *24 lapins* ont envahi tout un *continent*."
+  },
+  {
+   "id": "r04",
+   "start": 14.906,
+   "end": 20.414,
+   "cap": "*Thomas Austin* est un colon anglais, installé près de *Geelong*, dans le sud de l'Australie."
+  },
+  {
+   "id": "r05",
+   "start": 20.914,
+   "end": 25.695,
+   "cap": "Il veut chasser comme en *Angleterre*… alors il fait venir des lapins d'*Europe*."
+  },
+  {
+   "id": "r06",
+   "start": 26.495,
+   "end": 33.246,
+   "cap": "Le jour de *Noël 1859*, *24 lapins* arrivent sur sa propriété."
+  },
+  {
+   "id": "r07",
+   "start": 33.696,
+   "end": 37.919,
+   "cap": "Six ans plus tard, il en a déjà tué *20 000* sur ses terres."
+  },
+  {
+   "id": "r08",
+   "start": 38.419,
+   "end": 45.738,
+   "cap": "Car en Australie, le lapin n'a presque *aucun prédateur*… et une lapine peut avoir *plusieurs dizaines* de petits par an."
+  },
+  {
+   "id": "r09",
+   "start": 46.338,
+   "end": 53.161,
+   "cap": "Ils avancent jusqu'à *100 kilomètres* par an : l'invasion de mammifère la *plus rapide* jamais enregistrée."
+  },
+  {
+   "id": "r10",
+   "start": 53.511,
+   "end": 56.908,
+   "cap": "En *50 ans*, ils colonisent presque *tout le continent*."
+  },
+  {
+   "id": "r11",
+   "start": 57.608,
+   "end": 62.688,
+   "cap": "Alors, l'Australie tente un plan fou : une *clôture géante*."
+  },
+  {
+   "id": "r12",
+   "start": 63.088,
+   "end": 69.396,
+   "cap": "Entre *1901* et *1907*, trois clôtures sont construites, sur plus de *3 000 kilomètres*."
+  },
+  {
+   "id": "r13",
+   "start": 69.796,
+   "end": 73.759,
+   "cap": "Mais c'est *trop tard* : les lapins sont déjà passés de l'autre côté."
+  },
+  {
+   "id": "r14",
+   "start": 74.559,
+   "end": 80.273,
+   "cap": "En *1950*, on essaie une autre arme : un virus, la *myxomatose*."
+  },
+  {
+   "id": "r15",
+   "start": 80.723,
+   "end": 85.063,
+   "cap": "En deux ans, la population passe de *600 millions*… à *100 millions*."
+  },
+  {
+   "id": "r16",
+   "start": 85.513,
+   "end": 89.453,
+   "cap": "Mais les survivants deviennent *résistants*… et les lapins *reviennent*."
+  },
+  {
+   "id": "r17",
+   "start": 89.953,
+   "end": 93.249,
+   "cap": "Aujourd'hui, ils occupent *70 %* du pays."
+  },
+  {
+   "id": "r18",
+   "start": 93.949,
+   "end": 97.187,
+   "cap": "Tout ça… à cause de *24 lapins*."
+  },
+  {
+   "id": "r19",
+   "start": 98.087,
+   "end": 105.994,
+   "cap": "Et toi, tu connais d'autres animaux qui ont envahi un pays ? Dis-le en commentaire !"
+  }
+ ],
+ "cue": {
+  "intro": [
+   0.0,
+   2.7283,
+   5.3153
+  ],
+  "flag": 5.0566,
+  "k24": 3.5043999999999995,
+  "k200": 7.4063,
+  "swarm": [
+   5.924,
+   9.518
+  ],
+  "title": 9.918,
+  "flagOut": [
+   10.118,
+   11.118
+  ],
+  "geelong": [
+   14.406,
+   15.806000000000001
+  ],
+  "austin": 15.7322,
+  "route": [
+   20.614,
+   26.095
+  ],
+  "noel": [
+   26.095000000000002,
+   27.195
+  ],
+  "k24b": 30.20805,
+  "k20000": 36.2298,
+  "babies": 42.444449999999996,
+  "spread": [
+   45.938,
+   56.908
+  ],
+  "k100": 48.3849,
+  "wa": [
+   57.208,
+   58.407999999999994
+  ],
+  "fence": [
+   63.288000000000004,
+   69.396
+  ],
+  "k3000": 67.819,
+  "late": 70.78675000000001,
+  "virus": [
+   74.059,
+   75.259
+  ],
+  "kmyxo": 78.55879999999999,
+  "crash": [
+   81.591,
+   85.063
+  ],
+  "back": [
+   85.813,
+   89.453
+  ],
+  "k70": 91.7658,
+  "home": [
+   93.449,
+   94.54899999999999
+  ],
+  "k24c": 95.8918,
+  "outro": 97.687,
+  "tickerShow": [
+   26.195,
+   93.54899999999999
+  ]
+ },
+ "ticker": [
+  [
+   26.495,
+   26.505000000000003,
+   1859,
+   1859,
+   1
+  ],
+  [
+   33.696,
+   36.2298,
+   1859,
+   1865,
+   1
+  ],
+  [
+   46.338,
+   56.908,
+   1865,
+   1910,
+   5
+  ],
+  [
+   63.088,
+   69.396,
+   1901,
+   1907,
+   1
+  ],
+  [
+   74.559,
+   74.569,
+   1950,
+   1950,
+   1
+  ],
+  [
+   80.723,
+   85.063,
+   1950,
+   1952,
+   1
+  ],
+  [
+   89.953,
+   90.553,
+   1952,
+   2025,
+   10
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "whoosh_long",
+   "t": 0.15,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh_long",
+   "t": 2.528,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 5.007,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 3.504,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 7.406,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 30.208,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 36.23,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 48.385,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 67.819,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 78.559,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 91.766,
+   "gain": 0.8
+  },
+  {
+   "name": "type",
+   "t": 95.892,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 6.424,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 6.534,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 6.644,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 6.754,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 6.864,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 6.974,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.084,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.194,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.304,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.414,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.524,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.634,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.744,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.854,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 7.964,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 8.074,
+   "gain": 0.35
+  },
+  {
+   "name": "whoosh",
+   "t": 10.118,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh_long",
+   "t": 14.406,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 15.732,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 20.614,
+   "gain": 0.8
+  },
+  {
+   "name": "horn",
+   "t": 21.514,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh_long",
+   "t": 26.095,
+   "gain": 0.8
+  },
+  {
+   "name": "bell",
+   "t": 26.795,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 30.408,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 30.478,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 30.548,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 30.618,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 30.688,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 30.758,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 30.828,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 30.898,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 30.968,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 31.038,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 31.108,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 31.178,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 42.444,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 42.534,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 42.624,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 42.714,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 42.804,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 42.894,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 42.984,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 43.074,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 43.164,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 43.254,
+   "gain": 0.3
+  },
+  {
+   "name": "whoosh_long",
+   "t": 45.938,
+   "gain": 0.8
+  },
+  {
+   "name": "riser",
+   "t": 56.908,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh_long",
+   "t": 57.208,
+   "gain": 0.8
+  },
+  {
+   "name": "thud",
+   "t": 63.288,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 63.724,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 64.161,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 64.597,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 65.033,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 65.469,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 65.906,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 66.342,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 66.778,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 67.215,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 67.651,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 68.087,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 68.523,
+   "gain": 0.45
+  },
+  {
+   "name": "thud",
+   "t": 68.96,
+   "gain": 0.45
+  },
+  {
+   "name": "stamp",
+   "t": 70.787,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh_long",
+   "t": 74.059,
+   "gain": 0.8
+  },
+  {
+   "name": "down",
+   "t": 82.191,
+   "gain": 0.7
+  },
+  {
+   "name": "shimmer",
+   "t": 85.813,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 86.113,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 86.233,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 86.353,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 86.473,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 86.593,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 86.713,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 86.833,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 86.953,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 87.073,
+   "gain": 0.3
+  },
+  {
+   "name": "pop",
+   "t": 87.193,
+   "gain": 0.3
+  },
+  {
+   "name": "hit",
+   "t": 91.766,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 93.449,
+   "gain": 0.9
+  },
+  {
+   "name": "impact",
+   "t": 95.892,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 98.187,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 34.118,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 34.541,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 34.963,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 35.385,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 35.807,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 36.23,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 47.512,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 48.687,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 49.861,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 51.036,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 52.21,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 53.385,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 54.559,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 55.734,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 56.908,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 64.139,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 65.191,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 66.242,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 67.293,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 68.345,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 69.396,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 82.893,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 85.063,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 90.035,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 90.2,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 90.364,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 90.528,
+   "gain": 0.45
+  }
+ ],
+ "duration": 108.194
+}

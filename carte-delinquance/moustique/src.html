@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Moustique Tigre</title>
+<style>
+@font-face{font-family:M;font-weight:600;src:url(data:font/woff2;base64,__M600__) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(data:font/woff2;base64,__M800__) format("woff2");}
+@font-face{font-family:M;font-weight:900;src:url(data:font/woff2;base64,__M900__) format("woff2");}
+:root{--bg:#02040a;--fg:#fff;--muted:#9aa4b8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#02040a}}
+:root[data-theme="dark"]{--bg:#02040a}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:M,system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#c{height:100%;max-width:100%;aspect-ratio:9/16;display:block}
+#gl{display:none}
+#ctrl{position:fixed;left:16px;bottom:16px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+#ctrl button{background:#151b27;color:var(--fg);border:1px solid #2a3346;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+body.capture #ctrl{display:none}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1080" height="1920"></canvas></div>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div id="ctrl"><button id="play">▶ Lecture (son)</button><span id="tc"></span></div>
+<script>__D3__</script>
+<script>__TOPOJSON__</script>
+<script>
+const WORLD = __WORLD__, TL = __TL__, DEPS = __DEPS__;
+const TEX = {world:"__TEXWORLD__", eu:"__TEXEU__"};
+const IMG_SRC = __IMGS__;
+const EU_BOX = [-6, 22, 36, 52];                       // texture régionale haute résolution : France / Italie / Albanie
+
+const W = 1080, H = 1920, MAPY = 1080;
+const Y1 = "#ffd60a", Y2 = "#ffe45c", ORANGE = "#ff9f1c", RED = "#ff3b30", CYAN = "#3ec9ff", ICE = "#9fe3ff";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const proj = d3.geoOrthographic().clipAngle(90).translate([W/2, MAPY]).precision(0.3);
+const path = d3.geoPath(proj, ctx), measure = d3.geoPath(proj);
+const C = TL.cue, V = Object.fromEntries(TL.vo.map(v => [v.id, v]));
+const S = k => V[k].start, Ed = k => V[k].end, DUR = TL.duration, M = (k, f) => S(k) + (Ed(k) - S(k))*f;
+
+const countries = topojson.feature(WORLD, WORLD.objects.countries).features;
+const CTRY = n => countries.find(f => f.properties.name === n);
+const borders = topojson.mesh(WORLD, WORLD.objects.countries, (a,b) => a !== b);
+const SEA_NAMES = ["Myanmar", "Thailand", "Laos", "Cambodia", "Vietnam", "Malaysia", "Indonesia", "Philippines", "Brunei", "Timor-Leste", "Singapore"];
+const SEASIA = {type:"FeatureCollection", features:SEA_NAMES.map(CTRY).filter(Boolean)};
+const albania = CTRY("Albania"), italy = CTRY("Italy");
+
+// départements : orientation des anneaux compatible d3 (sinon le polygone couvre toute la sphère)
+for (const f of DEPS.features) if (d3.geoArea(f) > 2*Math.PI){
+  const g = f.geometry; const rv = r => r.reverse();
+  if (g.type === "Polygon") g.coordinates.forEach(rv); else g.coordinates.forEach(p => p.forEach(rv));
+}
+const FRANCE = {type:"FeatureCollection", features:DEPS.features};
+const DEP = c => DEPS.features.find(f => f.properties.code === c);
+
+const IMG = {};
+const loadImg = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { IMG[k] = i; r(); }; i.src = src; });
+const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b, x));
+const prog = (t,a,b) => clamp((t-a)/(b-a));
+const lerp = (a,b,k) => a + (b-a)*k;
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EBig = d3.easeBackOut.overshoot(3);
+
+// ------------------------------------------------------------------ lieux & routes
+const MENTON = [7.50, 43.78], GENES = [8.93, 44.41], DURRES = [19.45, 41.32], HOUSTON = [-95.2, 29.6], PARIS = [2.35, 48.86];
+const ORIGIN = [104.5, 13.5];
+// routes maritimes (escales) — le moustique voyage dans les pneus d'occasion
+const R_ALB = [[104.5, 9], [103.8, 1.3], [95, 6], [80.5, 5.8], [60, 13], [45, 12.3], [43.3, 12.7], [38.5, 19.5], [32.5, 29.8], [32.3, 31.4], [25, 34], [19.6, 38.2], DURRES];
+const R_USA = [[139.8, 35.3], [160, 34], [-170, 31], [-140, 24], [-110, 14], [-85, 8], [-79.6, 8.9], [-79.9, 9.4], [-82.5, 15], [-85.8, 21.6], [-90, 26.5], HOUSTON];
+const R_ITA = [HOUSTON, [-88, 26.5], [-84, 24.4], [-80.2, 25.2], [-74, 30], [-50, 36], [-25, 37.5], [-6, 36], [-1, 37], [4, 40.5], [8.4, 43.6], GENES];
+const COAST = [GENES, [8.47, 44.31], [8.22, 44.06], [8.02, 43.88], [7.78, 43.80], [7.62, 43.78], MENTON];
+const ROAD = [[5.37, 43.30], [4.81, 43.95], [4.89, 44.93], [4.84, 45.76], [4.85, 46.78], [5.04, 47.32], [3.57, 47.80], [2.75, 48.40], PARIS];
+const LANES = [[4.3, 51.9], [55.3, 25.2], [18.4, -33.9], [151.2, -33.9], [139.8, 35.3], [-118.2, 33.7], [39.7, -4.0], [72.8, 18.9]];
+const ASIA_PORT = [103.8, 1.3];
+// densifie une route (segments géodésiques) → points + longueur cumulée
+function densify(pts, step=0.6){
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length; i++){
+    const ip = d3.geoInterpolate(pts[i-1], pts[i]), n = Math.max(2, Math.ceil(d3.geoDistance(pts[i-1], pts[i])*180/Math.PI/step));
+    for (let j = 1; j <= n; j++) out.push(ip(j/n));
+  }
+  const cum = [0]; for (let i = 1; i < out.length; i++) cum.push(cum[i-1] + d3.geoDistance(out[i-1], out[i]));
+  return {pts:out, cum, len:cum[cum.length-1]};
+}
+const RT = {alb:densify(R_ALB), usa:densify(R_USA), ita:densify(R_ITA), coast:densify(COAST, 0.05), road:densify(ROAD, 0.05)};
+function routeAt(r, k){                       // point + cap à la fraction k de la longueur
+  const d = clamp(k)*r.len; let i = d3.bisectLeft(r.cum, d); i = Math.max(1, Math.min(r.pts.length - 1, i));
+  const f = (d - r.cum[i-1])/Math.max(1e-9, r.cum[i] - r.cum[i-1]);
+  return {p:d3.geoInterpolate(r.pts[i-1], r.pts[i])(clamp(f)), i, a:r.pts[i-1], b:r.pts[i]};
+}
+
+// ------------------------------------------------------------------ caméras
+function fit(feature, center, w, h){
+  proj.rotate([-center[0], -center[1]]).scale(1).translate([0,0]);
+  const [[x0,y0],[x1,y1]] = measure.bounds(feature);
+  proj.translate([W/2, MAPY]);
+  return {lon:center[0], lat:center[1], s: Math.min(w/(x1-x0), h/(y1-y0))};
+}
+const box = (a, b, c, d) => ({type:"Polygon", coordinates:[[[a,b],[a,d],[c,d],[c,b],[a,b]]]});
+const FR = fit(box(-5.2, 41.3, 9.7, 51.2), [2.4, 46.2], W*0.94, 1020);
+const MENT0 = {lon:7.2, lat:44.0, s:1900}, MENT = {lon:7.3, lat:43.9, s:2150};      // vue large (niveau « continent »)
+const ASIA = fit(box(92, -9, 127, 24), [109, 8], W*0.9, 1000);
+const LANEV = {lon:70, lat:12, s:430};
+const ALBV = {lon:18.5, lat:40.6, s:FR.s*1.15};
+const USV = {lon:-91, lat:27, s:FR.s*0.7};
+const ITV = {lon:8.6, lat:43.9, s:FR.s*1.5};
+const COASTV = {lon:8.1, lat:44.0, s:FR.s*1.55};
+const RHV0 = {lon:5.0, lat:44.4, s:FR.s*1.5}, RHV1 = {lon:4.9, lat:46.0, s:FR.s*1.5};
+const SWV = {lon:0.6, lat:44.2, s:FR.s*1.7}, CENTV = {lon:2.4, lat:46.4, s:FR.s*1.6};
+const PARV = {lon:2.45, lat:48.3, s:FR.s*1.6};
+const FRX = {...FR, s:FR.s*1.06}, OUT = {...FR, s:FR.s*0.8};
+
+function camLerp(a, b, k, fly, ease=E){
+  const e = ease(k);
+  let s = Math.exp(lerp(Math.log(a.s), Math.log(b.s), e));
+  if (fly){ const dist = d3.geoDistance([a.lon,a.lat],[b.lon,b.lat])*180/Math.PI;
+    s *= 1 - clamp(dist/14, 0, 0.45)*Math.sin(Math.PI*e); }
+  let dl = b.lon - a.lon; if (dl > 180) dl -= 360; if (dl < -180) dl += 360;
+  return {lon:a.lon + dl*e, lat:lerp(a.lat,b.lat,e), s};
+}
+const push = (c, k) => ({...c, s:c.s*(1 + 0.05*k)});
+// caméra qui suit le bateau le long d'une route
+const shipK = (key, t) => E(prog(t, C[key][0] + 0.9, C[key][0] + 3.3));
+const roadK = t => Math.max(E(prog(t, C.rhone[0] + 0.6, Ed("m13") - 0.2))*0.62, 0.62 + E(prog(t, C.paris[0] - 0.1, Ed("m15")))*0.38*(t > C.paris[0] - 0.1));
+function truckCam(t){ const {p} = routeAt(RT.road, roadK(t)); return {lon:p[0] + 0.3, lat:p[1] - 0.6, s:FR.s*1.5}; }
+function follow(key, t, s){ const {p} = routeAt(RT[key], shipK(key, t)); return {lon:p[0], lat:p[1] - 3, s}; }
+
+// plans : [début, fin, caméra (objet ou fonction de t), vol ?]
+const SHOTS = [
+  [C.intro[0], C.intro[1], FR, false],
+  [M("m02", 0.9), Ed("m03"), FRX, false],
+  [C.asia[0], C.asia[1], ASIA, true],
+  [M("m07", 0.22) + 1.6, C.lanes[0] + 1.4, LANEV, false],
+  // Albanie : on suit le bateau depuis Singapour
+  [C.alb[0], C.alb[0] + 0.9, t => follow("alb", t, 820), true],
+  [C.alb[0] + 0.9, C.alb[0] + 3.3, t => follow("alb", t, 820), false],
+  [C.alb[0] + 3.3, C.alb[1], ALBV, false],
+  // Texas : demi-tour du globe vers le Japon puis traversée du Pacifique
+  [C.usa[0], C.usa[0] + 0.9, t => follow("usa", t, 640), true],
+  [C.usa[0] + 0.9, C.usa[0] + 3.3, t => follow("usa", t, 640), false],
+  [C.usa[0] + 3.3, C.usa[1], USV, false],
+  // Italie : traversée de l'Atlantique
+  [C.ita[0], C.ita[0] + 0.9, t => follow("ita", t, 720), true],
+  [C.ita[0] + 0.9, C.ita[0] + 3.3, t => follow("ita", t, 720), false],
+  [C.ita[0] + 3.3, C.ita[1], ITV, false],
+  [C.coast[0], C.coast[0] + 1.0, COASTV, false],
+  [C.coast[0] + 1.0, C.coast[1], {...COASTV, lon:7.8, lat:43.9}, false],
+  [C.cold[0], C.cold[0] + 1.0, FR, false],
+  [C.rhone[0], C.rhone[0] + 0.6, RHV0, false],
+  [C.rhone[0] + 0.6, C.rhone[0] + 1.2, t => truckCam(t), true],
+  [C.rhone[0] + 1.2, C.rhone[1], t => truckCam(t), false],
+  [C.sw[0], C.sw[0] + 0.9, SWV, false],
+  [C.sw[0] + 0.9, C.sw[1], CENTV, false],
+  [C.paris[0], C.paris[0] + 0.9, PARV, false],
+  [S("m16") - 0.3, S("m16") + 0.8, FR, false],
+  [C.k81 - 0.1, C.k81 + 0.3, FRX, false],
+  [C.virus[0], C.virus[0] + 0.8, FR, false],
+  [C.record[0], C.record[0] + 0.8, FRX, false],
+  [C.stay[0], C.stay[1], OUT, false],
+];
+function camera(t){
+  if (t < C.intro[0]) return camLerp(MENT0, MENT, prog(t, 0, C.intro[0]), false, d3.easeSinOut);
+  let prev = MENT, tPrev = C.intro[0];
+  for (const [a, b, cam, fly] of SHOTS){
+    const cb = typeof cam === "function" ? cam(Math.min(t, b)) : cam;
+    if (t < a) return push(prev, prog(t, tPrev, a)*0.6);
+    if (t < b){
+      if (typeof cam === "function" && !fly) return cb;                 // suivi direct
+      return camLerp(a - tPrev > 0.01 ? push(prev, 0.6) : prev, cb, prog(t, a, b), fly);
+    }
+    prev = typeof cam === "function" ? cam(b) : cam; tPrev = b;
+  }
+  return push(prev, prog(t, tPrev, DUR));
+}
+function yearAt(t){
+  let seg = TL.ticker[0];
+  for (const s of TL.ticker) if (t >= s[0]) seg = s;
+  return {v: lerp(seg[2], seg[3], prog(t, seg[0], seg[1])), step: seg[4]};
+}
+
+const glc = document.getElementById("gl");
+const gl = glc.getContext("webgl2", {premultipliedAlpha:false, preserveDrawingBuffer:true, antialias:false});
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+uniform sampler2D uWorld, uEu;
+uniform vec3 uCam; uniform vec2 uC; uniform float uH, uShade, uSat; uniform vec4 uBox;
+out vec4 o;
+const float PI = 3.14159265359;
+void main(){
+  float px = gl_FragCoord.x, py = uH - gl_FragCoord.y;
+  float x = (px - uC.x)/uCam.z, y = (uC.y - py)/uCam.z;
+  float r2 = x*x + y*y;
+  float edge = 1.0 - smoothstep(1.0 - 2.0/uCam.z, 1.0, sqrt(r2));
+  if (r2 >= 1.0){ o = vec4(0); return; }
+  float z = sqrt(1.0 - r2), d = -uCam.y;
+  float X = z*cos(d) + y*sin(d), Z = y*cos(d) - z*sin(d);
+  float lon = mod(atan(x, X) + uCam.x + PI, 2.*PI) - PI, lat = asin(clamp(Z, -1., 1.));
+  vec2 uv = vec2((lon + PI)/(2.*PI), (PI/2. - lat)/PI), uv2 = vec2(fract(uv.x + .5), uv.y);
+  vec2 dx = dFdx(uv), dy = dFdy(uv), dx2 = dFdx(uv2), dy2 = dFdy(uv2);
+  if (abs(dx2.x) + abs(dy2.x) < abs(dx.x) + abs(dy.x)) { dx = dx2; dy = dy2; }
+  vec3 col = textureGrad(uWorld, uv, dx, dy).rgb;
+  vec2 euv = vec2((degrees(lon) - uBox.x)/(uBox.y - uBox.x), (uBox.w - degrees(lat))/(uBox.w - uBox.z));
+  float m = smoothstep(0., .03, euv.x) * smoothstep(1., .97, euv.x) * smoothstep(0., .04, euv.y) * smoothstep(1., .96, euv.y);
+  vec3 ce = textureGrad(uEu, clamp(euv, 0., 1.), dFdx(euv), dFdy(euv)).rgb;
+  col = mix(col, ce, m);
+  float l = dot(col, vec3(.299,.587,.114));
+  col = mix(vec3(l), col, 1.18*uSat);
+  col = clamp(((col - .5)*1.08 + .5)*.95, 0., 1.);
+  float light = mix(1.0, .35 + .75*pow(z, .6), uShade);
+  col = col*light + vec3(.35,.6,1.)*uShade*pow(1. - z, 3.)*.55;
+  o = vec4(col, edge);
+}`;
+function sh(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prg = gl.createProgram();
+gl.attachShader(prg, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prg, sh(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prg); gl.useProgram(prg);
+gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prg, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = n => gl.getUniformLocation(prg, n);
+function loadTex(src, unit){
+  return new Promise(res => { const img = new Image(); img.onload = () => {
+    gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img); gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const ext = gl.getExtension("EXT_texture_filter_anisotropic");
+    if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+    res(); }; img.src = src; });
+}
+gl.uniform1i(U("uWorld"), 0); gl.uniform1i(U("uEu"), 1);
+gl.uniform4f(U("uBox"), ...EU_BOX); gl.uniform1f(U("uH"), H); gl.uniform2f(U("uC"), W/2, MAPY);
+function drawGlobe(cam, shade, sat){
+  gl.viewport(0, 0, W, H); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform3f(U("uCam"), cam.lon*Math.PI/180, cam.lat*Math.PI/180, cam.s);
+  gl.uniform1f(U("uShade"), shade); gl.uniform1f(U("uSat"), sat);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+// ------------------------------------------------------------------ helpers
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", align="center", alpha=1, glow=null, stroke=0, scale=1, rot=0, base="alphabetic", spacing=0} = o;
+  if (alpha <= 0.003 || scale <= 0.001) return;
+  ctx.save(); ctx.globalAlpha *= Math.min(alpha, 1); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(scale, scale);
+  ctx.font = `${weight} ${size}px M`; ctx.textAlign = align; ctx.textBaseline = base;
+  if (spacing) ctx.letterSpacing = spacing + "px";
+  if (stroke){ ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(s, 0, 0); }
+  ctx.shadowColor = glow || "rgba(0,0,0,0.9)"; ctx.shadowBlur = glow ? 28 : 16; ctx.shadowOffsetY = glow ? 0 : 3;
+  ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+function richLine(segs, x, y, o={}){
+  const {size=56, weight=900, scale=1} = o;
+  ctx.font = `${weight} ${size}px M`;
+  const widths = segs.map(s => ctx.measureText(s.t).width), total = d3.sum(widths);
+  let cx = x - total*scale/2;
+  segs.forEach((s, i) => { txt(s.t, cx, y, {...o, align:"left", color:s.c}); cx += widths[i]*scale; });
+}
+function dashed(x0, y0, x1, y1, alpha, color="#fff", w=4){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.setLineDash([14, 10]); ctx.lineWidth = w; ctx.strokeStyle = color;
+  ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.restore();
+}
+// sticker : image détourée avec contour blanc (pré-calculé), entrée en ressort + flottement
+function sticker(key, cx, by, h, t, tin, tout, o={}){
+  const img = IMG[key]; if (!img) return;
+  const a = EBig(prog(t, tin, tin + 0.55)), out = E(prog(t, tout, tout + 0.45));
+  if (a <= 0 || out >= 1) return;
+  const {flip=false, gray=0, alpha=1, rot=-0.04} = o;
+  const w = h*img.width/img.height, fl = Math.sin((t - tin)*1.6)*6;
+  ctx.save();
+  ctx.translate(cx, by + out*700 + fl); ctx.rotate(rot*(1 - a) + Math.sin((t - tin)*0.9)*0.012);
+  ctx.scale(a*(flip ? -1 : 1), a);
+  ctx.globalAlpha = alpha*(1 - out*0.3);
+  ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
+  if (gray > 0) ctx.filter = `grayscale(${gray}) brightness(${1 - 0.35*gray})`;
+  ctx.drawImage(img, -w/2, -h, w, h);
+  ctx.restore();
+}
+function kin(str, x, y, t, t0, o={}){                // texte qui apparaît lettre par lettre (Montserrat)
+  const {size=120, color="#fff", out=1e9, step=0.045, rot=-0.03} = o;
+  const outK = prog(t, out, out + 0.3); if (t < t0 || outK >= 1) return;
+  ctx.save(); ctx.globalAlpha = 1 - outK; ctx.translate(x, y - 40*outK); ctx.rotate(rot); ctx.font = `900 ${size}px M`;
+  const chars = [...str], ws = chars.map(c => ctx.measureText(c).width), tot = d3.sum(ws);
+  let cx = -tot/2;
+  chars.forEach((c, i) => {
+    const a = EBig(prog(t, t0 + i*step, t0 + i*step + 0.26)), w = ws[i];
+    if (a > 0){
+      ctx.save(); ctx.translate(cx + w/2, -size*0.3*(1 - Math.min(a, 1))); ctx.scale(a, a);
+      ctx.lineJoin = "round"; ctx.lineWidth = size*0.14; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(c, -w/2, size*0.35);
+      ctx.shadowColor = color === "#fff" ? "rgba(0,0,0,.6)" : color; ctx.shadowBlur = color === "#fff" ? 10 : 26;
+      ctx.fillStyle = color; ctx.fillText(c, -w/2, size*0.35); ctx.restore();
+    }
+    cx += w;
+  });
+  ctx.restore();
+}
+function chip(textSegs, y, a, size=38){
+  if (a <= 0) return;
+  ctx.font = `900 ${size}px M`;
+  const w = d3.sum(textSegs, s => ctx.measureText(s.t).width) + 60;
+  ctx.save(); ctx.translate(W/2, y); ctx.scale(a, a); ctx.globalAlpha = Math.min(a, 1);
+  ctx.fillStyle = "rgba(0,0,0,0.62)"; ctx.strokeStyle = Y1; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.roundRect(-w/2, -size*0.95, w, size*1.75, size*0.9); ctx.fill(); ctx.stroke(); ctx.restore();
+  richLine(textSegs, W/2, y + size*0.32, {size, weight:900, scale:a, alpha:Math.min(a, 1)});
+}
+function pin(x, y, a, color=Y1, r=12){
+  ctx.save(); ctx.globalAlpha = Math.min(a, 1); ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 24;
+  ctx.beginPath(); ctx.arc(x, y, r*Math.max(a, 0.01), 0, 7); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.shadowBlur = 0; ctx.stroke(); ctx.restore();
+}
+function pulse(x, y, t, a, color=Y2, max=90){
+  for (let k = 0; k < 2; k++){ const ph = (t*0.8 + k*0.5) % 1;
+    ctx.save(); ctx.globalAlpha = (1 - ph)*a; ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 12 + ph*max, 0, 7); ctx.stroke(); ctx.restore(); }
+}
+function stamp(lines, y, t, t0, out){
+  const sa = prog(t, t0, t0 + 0.18), sOut = 1 - prog(t, out, out + 0.3);
+  if (sa <= 0 || sOut <= 0) return;
+  const sc = lerp(2.4, 1, d3.easeQuadIn(sa));
+  ctx.save(); ctx.translate(W/2, y); ctx.rotate(-0.1); ctx.scale(sc, sc); ctx.globalAlpha = sa*sOut;
+  ctx.strokeStyle = RED; ctx.lineWidth = 9; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 16;
+  ctx.strokeRect(-360, -100, 720, lines.length > 1 ? 210 : 170); ctx.restore();
+  lines.forEach((l, i) => txt(l, W/2, y + (i === 0 ? 30 : 100)*sc + (lines.length > 1 ? -10 : 10), {size:i === 0 ? 92 : 50, color:RED, scale:sc, rot:-0.1, alpha:sa*sOut, stroke:0}));
+}
+
+// ------------------------------------------------------------------ dessin : carte
+const rnd = d3.randomLcg(11);
+const stars = d3.range(320).map(() => [rnd()*W, rnd()*H, rnd()*1.7+0.3, rnd()]);
+const visible = p => d3.geoDistance(p, [-proj.rotate()[0], -proj.rotate()[1]]) < Math.PI/2 - 0.03;
+const vproj = p => visible(p) ? proj(p) : null;
+function geoArc(a, b, k, alpha, color="#fff", w=6){
+  if (k <= 0 || alpha <= 0) return null;
+  const ip = d3.geoInterpolate(a, b), n = 80, pts = d3.range(Math.floor(n*k) + 1).map(i => ip(i/n));
+  if (pts.length < 2) return null;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.setLineDash([12, 10]); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = "round";
+  ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8; ctx.beginPath(); path({type:"LineString", coordinates:pts}); ctx.stroke(); ctx.restore();
+  return vproj(pts[pts.length - 1]);
+}
+// route parcourue jusqu'à la fraction k (trait pointillé + halo)
+function routeLine(r, k, alpha, color="#fff", w=7, dash=[16, 11]){
+  if (k <= 0 || alpha <= 0) return;
+  const {p, i} = routeAt(r, k), pts = r.pts.slice(0, i).concat([p]);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.setLineDash(dash); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.shadowColor = "rgba(0,0,0,.85)"; ctx.shadowBlur = 10;
+  ctx.beginPath(); path({type:"LineString", coordinates:pts}); ctx.stroke(); ctx.restore();
+}
+// image détourée posée SUR la carte (bateau, camion), orientée selon le cap
+// passager clandestin : le moustique (dans son pneu pour le bateau) posé sur le véhicule + halo jaune
+function mapSprite(key, r, k, h, alpha, t, rider=0){
+  const img = IMG[key]; if (!img || alpha <= 0) return;
+  const {p, a, b} = routeAt(r, k), xy = vproj(p); if (!xy) return;
+  const pa = proj(a), pb = proj(b), dir = pb && pa ? Math.sign(pb[0] - pa[0]) || 1 : 1;
+  const w = h*img.width/img.height, bob = Math.sin(k*60)*2;
+  if (rider > 0) pulse(xy[0], xy[1] - h*0.4, t, alpha*rider, Y1, h*0.9);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(xy[0], xy[1] + bob); ctx.scale((key === "cargo" ? dir < 0 : dir > 0) ? -1 : 1, 1);
+  ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+  ctx.drawImage(img, -w/2, -h*0.85, w, h);
+  if (rider > 0){
+    ctx.globalAlpha = alpha*Math.min(rider, 1);
+    if (key === "cargo"){ const ti = IMG.pneu, th = h*0.62; ctx.drawImage(ti, -w*0.12 - th*ti.width/ti.height/2, -h*0.85 - th*0.72, th*ti.width/ti.height, th); }
+    const mq = IMG.m_34, mh = h*(key === "cargo" ? 0.5 : 0.85), wig = Math.sin(t*14)*0.12;
+    ctx.save(); ctx.translate(key === "cargo" ? -w*0.12 : w*0.1, key === "cargo" ? -h*0.85 - h*0.62*0.3 : -h*1.0);
+    const gl2 = ctx.createRadialGradient(0, 0, 0, 0, 0, mh*0.7); gl2.addColorStop(0, "rgba(255,214,10,0.8)"); gl2.addColorStop(1, "rgba(255,214,10,0)");
+    ctx.shadowColor = "transparent"; ctx.fillStyle = gl2; ctx.fillRect(-mh, -mh, 2*mh, 2*mh); ctx.rotate(wig);
+    ctx.drawImage(mq, -mh*mq.width/mq.height/2, -mh/2, mh*mq.width/mq.height, mh); ctx.restore();
+  }
+  ctx.restore();
+}
+function label(str, lonlat, dx, dy, a, o={}){
+  const p = vproj(lonlat); if (!p || a <= 0) return;
+  txt(str, p[0] + dx, p[1] + dy, {size:44, stroke:10, scale:Math.max(a, 0.001), alpha:Math.min(a, 1), ...o});
+}
+function spotlight(feature, k){
+  if (k <= 0) return;
+  ctx.save(); ctx.beginPath(); path({type:"Sphere"}); path(feature);
+  ctx.fillStyle = `rgba(2,6,18,${0.45*k})`; ctx.fill("evenodd"); ctx.restore();
+}
+
+// drapeau français (bandes verticales)
+const FLAG = document.createElement("canvas"); FLAG.width = 900; FLAG.height = 600;
+(f => { f.fillStyle = "#002395"; f.fillRect(0, 0, 300, 600); f.fillStyle = "#fff"; f.fillRect(300, 0, 300, 600);
+        f.fillStyle = "#ED2939"; f.fillRect(600, 0, 300, 600); })(FLAG.getContext("2d"));
+
+// ordre d'apparition des départements (aperçu du hook)
+const COLONISED = DEPS.features.filter(f => f.properties.y).sort((a, b) => a.properties.y - b.properties.y || d3.geoDistance(d3.geoCentroid(a), MENTON) - d3.geoDistance(d3.geoCentroid(b), MENTON));
+COLONISED.forEach((f, i) => f.properties.rank = i/COLONISED.length);
+const MAIN0 = M("m11", 0.1);
+function depFill(f, t){
+  const y = f.properties.y; if (!y) return 0;
+  const pv = EO(prog(t, C.preview[0] + f.properties.rank*1.6, C.preview[0] + f.properties.rank*1.6 + 0.25)) * (1 - prog(t, C.asia[0] - 0.2, C.asia[0] + 0.4));
+  const v = t >= MAIN0 ? yearAt(t).v : 0;
+  return Math.max(pv, clamp((v - (y - 0.6))*3));
+}
+const OUTBREAKS = [[3.88, 43.61], [5.93, 43.12], [7.26, 43.70], [8.74, 41.93], [4.84, 45.76], [1.44, 43.60], [-0.58, 44.84], [2.35, 48.86],
+  [7.75, 48.58], [5.04, 47.32], [2.89, 42.70], [4.81, 43.95], [4.36, 43.84], [5.72, 45.19], [6.13, 43.43], [3.21, 43.34], [0.69, 47.39]];
+
+function renderMap(t){
+  const cam = camera(t), camB = camera(Math.max(0, t - 1/30));
+  const dz = Math.log(cam.s/camB.s)*30, zoomSpeed = dz > 0 ? dz*0.4 : -dz*0.06;   // flou très léger
+  proj.rotate([-cam.lon, -cam.lat]).scale(cam.s);
+  const zk = prog(cam.s, 470, 1600);
+  const bg = ctx.createRadialGradient(W/2, MAPY, 50, W/2, MAPY, H*0.8);
+  bg.addColorStop(0, "#0a1630"); bg.addColorStop(1, "#010208");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  if (zk < 1){
+    for (const [x,y,r,p] of stars){ ctx.globalAlpha = (1-zk)*(0.3 + 0.7*Math.abs(Math.sin(t*1.1 + p*30)));
+      ctx.fillStyle = "#dfe6ff"; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(W/2, MAPY, cam.s*0.95, W/2, MAPY, cam.s*1.22);
+    g.addColorStop(0, `rgba(80,150,255,${0.55*(1-zk)})`); g.addColorStop(1, "rgba(80,150,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  drawGlobe(cam, 1 - zk, 0.9);
+  ctx.drawImage(glc, 0, 0);
+  const blur = clamp(zoomSpeed*0.3, 0, 0.45);
+  if (blur > 0.05) for (let i = 1; i <= 3; i++){
+    const k = 1 + blur*0.02*i; ctx.save(); ctx.globalAlpha = 0.2; ctx.translate(W/2, MAPY); ctx.scale(k, k); ctx.translate(-W/2, -MAPY); ctx.drawImage(glc, 0, 0); ctx.restore(); }
+  ctx.save(); ctx.beginPath(); path(borders); ctx.strokeStyle = `rgba(255,255,255,${0.12 + 0.12*zk})`; ctx.lineWidth = 1.3; ctx.stroke(); ctx.restore();
+
+  // ---- France : projecteur, drapeau au premier recul, départements
+  const frOn = clamp(prog(t, C.intro[0], C.intro[0] + 0.8) - prog(t, C.asia[0], C.asia[0] + 0.5) + prog(t, C.coast[1] - 0.2, C.coast[1] + 0.6));
+  spotlight(FRANCE, frOn*0.8);
+  const fa = EB(prog(t, C.flag - 0.1, C.flag + 0.4)) * (1 - prog(t, C.preview[0] - 0.1, C.preview[0] + 0.5));
+  if (fa > 0){
+    const [[x0, y0], [x1, y1]] = measure.bounds(FRANCE), cx = (x0 + x1)/2, cy = (y0 + y1)/2, s = Math.min(fa, 1.1);
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-cx, -cy);
+    ctx.beginPath(); path(FRANCE); ctx.save(); ctx.clip(); ctx.globalAlpha = Math.min(fa, 1)*0.92;
+    ctx.drawImage(FLAG, x0 - 10, y0 - 10, x1 - x0 + 20, y1 - y0 + 20); ctx.restore();
+    ctx.globalAlpha = Math.min(fa, 1); ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 14; ctx.stroke();
+    ctx.restore();
+  }
+  // gel (œufs résistants au froid) : voile glacé sur la France
+  const ice = Math.sin(Math.PI*prog(t, C.cold[0] + 0.6, Ed("m12") + 0.2))*0.5;
+  if (ice > 0.01){ ctx.save(); ctx.beginPath(); path(FRANCE); ctx.fillStyle = `rgba(159,227,255,${ice*0.5})`; ctx.fill(); ctx.restore(); }
+  if (frOn > 0){
+    for (const f of DEPS.features){
+      const a = depFill(f, t); if (a <= 0) continue;
+      ctx.save(); ctx.beginPath(); path(f); ctx.globalAlpha = frOn;
+      ctx.fillStyle = `rgba(255,214,10,${0.72*a})`; ctx.fill();
+      const fl = a*(1 - a)*4*(t < C.asia[0] - 0.3 || t > C.asia[0] + 0.5);                                                    // éclat à l'allumage
+      if (fl > 0.05){ ctx.strokeStyle = `rgba(255,255,255,${fl})`; ctx.lineWidth = 5; ctx.shadowColor = Y1; ctx.shadowBlur = 24; ctx.stroke(); }
+      ctx.restore();
+    }
+    ctx.save(); ctx.globalAlpha = frOn; ctx.beginPath(); for (const f of DEPS.features) path(f);
+    ctx.strokeStyle = "rgba(255,255,255,0.4)"; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.beginPath(); path(FRANCE); ctx.restore();
+  }
+  // ---- Menton (hook)
+  const mh = EB(prog(t, 0.5, 1.0)) * (1 - prog(t, C.intro[0] + 0.3, C.intro[0] + 0.8));
+  if (mh > 0){ const p = vproj(MENTON); if (p){ pulse(p[0], p[1], t, Math.min(mh, 1), Y2, 110); pin(p[0], p[1], mh, Y1, 13);
+    ctx.save(); ctx.globalAlpha = Math.min(mh, 1); ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(p[0], p[1], 58*Math.max(mh, 0.01), -Math.PI/2, -Math.PI/2 + 2*Math.PI*Math.min(1, prog(t, 0.6, 1.2))); ctx.stroke(); ctx.restore();
+    dashed(p[0] - 42, p[1] - 42, p[0] - 170, p[1] - 200, Math.min(mh, 1)); txt("MENTON", p[0] - 170, p[1] - 230, {size:62, scale:mh, stroke:12}); } }
+
+  // ---- Asie du Sud-Est
+  const sa = prog(t, C.asia[1] - 0.6, C.asia[1]) * (1 - prog(t, C.lanes[0] + 1.0, C.lanes[0] + 1.6));
+  if (sa > 0){
+    spotlight(SEASIA, sa*0.8);
+    ctx.save(); ctx.beginPath(); path(SEASIA); ctx.fillStyle = `rgba(255,214,10,${0.32*sa})`; ctx.fill();
+    ctx.strokeStyle = `rgba(255,255,255,${0.9*sa})`; ctx.lineWidth = 3; ctx.shadowColor = Y1; ctx.shadowBlur = 16; ctx.stroke(); ctx.restore();
+    const la = EB(prog(t, C.asia[1] - 0.2, C.asia[1] + 0.3))*(1 - prog(t, M("m06", 0.5), M("m06", 0.6)));
+    const p = vproj(ORIGIN); if (p && la > 0){ pulse(p[0], p[1], t, Math.min(la, 1)); pin(p[0], p[1], la, Y1, 14);
+      txt("ASIE", p[0] + 30, p[1] - 160, {size:60, scale:la, stroke:12}); txt("DU SUD-EST", p[0] + 30, p[1] - 95, {size:60, color:Y1, scale:la, stroke:12}); }
+  }
+  // ---- routes maritimes mondiales (les pneus voyagent partout)
+  const lk = prog(t, C.lanes[0], C.lanes[1] - 0.6), lOut = 1 - prog(t, C.alb[0], C.alb[0] + 0.5);
+  if (lk > 0 && lOut > 0){
+    LANES.forEach((d, i) => geoArc(ASIA_PORT, d, E(prog(lk, i*0.08, 0.5 + i*0.06)), lOut*0.85, "#fff", 4));
+    const p = vproj(ASIA_PORT); if (p) pin(p[0], p[1], lOut, Y1, 11);
+  }
+  // ---- les trois traversées
+  const trip = (key, dest, name, t0, tEnd, extra) => {
+    const k = shipK(key, t), al = clamp(prog(t, C[key][0] + 0.6, C[key][0] + 0.9)) * (1 - prog(t, tEnd, tEnd + 0.5));
+    if (al <= 0) return;
+    routeLine(RT[key], k, al, "#fff", 7);
+    if (extra) extra(al, k);
+    const ar = EB(prog(t, C[key][0] + 3.2, C[key][0] + 3.6))*al;
+    const pd = vproj(dest); if (pd && ar > 0){ pulse(pd[0], pd[1], t, Math.min(ar, 1)); pin(pd[0], pd[1], ar, Y1, 14);
+      txt(name, pd[0], pd[1] - 46, {size:52, scale:ar, stroke:11}); }
+    mapSprite("cargo", RT[key], k, 150, al*(1 - prog(t, C[key][0] + 3.4, C[key][0] + 3.8)), t, 1);
+    const ps = vproj(RT[key].pts[0]); if (ps) pin(ps[0], ps[1], al, "#fff", 10);
+  };
+  trip("alb", DURRES, "ALBANIE", 0, C.usa[0], al => { if (prog(t, C.alb[0] + 3.2, C.alb[0] + 3.6) > 0){ ctx.save(); ctx.beginPath(); path(albania);
+    ctx.fillStyle = `rgba(255,214,10,${0.5*al*prog(t, C.alb[0] + 3.2, C.alb[0] + 3.6)})`; ctx.fill(); ctx.restore(); } });
+  trip("usa", HOUSTON, "TEXAS", 0, C.ita[0]);
+  trip("ita", GENES, "GÊNES", 0, C.coast[1], al => { const k = prog(t, C.ita[0] + 3.2, C.ita[0] + 3.8); if (k > 0){ ctx.save(); ctx.beginPath(); path(italy);
+    ctx.strokeStyle = `rgba(255,255,255,${0.85*k*al})`; ctx.lineWidth = 3.5; ctx.shadowColor = "#fff"; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore(); } });
+  // ---- le long de la côte jusqu'à Menton
+  const ck = E(prog(t, C.coast[0] + 0.6, M("m11", 0.55))), cOut = 1 - prog(t, C.cold[0], C.cold[0] + 0.5);
+  if (ck > 0 && cOut > 0){
+    routeLine(RT.coast, ck, cOut, Y1, 9, [1, 0]);
+    const ma = EB(prog(t, M("m11", 0.5), M("m11", 0.6)))*cOut, p = vproj(MENTON);
+    if (p && ma > 0){ pulse(p[0], p[1], t, Math.min(ma, 1)); pin(p[0], p[1], ma, Y1, 15); txt("MENTON", p[0] - 40, p[1] + 80, {size:56, scale:ma, stroke:12}); }
+  }
+  // ---- vallée du Rhône → Paris : la route et le camion
+  const rk = roadK(t);
+  const rOut = clamp(prog(t, C.rhone[0] + 0.5, C.rhone[0] + 0.8)) * (1 - prog(t, S("m16") - 0.2, S("m16") + 0.3));
+  if (rOut > 0){
+    routeLine(RT.road, rk, rOut, "#fff", 8, [18, 12]);
+    truckXY = vproj(routeAt(RT.road, rk).p);
+    mapSprite("camion", RT.road, rk, 105, rOut, t, prog(t, M("m13", 0.38), M("m13", 0.45)));
+    label("VALLÉE", [5.6, 44.95], 120, -20, EB(prog(t, M("m13", 0.2), M("m13", 0.3)))*rOut*(1 - prog(t, C.sw[0], C.sw[0] + 0.3)), {size:40});
+    label("DU RHÔNE", [5.6, 44.95], 120, 30, EB(prog(t, M("m13", 0.2), M("m13", 0.3)))*rOut*(1 - prog(t, C.sw[0], C.sw[0] + 0.3)), {size:40, color:Y1});
+  }
+  label("SUD-OUEST", [0.2, 44.0], 0, 0, EB(prog(t, C.sw[0] + 0.5, C.sw[0] + 0.8))*(1 - prog(t, M("m14", 0.55), M("m14", 0.65))), {size:56});
+  label("CENTRE", [2.5, 46.6], 0, 0, EB(prog(t, M("m14", 0.6), M("m14", 0.7)))*(1 - prog(t, C.paris[0], C.paris[0] + 0.3)), {size:56});
+  const pa = EB(prog(t, C.paris[0] + 0.5, C.paris[0] + 0.9))*(1 - prog(t, S("m16"), S("m16") + 0.4));
+  if (pa > 0){ const p = vproj(PARIS); if (p){ pulse(p[0], p[1], t, Math.min(pa, 1)); pin(p[0], p[1], pa, Y1, 14); txt("PARIS", p[0], p[1] - 50, {size:56, scale:pa, stroke:12}); } }
+  // ---- 2025 : foyers de chikungunya contractés sur place
+  const ob = prog(t, C.record[0] + 0.3, C.k800 + 0.4), obOut = 1 - prog(t, C.stay[0] + 0.3, C.stay[0] + 0.9);
+  if (ob > 0 && obOut > 0) OUTBREAKS.forEach((q, i) => { const a = EB(prog(ob, i/OUTBREAKS.length*0.8, i/OUTBREAKS.length*0.8 + 0.15))*obOut, p = vproj(q);
+    if (p && a > 0){ pulse(p[0], p[1], t + i*0.3, Math.min(a, 1)*0.8, RED, 50); pin(p[0], p[1], a, RED, 10); } });
+
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.42, W/2, H/2, H*0.8);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.35)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+// ------------------------------------------------------------------ séquences photo plein écran
+// ------------------------------------------------------------------ séquences photo plein écran
+const PH = n => TL.photos.find(p => p.img === n);
+const onPh = (t, n) => { const p = PH(n); return EB(prog(t, p.a + 0.25, p.a + 0.6))*(1 - prog(t, p.b - 0.3, p.b)); };
+function photoAlpha(t){                                        // opacité de la photo active (0..1)
+  let best = 0;
+  for (const p of TL.photos){ const a = Math.min(EO(prog(t, p.a, p.a + 0.35)), 1 - prog(t, p.b - 0.35, p.b)); best = Math.max(best, a); }
+  return best;
+}
+function drawPhotos(t){
+  for (const p of TL.photos){
+    if (t < p.a || t > p.b) continue;
+    const img = IMG[p.img]; if (!img) continue;
+    const a = EO(prog(t, p.a, p.a + 0.35)), out = prog(t, p.b - 0.35, p.b), k = prog(t, p.a, p.b);
+    const z = lerp(p.z0, p.z1, d3.easeSinInOut(k)) * (1 + 0.22*(1 - a));           // plongée à l'entrée
+    const base = Math.max(W/img.width, H/img.height)*z, w = img.width*base, h = img.height*base;
+    const x = (W - w)/2 + p.px*W*k, y = (H - h)/2 + p.py*H*k;
+    ctx.save(); ctx.globalAlpha = a*(1 - out);
+    if (p.gray) ctx.filter = `grayscale(${p.gray}) contrast(1.05)`;
+    ctx.drawImage(img, x, y, w, h);
+    const fl = Math.exp(-(t - p.a)*9);
+    if (fl > 0.02){ ctx.save(); ctx.fillStyle = `rgba(255,255,255,${0.55*fl})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+    ctx.restore();
+    // dégradés haut/bas pour la lisibilité des textes
+    ctx.save(); ctx.globalAlpha = a*(1 - out);
+    let g = ctx.createLinearGradient(0, H*0.62, 0, H); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.65)");
+    ctx.fillStyle = g; ctx.fillRect(0, H*0.62, W, H*0.38);
+    g = ctx.createLinearGradient(0, 0, 0, H*0.25); g.addColorStop(0, "rgba(0,0,0,0.45)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H*0.25); ctx.restore();
+  }
+}
+
+// image en vol (trajectoire en arc, taille qui diminue) : [x, y centre, hauteur]
+function flyer(key, a, b, t, t0, t1, o={}){
+  const img = IMG[key]; if (!img) return;
+  const {fade=true, wob=1} = o, k = E(prog(t, t0, t1));
+  const x = lerp(a[0], b[0], k), y = lerp(a[1], b[1], k) - Math.sin(Math.PI*k)*160*wob, h = lerp(a[2], b[2], k);
+  const w = h*img.width/img.height;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t*18)*0.08*wob); ctx.globalAlpha = fade ? 1 - prog(k, 0.85, 1) : 1;
+  ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+  ctx.drawImage(img, -w/2, -h/2, w, h); ctx.restore();
+}
+// moustique tapi dans le pneu (petits mouvements) + halo
+function inside(x, y, h, t, a){
+  if (a <= 0) return; const img = IMG.m_34, w = h*img.width/img.height;
+  pulse(x, y, t, a, Y1, h*0.9);
+  ctx.save(); ctx.globalAlpha = a*0.9; const g = ctx.createRadialGradient(x, y, 0, x, y, h*0.75);
+  g.addColorStop(0, "rgba(255,214,10,0.85)"); g.addColorStop(1, "rgba(255,214,10,0)"); ctx.fillStyle = g; ctx.fillRect(x - h, y - h, 2*h, 2*h); ctx.restore();
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(x + Math.sin(t*9)*3, y); ctx.rotate(Math.sin(t*13)*0.15);
+  ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 10; ctx.drawImage(img, -w/2, -h/2, w, h); ctx.restore();
+}
+let truckXY = null;
+// ------------------------------------------------------------------ sous-titres (groupes de 2-3 mots)
+const CAPS = TL.vo.filter(v => !["m01", "m02", "m03", "m21"].includes(v.id)).map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){ const o = {hi:/\*/.test(w), w:w.replace(/\*/g, "")};
+    const p = words[words.length-1];
+    if (p && ((/^[:;!?…]$/.test(o.w)) || (/^\d+$/.test(p.w) && /^\d{3}/.test(o.w)))) { p.w += " " + o.w; p.hi = p.hi || o.hi; } else words.push(o); }
+  const groups = []; let cur = [];
+  for (const w of words){ const len = cur.map(x => x.w).join(" ").length + w.w.length + 1;
+    if (cur.length && len > 15){ groups.push(cur); cur = []; } cur.push(w); if (/[.,:!?…]$/.test(w.w)){ groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const tot = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4); let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4; const s = v.start + (v.end - v.start)*acc/tot; acc += l;
+    return {g, s, e:v.start + (v.end - v.start)*acc/tot}; });
+}).flat();
+
+// ------------------------------------------------------------------ rendu
+function render(t){
+  const pa = photoAlpha(t);
+  if (pa < 0.999) renderMap(t); else { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); }
+  drawPhotos(t);
+  overlay(t, pa);
+}
+function overlay(t, pa){
+  const mapA = 1 - pa;
+  // --- titre (2 lignes) : seulement pendant l'accroche
+  const hd = EO(prog(t, C.title, C.title + 0.5)) * (1 - prog(t, S("m04") - 0.6, S("m04") - 0.2)) * mapA;
+  if (hd > 0){
+    txt("LE MOUSTIQUE", W/2, 225, {size:104, alpha:hd, stroke:14});
+    txt("TIGRE", W/2, 335, {size:118, color:Y1, alpha:hd, stroke:14, glow:"rgba(255,214,10,.45)"});
+  }
+  // --- frise des années
+  const show = TL.ticker.some(s => t >= s[0] - 0.3 && t <= s[1] + 2.2) && t < Ed("m16") + 0.6;
+  const fa = (show ? 1 : 0) * mapA;
+  if (fa > 0){
+    const {v, step} = yearAt(t), y = 430, gap = 250;
+    ctx.save(); ctx.globalAlpha = fa; ctx.strokeStyle = Y1; ctx.lineWidth = 4; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.restore();
+    const base = Math.round(v/step)*step;
+    for (let j = -3; j <= 3; j++){
+      const yv = base + j*step, x = W/2 + (yv - v)/step*gap;
+      if (x < -150 || x > W + 150 || yv > 2025) continue;
+      const act = clamp(1 - Math.abs(yv - v)/step);
+      ctx.save(); ctx.globalAlpha = fa; ctx.fillStyle = Y1; ctx.fillRect(x - 2, y - 14, 4, 28); ctx.restore();
+      txt(String(yv), x, y + 66 + act*16, {size:46 + act*40, color:act > 0.5 ? ORANGE : Y1, alpha:fa*(0.5 + 0.5*act), stroke:8, glow:act > 0.5 ? "rgba(255,159,28,0.6)" : null});
+    }
+  }
+  // --- textes cinétiques (un seul bloc à la fois)
+  kin("+ DE 80", W/2, 600, t, C.k80, {size:150, color:Y1, out:Ed("m03") - 0.2});
+  kin("DÉPARTEMENTS", W/2, 720, t, C.k80 + 0.35, {size:84, out:Ed("m03") - 0.2});
+  kin("LES VIEUX PNEUS", W/2, 640, t, M("m06", 0.62), {size:92, color:Y1, out:Ed("m06") + 0.3});
+  kin("81 DÉPARTEMENTS", W/2, 640, t, C.k81, {size:82, color:Y1, out:Ed("m16") + 0.4});
+  kin("DENGUE", W/2, 640, t, M("m18", 0.3), {size:130, color:RED, out:M("m18", 0.62)});
+  kin("CHIKUNGUNYA", W/2, 640, t, M("m18", 0.66), {size:110, color:RED, out:S("m19") + 0.4});
+  kin("+ DE 800 CAS", W/2, 640, t, C.k800, {size:120, color:Y1, out:Ed("m19") + 0.3});
+  // --- compteur de départements (texte simple sous la frise, sans encadré)
+  const nDep = DEPS.features.filter(f => f.properties.y && depFill(f, t) > 0.5).length;
+  const ca = EO(prog(t, C.rhone[0] + 0.3, C.rhone[0] + 0.7))*(1 - prog(t, C.k81 - 0.3, C.k81))*mapA;
+  if (ca > 0) richLine([{t:String(nDep), c:Y1}, {t:nDep > 1 ? " DÉPARTEMENTS" : " DÉPARTEMENT", c:"#fff"}], W/2, 600, {size:54, alpha:ca, stroke:11});
+  // --- stickers (dans la mer, jamais sur la France)
+  sticker("m_34", 300, 1760, 330, t, 0.35, C.intro[0] + 0.2, {rot:0.05});
+  // le moustique s'envole et se cache dans le pneu
+  const F0 = Ed("m06") - 0.7, F1 = F0 + 0.9, TIRE = [820, 1700 - 165];
+  if (t < F0) sticker("m_cote", 300, 1650, 230, t, C.asia[1] - 0.2, 1e9);
+  else if (t < F1) flyer("m_cote", [300, 1650 - 115, 230], TIRE.concat([46]), t, F0, F1);
+  sticker("pneu", 820, 1700, 330, t, M("m06", 0.55), M("m07", 0.22) - 0.2);
+  if (t >= F1 && t < M("m07", 0.22)) inside(TIRE[0], TIRE[1] + 20, 120, t, 1 - E(prog(t, M("m07", 0.22) - 0.2, M("m07", 0.22) + 0.25)));
+  // puis le pneu (avec le moustique) est chargé sur le porte-conteneurs
+  const P = M("m07", 0.22), L0 = P + 2.6, L1 = P + 3.2, DECK = [500, 1700 - 300*0.62];
+  sticker("cargo", 560, 1700, 300, t, P + 2.1, C.alb[0] - 0.1);
+  const cOut = E(prog(t, C.alb[0] - 0.1, C.alb[0] + 0.35))*700;
+  if (t >= P + 2.0 && t < L0) { sticker("pneu", 820, 1700, 330, t, P + 2.0, 1e9); inside(820, 1700 - 145, 120, t, 1); }
+  else if (t >= L0 && t < L1) { const k = E(prog(t, L0, L1)); flyer("pneu", [820, 1700 - 165, 330], [DECK[0], DECK[1] - 55, 110], t, L0, L1, {fade:false, wob:0});
+    inside(lerp(820, DECK[0], k), lerp(1555, DECK[1] - 55, k), lerp(120, 60, k), t, 1); }
+  else if (t >= L1 && t < C.alb[0] + 0.4){ flyer("pneu", [DECK[0], DECK[1] - 55 + cOut, 110], [DECK[0], DECK[1] - 55 + cOut, 110], t, 0, 1, {fade:false, wob:0});
+    inside(DECK[0], DECK[1] - 55 + cOut, 60, t, 1); pulse(DECK[0], DECK[1] - 55 + cOut, t, 1 - prog(t, C.alb[0] - 0.1, C.alb[0] + 0.2), Y1, 90); }
+  // il se cache dans le camion (vole jusqu'au camion sur la carte)
+  const T0 = M("m13", 0.1), T1 = M("m13", 0.4);
+  if (t >= T0 && t < T1 && truckXY) flyer("m_cote", [170, 1350, 220], [truckXY[0], truckXY[1] - 60, 40], t, T0, T1);
+  sticker("flocon", 165, 1360, 220, t, M("m12", 0.4), C.rhone[0]);
+  sticker("m_dessus", 165, 1420, 280, t, C.virus[0] + 0.2, C.record[0] + 0.2);
+  sticker("m_34", 190, 1400, 280, t, C.stay[0] + 0.1, DUR + 1, {rot:0.05});
+  // --- outro
+  const oa = EB(prog(t, C.outro + 0.3, C.outro + 0.8));
+  if (oa > 0){
+    txt("Il est déjà arrivé", W/2, 330, {size:72, weight:800, scale:oa, stroke:12});
+    txt("dans ton département ?", W/2, 425, {size:72, weight:800, color:Y1, scale:oa, stroke:12});
+    const na = EB(prog(t, C.outro + 2.4, C.outro + 2.9));
+    if (na > 0) richLine([{t:"DIS-LE ", c:Y1}, {t:"EN COMMENTAIRE !", c:"#fff"}], W/2, 545, {size:56, scale:na, alpha:Math.min(na, 1), stroke:12});
+  }
+  // --- sous-titres : gros, en haut, par groupes de 2-3 mots
+  let cur = null;
+  for (const g of CAPS) if (g.s <= t) cur = g;
+  if (cur && t <= cur.e + 0.25 && t >= S("m04") - 0.1){
+    const a = EB(prog(t, cur.s, cur.s + 0.15));
+    const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.replace(/[.,]+$/, "").toUpperCase(), c:w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 300, {size:84, weight:900, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:16});
+  }
+}
+
+// ------------------------------------------------------------------ lecture
+// ------------------------------------------------------------------ lecture
+window.DURATION = DUR;
+window.renderAt = render;
+window.ready = Promise.all([loadTex(TEX.world, 0), loadTex(TEX.eu, 1),
+  ...Object.entries(IMG_SRC).map(([k, s]) => loadImg(k, s)),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M"), document.fonts.load("600 60px M")]);
+if (new URLSearchParams(location.search).has("capture")) document.body.classList.add("capture");
+else window.ready.then(() => {
+  const audio = new Audio("__AUDIO__");
+  let start = null; render(0);
+  const tc = document.getElementById("tc");
+  document.getElementById("play").onclick = () => { audio.currentTime = 0; audio.play().catch(() => {}); start = performance.now(); };
+  const loop = now => {
+    if (start !== null){ const t = Math.min(audio.paused ? (now - start)/1000 : audio.currentTime, DUR);
+      render(t); tc.textContent = t.toFixed(1) + " s / " + DUR.toFixed(0) + " s"; }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>

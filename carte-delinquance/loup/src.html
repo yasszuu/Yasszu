@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Retour du Loup</title>
+<style>
+@font-face{font-family:M;font-weight:600;src:url(data:font/woff2;base64,__M600__) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(data:font/woff2;base64,__M800__) format("woff2");}
+@font-face{font-family:M;font-weight:900;src:url(data:font/woff2;base64,__M900__) format("woff2");}
+:root{--bg:#02040a;--fg:#fff;--muted:#9aa4b8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#02040a}}
+:root[data-theme="dark"]{--bg:#02040a}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:M,system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#c{height:100%;max-width:100%;aspect-ratio:9/16;display:block}
+#gl{display:none}
+#ctrl{position:fixed;left:16px;bottom:16px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+#ctrl button{background:#151b27;color:var(--fg);border:1px solid #2a3346;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+body.capture #ctrl{display:none}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1080" height="1920"></canvas></div>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div id="ctrl"><button id="play">▶ Lecture (son)</button><span id="tc"></span></div>
+<script>__D3__</script>
+<script>__TOPOJSON__</script>
+<script>
+const WORLD = __WORLD__, DEPS = __DEPS__, TL = __TL__;
+const TEX = {world:"__TEXWORLD__", eu:"__TEXEU__"};
+const IMG_SRC = __IMGS__;
+const EU_BOX = [-14, 24, 33, 60];
+
+const W = 1080, H = 1920, MAPY = 1080;
+const Y1 = "#ffd60a", Y2 = "#ffe45c", ORANGE = "#ff9f1c", RED = "#ff4433";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const proj = d3.geoOrthographic().clipAngle(90).translate([W/2, MAPY]).precision(0.3);
+const path = d3.geoPath(proj, ctx), measure = d3.geoPath(proj);
+const C = TL.cue, V = Object.fromEntries(TL.vo.map(v => [v.id, v]));
+const S = k => V[k].start, Ed = k => V[k].end, DUR = TL.duration;
+
+const countries = topojson.feature(WORLD, WORLD.objects.countries).features;
+const france = countries.find(f => f.properties.name === "France");
+const italy = countries.find(f => f.properties.name === "Italy");
+const borders = topojson.mesh(WORLD, WORLD.objects.countries, (a,b) => a !== b);
+const DEP = Object.fromEntries(DEPS.features.map(f => [f.properties.code, f]));
+const metro = {type:"FeatureCollection", features: DEPS.features};
+DEPS.features.forEach(f => f.c = d3.geoCentroid(f));
+
+// ------------------------------------------------------------------ données de l'histoire
+// années de première détection (carte simplifiée, par grands fronts de colonisation)
+const EXPY = {"06":1992,"04":1994,"05":1995,"38":1996,"26":1996,"73":1997,"48":1997,"74":1998,"83":1999,"66":1999,
+  "84":2001,"39":2003,"01":2003,"25":2004,"09":2005,"11":2006,"07":2008,"13":2008,"88":2011,"52":2011,"30":2012,"34":2012,
+  "70":2013,"90":2013,"68":2013,"10":2013,"55":2014,"54":2014,"21":2014,"12":2015,"43":2015,"15":2015,"67":2016,"57":2016,
+  "51":2016,"63":2016,"31":2017,"65":2017,"81":2017,"71":2018,"58":2018,"89":2018,"42":2018,"69":2018,"87":2020,"19":2020,
+  "23":2020,"03":2020,"24":2021,"46":2021,"82":2021,"64":2021,"22":2021,"29":2021,"56":2021,"76":2022,"18":2022,"36":2022,
+  "41":2023,"86":2023,"16":2024};
+const NO_HIST = new Set(["2A","2B"]);                     // pas de loups historiques en Corse
+// ordre de disparition : de la périphérie vers le Limousin (derniers refuges)
+const LIMOUSIN = [1.6, 45.8];
+const FADE_ORDER = DEPS.features.filter(f => !NO_HIST.has(f.properties.code))
+  .map(f => ({code:f.properties.code, d:d3.geoDistance(f.c, LIMOUSIN) + 0.02*Math.sin(+f.properties.code.replace(/\D/g,"")*7.3)}))
+  .sort((a,b) => b.d - a.d).map((o,i,arr) => [o.code, i/(arr.length-1)]);
+const FADE_AT = Object.fromEntries(FADE_ORDER);
+const FILL_AT = Object.fromEntries(DEPS.features.map(f => [f.properties.code, (Math.sin(+f.properties.code.replace(/\D/g,"")*12.9898)*43758.5453 % 1 + 1) % 1]));
+// Apennins (refuge italien) et trajet de recolonisation
+const APENNINS = [[16.0,39.9],[15.4,40.6],[14.6,41.4],[13.9,41.9],[13.3,42.5],[12.8,43.2],[12.1,43.7],[11.3,44.1],[10.3,44.35],[9.3,44.5],[8.6,44.35]];
+const ABRUZZES = [13.9, 41.95];
+const TRAIL = [[13.9,41.95],[13.2,42.7],[12.5,43.4],[11.6,43.95],[10.6,44.3],[9.6,44.45],[8.6,44.3],[7.9,44.2],[7.17,44.07]];
+const MERC = [7.17, 44.07];
+function densify(line, n){
+  const segs = d3.pairs(line).map(([a,b]) => ({a, b, d:d3.geoDistance(a,b)})), tot = d3.sum(segs, s => s.d);
+  const out = []; let acc = 0;
+  for (const s of segs){ const ip = d3.geoInterpolate(s.a, s.b), k = Math.max(2, Math.round(n*s.d/tot));
+    for (let i = 0; i < k; i++) out.push(ip(i/k)); acc += s.d; }
+  out.push(line[line.length-1]); return out;
+}
+const APP_PTS = densify(APENNINS, 160), TRAIL_PTS = densify(TRAIL, 220);
+const LABELS = {"48":["MASSIF CENTRAL","1997",[-190,-120]], "66":["PYRÉNÉES","1999",[-170,120]], "39":["JURA","2003",[150,60]],
+                "88":["VOSGES","",[130,-80]], "29":["BRETAGNE","",[60,-110]], "76":["NORMANDIE","",[-20,-120]]};
+
+// ------------------------------------------------------------------ images
+const IMG = {};
+const loadImg = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { IMG[k] = i; r(); }; i.src = src; });
+
+// ------------------------------------------------------------------ caméra
+const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b, x));
+const prog = (t,a,b) => clamp((t-a)/(b-a));
+const lerp = (a,b,k) => a + (b-a)*k;
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EBig = d3.easeBackOut.overshoot(3);
+function fit(feature, center, w, h){
+  proj.rotate([-center[0], -center[1]]).scale(1).translate([0,0]);
+  const [[x0,y0],[x1,y1]] = measure.bounds(feature);
+  proj.translate([W/2, MAPY]);
+  return {lon:center[0], lat:center[1], s: Math.min(w/(x1-x0), h/(y1-y0))};
+}
+const FR = fit(metro, [2.5, 46.3], W*0.84, 800);
+const ITA = {lon:10.9, lat:43.1, s:FR.s*1.25};
+const MERCAM = {lon:7.35, lat:44.0, s:FR.s*2.3};
+const G0 = {lon:-38, lat:20, s:440}, G1 = {lon:9, lat:44, s:440};
+function camLerp(a, b, k, fly, ease=E){
+  const e = ease(k);
+  let s = Math.exp(lerp(Math.log(a.s), Math.log(b.s), e));
+  if (fly){ const dist = d3.geoDistance([a.lon,a.lat],[b.lon,b.lat])*180/Math.PI;
+    s *= 1 - clamp(dist/12, 0, 0.35)*Math.sin(Math.PI*e); }
+  return {lon:lerp(a.lon,b.lon,e), lat:lerp(a.lat,b.lat,e), s};
+}
+const push = (c, k) => ({...c, s:c.s*(1 + 0.05*k)});
+function camera(t){
+  const [z0, z1] = C.zoomFR;
+  if (t < z0) return camLerp(G0, G1, prog(t, 0, z0), false, d3.easeSinInOut);
+  if (t < z1) return camLerp(G1, FR, prog(t, z0, z1), false);
+  if (t < C.toItaly[0]) return push(FR, prog(t, z1, C.toItaly[0]));
+  if (t < C.toItaly[1]) return camLerp(push(FR,1), ITA, prog(t, ...C.toItaly), true);
+  if (t < C.path[0]) return push(ITA, prog(t, C.toItaly[1], C.path[0])*0.6);
+  if (t < C.path[1]) return camLerp(push(ITA,0.6), MERCAM, prog(t, ...C.path), false, d3.easeSinInOut);
+  if (t < C.toFR[0]) return push(MERCAM, prog(t, C.path[1], C.toFR[0])*0.8);
+  if (t < C.toFR[1]) return camLerp(push(MERCAM,0.8), FR, prog(t, ...C.toFR), true);
+  return push(FR, 0.8*prog(t, C.toFR[1], DUR));
+}
+// valeur de la frise des années
+function yearAt(t){
+  let seg = TL.ticker[0];
+  for (const s of TL.ticker) if (t >= s[0]) seg = s;
+  return {v: lerp(seg[2], seg[3], prog(t, seg[0], seg[1])), step: seg[4]};
+}
+
+// ------------------------------------------------------------------ WebGL : imagerie satellite
+const glc = document.getElementById("gl");
+const gl = glc.getContext("webgl2", {premultipliedAlpha:false, preserveDrawingBuffer:true, antialias:false});
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+uniform sampler2D uWorld, uEu;
+uniform vec3 uCam; uniform vec2 uC; uniform float uH, uShade, uSat; uniform vec4 uBox;
+out vec4 o;
+const float PI = 3.14159265359;
+void main(){
+  float px = gl_FragCoord.x, py = uH - gl_FragCoord.y;
+  float x = (px - uC.x)/uCam.z, y = (uC.y - py)/uCam.z;
+  float r2 = x*x + y*y;
+  float edge = 1.0 - smoothstep(1.0 - 2.0/uCam.z, 1.0, sqrt(r2));
+  if (r2 >= 1.0){ o = vec4(0); return; }
+  float z = sqrt(1.0 - r2), d = -uCam.y;
+  float X = z*cos(d) + y*sin(d), Z = y*cos(d) - z*sin(d);
+  float lon = mod(atan(x, X) + uCam.x + PI, 2.*PI) - PI, lat = asin(clamp(Z, -1., 1.));
+  vec2 uv = vec2((lon + PI)/(2.*PI), (PI/2. - lat)/PI), uv2 = vec2(fract(uv.x + .5), uv.y);
+  vec2 dx = dFdx(uv), dy = dFdy(uv), dx2 = dFdx(uv2), dy2 = dFdy(uv2);
+  if (abs(dx2.x) + abs(dy2.x) < abs(dx.x) + abs(dy.x)) { dx = dx2; dy = dy2; }
+  vec3 col = textureGrad(uWorld, uv, dx, dy).rgb;
+  vec2 euv = vec2((degrees(lon) - uBox.x)/(uBox.y - uBox.x), (uBox.w - degrees(lat))/(uBox.w - uBox.z));
+  float m = smoothstep(0., .03, euv.x) * smoothstep(1., .97, euv.x) * smoothstep(0., .04, euv.y) * smoothstep(1., .96, euv.y);
+  vec3 ce = textureGrad(uEu, clamp(euv, 0., 1.), dFdx(euv), dFdy(euv)).rgb;
+  col = mix(col, ce, m);
+  float l = dot(col, vec3(.299,.587,.114));
+  col = mix(vec3(l), col, 1.18*uSat);
+  col = clamp(((col - .5)*1.08 + .5)*.95, 0., 1.);
+  float light = mix(1.0, .35 + .75*pow(z, .6), uShade);
+  col = col*light + vec3(.35,.6,1.)*uShade*pow(1. - z, 3.)*.55;
+  o = vec4(col, edge);
+}`;
+function sh(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prg = gl.createProgram();
+gl.attachShader(prg, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prg, sh(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prg); gl.useProgram(prg);
+gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prg, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = n => gl.getUniformLocation(prg, n);
+function loadTex(src, unit){
+  return new Promise(res => { const img = new Image(); img.onload = () => {
+    gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img); gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const ext = gl.getExtension("EXT_texture_filter_anisotropic");
+    if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+    res(); }; img.src = src; });
+}
+gl.uniform1i(U("uWorld"), 0); gl.uniform1i(U("uEu"), 1);
+gl.uniform4f(U("uBox"), ...EU_BOX); gl.uniform1f(U("uH"), H); gl.uniform2f(U("uC"), W/2, MAPY);
+function drawGlobe(cam, shade, sat){
+  gl.viewport(0, 0, W, H); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform3f(U("uCam"), cam.lon*Math.PI/180, cam.lat*Math.PI/180, cam.s);
+  gl.uniform1f(U("uShade"), shade); gl.uniform1f(U("uSat"), sat);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ------------------------------------------------------------------ dessin : helpers
+const rnd = d3.randomLcg(11);
+const stars = d3.range(320).map(() => [rnd()*W, rnd()*H, rnd()*1.7+0.3, rnd()]);
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", align="center", alpha=1, glow=null, stroke=0, scale=1, rot=0, base="alphabetic", spacing=0} = o;
+  if (alpha <= 0.003 || scale <= 0.001) return;
+  ctx.save(); ctx.globalAlpha *= Math.min(alpha, 1); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(scale, scale);
+  ctx.font = `${weight} ${size}px M`; ctx.textAlign = align; ctx.textBaseline = base;
+  if (spacing) ctx.letterSpacing = spacing + "px";
+  if (stroke){ ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(s, 0, 0); }
+  ctx.shadowColor = glow || "rgba(0,0,0,0.9)"; ctx.shadowBlur = glow ? 28 : 16; ctx.shadowOffsetY = glow ? 0 : 3;
+  ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+function richLine(segs, x, y, o={}){
+  const {size=56, weight=900, scale=1} = o;
+  ctx.font = `${weight} ${size}px M`;
+  const widths = segs.map(s => ctx.measureText(s.t).width), total = d3.sum(widths);
+  let cx = x - total*scale/2;
+  segs.forEach((s, i) => { txt(s.t, cx, y, {...o, align:"left", color:s.c}); cx += widths[i]*scale; });
+}
+function dashed(x0, y0, x1, y1, alpha, color="#fff", w=4){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.setLineDash([14, 10]); ctx.lineWidth = w; ctx.strokeStyle = color;
+  ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.restore();
+}
+// sticker : image détourée avec contour blanc (pré-calculé), entrée en ressort + flottement
+function sticker(key, cx, by, h, t, tin, tout, o={}){
+  const img = IMG[key]; if (!img) return;
+  const a = EBig(prog(t, tin, tin + 0.55)), out = E(prog(t, tout, tout + 0.45));
+  if (a <= 0 || out >= 1) return;
+  const {flip=false, gray=0, alpha=1, rot=-0.04} = o;
+  const w = h*img.width/img.height, fl = Math.sin((t - tin)*1.6)*6;
+  ctx.save();
+  ctx.translate(cx, by + out*700 + fl); ctx.rotate(rot*(1 - a) + Math.sin((t - tin)*0.9)*0.012);
+  ctx.scale(a*(flip ? -1 : 1), a);
+  ctx.globalAlpha = alpha*(1 - out*0.3);
+  ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
+  if (gray > 0) ctx.filter = `grayscale(${gray}) brightness(${1 - 0.35*gray})`;
+  ctx.drawImage(img, -w/2, -h, w, h);
+  ctx.restore();
+}
+function paw(x, y, ang, s, alpha){
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang + Math.PI/2); ctx.scale(s, s); ctx.globalAlpha = alpha;
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 6;
+  ctx.beginPath(); ctx.ellipse(0, 4, 6.5, 5.5, 0, 0, 7); ctx.fill();
+  for (const [dx, dy, r] of [[-7,-4,2.6],[-2.6,-9,2.8],[2.6,-9,2.8],[7,-4,2.6]]){ ctx.beginPath(); ctx.ellipse(dx, dy, r, r*1.25, 0, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+function sheep(x, y, s, alpha){
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = alpha;
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 8;
+  for (const [dx, dy, r] of [[-12,0,11],[0,-6,12],[12,0,11],[0,5,12],[-6,6,10],[7,6,10]]){ ctx.beginPath(); ctx.arc(dx, dy, r, 0, 7); ctx.fill(); }
+  ctx.fillStyle = "#e9e9e9"; ctx.fillRect(-12, 12, 4, 12); ctx.fillRect(8, 12, 4, 12);
+  ctx.fillStyle = "#222"; ctx.beginPath(); ctx.ellipse(22, -4, 8, 6, 0.3, 0, 7); ctx.fill();
+  ctx.restore();
+}
+const nf = v => Math.round(v).toLocaleString("fr-FR");
+function spotlight(feature, k){
+  if (k <= 0) return;
+  ctx.save(); ctx.beginPath(); path({type:"Sphere"}); path(feature);
+  ctx.fillStyle = `rgba(2,6,18,${0.45*k})`; ctx.fill("evenodd"); ctx.restore();
+}
+function polyline(pts, n){
+  ctx.beginPath(); let started = false;
+  for (let i = 0; i < n; i++){ const p = proj(pts[i]); if (!p) continue;
+    if (!started){ ctx.moveTo(p[0], p[1]); started = true; } else ctx.lineTo(p[0], p[1]); }
+}
+
+// sous-titres découpés en groupes de mots
+const CAPS = TL.vo.filter(v => !["g1","g2"].includes(v.id)).map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){
+    const o = {hi:/\*/.test(w), w:w.replace(/\*/g, "")};
+    if (/^[:;!?]$/.test(o.w) && words.length) words[words.length-1].w += " " + o.w; else words.push(o);
+  }
+  const groups = []; let cur = [];
+  for (const w of words){ cur.push(w); if (cur.map(x => x.w).join(" ").length >= 13 || /[.,:!?]$/.test(w.w)){ groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const total = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4); let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4;
+    const s = v.start + (v.end - v.start)*acc/total; acc += l; return {g, s, e:v.start + (v.end - v.start)*acc/total}; });
+}).flat();
+
+// ------------------------------------------------------------------ rendu d'une image
+function render(t){
+  const cam = camera(t);
+  proj.rotate([-cam.lon, -cam.lat]).scale(cam.s);
+  const zk = prog(cam.s, 440, 2500), ratio = cam.s/FR.s;
+
+  // fond spatial + globe
+  const bg = ctx.createRadialGradient(W/2, MAPY, 50, W/2, MAPY, H*0.8);
+  bg.addColorStop(0, "#0a1630"); bg.addColorStop(1, "#010208");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  if (zk < 1){
+    for (const [x,y,r,p] of stars){ ctx.globalAlpha = (1-zk)*(0.3 + 0.7*Math.abs(Math.sin(t*1.1 + p*30)));
+      ctx.fillStyle = "#dfe6ff"; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(W/2, MAPY, cam.s*0.95, W/2, MAPY, cam.s*1.22);
+    g.addColorStop(0, `rgba(80,150,255,${0.55*(1-zk)})`); g.addColorStop(1, "rgba(80,150,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  // chapitre « disparition » légèrement désaturé
+  const sad = prog(t, C.fade[0], C.stamp) * (1 - prog(t, C.toItaly[0], C.toItaly[1]));
+  drawGlobe(cam, 1 - zk, 1 - 0.45*sad);
+  ctx.drawImage(glc, 0, 0);
+
+  // projecteurs
+  const frSpot = E(prog(t, C.zoomFR[0] + 0.8, C.zoomFR[1])) * (1 - prog(t, C.toItaly[0], C.toItaly[0] + 0.6))
+               + E(prog(t, C.arrive, C.arrive + 0.8));
+  const itSpot = E(prog(t, C.toItaly[0] + 0.3, C.toItaly[1])) * (1 - prog(t, C.path[0], C.path[0] + 1.2));
+  spotlight(france, clamp(frSpot)); spotlight(italy, itSpot);
+  ctx.save(); ctx.beginPath(); path(borders);
+  ctx.strokeStyle = `rgba(255,255,255,${0.14 + 0.1*zk})`; ctx.lineWidth = 1.2; ctx.stroke(); ctx.restore();
+
+  // ---- départements : présence historique puis disparition
+  const fillK = prog(t, ...C.fillAll), fadeK = prog(t, C.fade[0], C.fade[1]);
+  const histOn = t < C.toItaly[1];
+  if (histOn && fillK > 0){
+    DEPS.features.forEach(f => {
+      const c = f.properties.code; if (NO_HIST.has(c)) return;
+      const a = EO(clamp((fillK - FILL_AT[c]*0.7)/0.3)) * (1 - E(clamp((fadeK - FADE_AT[c]*0.85)/0.15)));
+      if (a <= 0.01) return;
+      ctx.save(); ctx.beginPath(); path(f); ctx.globalAlpha = a*0.5; ctx.fillStyle = Y1; ctx.fill(); ctx.restore();
+    });
+  }
+  // ---- départements : recolonisation
+  const yr = yearAt(t).v;
+  const recol = t >= C.arrive;
+  if (recol){
+    DEPS.features.forEach(f => {
+      const c = f.properties.code; const y = EXPY[c]; if (!y) return;
+      let a = c === "06" ? EO(prog(t, C.arrive, C.arrive + 0.5)) : (t >= C.expand[0] ? EO(clamp(yr - y + 1)) : 0);
+      if (["22","29","56"].includes(c)) a = Math.max(a, EO(prog(t, C.labels["29"] - 0.3, C.labels["29"] + 0.2)));
+      if (c === "76") a = Math.max(a, EO(prog(t, C.labels["76"] - 0.3, C.labels["76"] + 0.2)));
+      if (a <= 0.01) return;
+      const fresh = clamp(1 - (yr - y)/2) * (t >= C.expand[0] && t < C.expand[1] + 1 ? 1 : 0);
+      ctx.save(); ctx.beginPath(); path(f);
+      ctx.globalAlpha = a*(0.5 + 0.25*fresh); ctx.fillStyle = Y1; ctx.fill();
+      if (c === "06" || fresh > 0.3){ ctx.globalAlpha = a*0.9; ctx.shadowColor = Y1; ctx.shadowBlur = 25;
+        ctx.strokeStyle = Y2; ctx.lineWidth = 3; ctx.stroke(); }
+      ctx.restore();
+    });
+  }
+  // contours départements + France
+  const depA = E(prog(t, C.zoomFR[1] - 0.8, C.zoomFR[1] + 0.3));
+  if (depA > 0){
+    ctx.save(); ctx.globalAlpha = depA; ctx.beginPath(); path(metro);
+    ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = clamp(1.1*Math.sqrt(ratio), 1, 2.4); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.beginPath(); path(france); ctx.shadowColor = "rgba(255,255,255,.9)"; ctx.shadowBlur = 14;
+    ctx.strokeStyle = `rgba(255,255,255,${0.85*depA})`; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
+  }
+
+  // ---- Italie : Apennins
+  const apA = prog(t, ...C.apennins), apOut = 1 - prog(t, C.toFR[0], C.toFR[1]);
+  if (apA > 0 && apOut > 0){
+    const n = Math.max(2, Math.round(APP_PTS.length*E(apA)));
+    const boost = EO(prog(t, C.protect, C.protect + 0.6));
+    ctx.save(); ctx.globalAlpha = apOut; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.globalAlpha = apOut*(1 - 0.8*prog(t, C.path[0], C.path[0] + 0.8));
+    polyline(APP_PTS, n); ctx.strokeStyle = `rgba(255,214,10,${0.4 + 0.2*boost})`; ctx.lineWidth = (16 + 12*boost)*ratio/1.2;
+    ctx.shadowColor = Y1; ctx.shadowBlur = 30; ctx.stroke();
+    ctx.restore();
+    const [ax, ay] = proj(ABRUZZES), pul = (t*0.9) % 1, la = EB(prog(t, C.apennins[0] + 0.6, C.apennins[0] + 1.1));
+    ctx.save(); ctx.globalAlpha = (1 - pul)*apOut*la; ctx.strokeStyle = Y2; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(ax, ay, 12 + pul*70, 0, 7); ctx.stroke(); ctx.restore();
+    const lo = 1 - prog(t, C.path[0], C.path[0] + 0.6);
+    dashed(ax, ay, ax - 140, ay + 150, la*lo);
+    txt("ABRUZZES", ax - 140, ay + 205, {size:40, alpha:la*lo, stroke:9});
+    txt("≈ 100 LOUPS", ax - 140, ay + 262, {size:52, color:Y1, alpha:la*lo, stroke:10, glow:"rgba(255,214,10,.5)"});
+    // 1971 : protection
+    const pa = EB(prog(t, C.protect, C.protect + 0.5)) * lo;
+    if (pa > 0){
+      const bx = W/2, by = 700;
+      ctx.save(); ctx.translate(bx - 250, by - 22); ctx.scale(pa, pa);
+      ctx.fillStyle = Y1; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.moveTo(0,-34); ctx.lineTo(28,-24); ctx.quadraticCurveTo(28,18,0,36); ctx.quadraticCurveTo(-28,18,-28,-24); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "#111"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-11,1); ctx.lineTo(-2,11); ctx.lineTo(13,-9); ctx.stroke();
+      ctx.restore();
+      txt("PROTÉGÉ EN ITALIE", bx + 30, by - 4, {size:44, alpha:pa, stroke:9, scale:pa});
+      txt("DÈS 1971", bx + 30, by + 46, {size:40, color:Y1, alpha:pa, stroke:9, scale:pa});
+    }
+  }
+
+  // ---- trajet de recolonisation + empreintes
+  const pk = prog(t, ...C.path), pOut = 1 - prog(t, C.toFR[1], C.toFR[1] + 1.0);
+  if (pk > 0 && pOut > 0){
+    const n = Math.max(2, Math.round(TRAIL_PTS.length*pk));
+    ctx.save(); ctx.globalAlpha = pOut; ctx.setLineDash([18, 12]); ctx.lineDashOffset = -t*40;
+    polyline(TRAIL_PTS, n); ctx.setLineDash([]); ctx.strokeStyle = "rgba(0,0,0,.45)"; ctx.lineWidth = 13; ctx.stroke();
+    ctx.setLineDash([18, 12]); ctx.strokeStyle = "#fff"; ctx.lineWidth = 7; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 10; ctx.stroke();
+    ctx.restore();
+    for (let i = 0; i < C.paws; i++){
+      const f = (i + 0.5)/C.paws; if (f > pk) break;
+      const idx = Math.floor(f*(TRAIL_PTS.length - 2));
+      const p0 = proj(TRAIL_PTS[idx]), p1 = proj(TRAIL_PTS[idx + 1]); if (!p0 || !p1) continue;
+      const ang = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), side = i % 2 ? 1 : -1;
+      const age = EO(prog(t, C.path[0] + f*(C.path[1] - C.path[0]), C.path[0] + f*(C.path[1] - C.path[0]) + 0.25));
+      paw(p0[0] - Math.sin(ang)*30*side, p0[1] + Math.cos(ang)*30*side, ang, 1.6*age + 0.0001, pOut*age*0.95);
+    }
+    // mini-loup en tête du tracé
+    if (pk < 1){
+      const head = proj(TRAIL_PTS[n - 1]), prev = proj(TRAIL_PTS[Math.max(0, n - 6)]);
+      if (head && prev){ const img = IMG.debout, h = 120, w = h*img.width/img.height;
+        ctx.save(); ctx.translate(head[0], head[1] - 6 + Math.abs(Math.sin(t*9))*-8);
+        ctx.scale(head[0] < prev[0] ? -1 : 1, 1); ctx.globalAlpha = EO(prog(t, C.path[0], C.path[0] + 0.4));
+        ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 16; ctx.drawImage(img, -w/2, -h, w, h); ctx.restore(); }
+    }
+  }
+
+  // ---- arrivée au Mercantour
+  const ma = EB(prog(t, C.arrive, C.arrive + 0.5)) * (1 - prog(t, C.toFR[0], C.toFR[0] + 0.5));
+  if (ma > 0){
+    const [mx, my] = proj(MERC);
+    for (let k = 0; k < 2; k++){ const ph = ((t - C.arrive)*0.8 + k*0.5) % 1;
+      ctx.save(); ctx.globalAlpha = (1 - ph)*ma; ctx.strokeStyle = Y2; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(mx, my, 14 + ph*110, 0, 7); ctx.stroke(); ctx.restore(); }
+    ctx.save(); ctx.fillStyle = Y1; ctx.shadowColor = Y1; ctx.shadowBlur = 30; ctx.beginPath(); ctx.arc(mx, my, 13*ma, 0, 7); ctx.fill(); ctx.restore();
+    dashed(mx, my, mx - 160, my - 180, Math.min(ma, 1));
+    txt("MERCANTOUR", mx - 160, my - 260, {size:54, scale:ma, stroke:10});
+    txt("5 NOV. 1992", mx - 160, my - 200, {size:48, color:Y1, scale:ma, stroke:10, glow:"rgba(255,214,10,.5)"});
+  }
+  // flash blanc à l'arrivée
+  const fl = Math.exp(-Math.max(0, t - C.arrive)*7) * (t >= C.arrive ? 1 : 0);
+  if (fl > 0.01){ ctx.fillStyle = `rgba(255,255,240,${0.45*fl})`; ctx.fillRect(0, 0, W, H); }
+
+  // ---- étiquettes des massifs
+  const labOut = 1 - prog(t, C.count - 0.3, C.count);
+  for (const [code, [name, year, off]] of Object.entries(LABELS)){
+    const la = EB(prog(t, C.labels[code], C.labels[code] + 0.45)) * labOut;
+    if (la <= 0) continue;
+    const [x, y] = proj(DEP[code].c);
+    const lx = clamp(x + off[0], 170, W - 170), ly = y + off[1];
+    dashed(x, y, lx, ly + (off[1] < 0 ? 16 : -46), Math.min(la, 1), "#fff", 3);
+    ctx.save(); ctx.fillStyle = Y2; ctx.beginPath(); ctx.arc(x, y, 7*la, 0, 7); ctx.fill(); ctx.restore();
+    txt(name, lx, ly, {size:36, scale:la, stroke:8});
+    if (year) txt(year, lx, ly + 44, {size:38, color:Y1, scale:la, stroke:8});
+  }
+
+  // vignette + bandeau titre
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.35, W/2, H/2, H*0.75);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  const tg = ctx.createLinearGradient(0, 0, 0, 640);
+  tg.addColorStop(0, "rgba(0,0,0,0.6)"); tg.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 640);
+
+  overlay(t, yr);
+}
+
+const CHAPTERS = [["a1","1","LA DISPARITION"],["b1","2","LE REFUGE ITALIEN"],["c1","3","LE RETOUR"],["d1","4","LA RECONQUÊTE"],["f1","5","LE CONFLIT"]];
+function overlay(t, yr){
+  // --- titre : grand pendant l'accroche, puis en-tête compact
+  const ti = EB(prog(t, 0.15, 0.7)), k = E(prog(t, C.zoomFR[0], C.zoomFR[0] + 0.9));
+  const outroHide = 1 - prog(t, C.outro, C.outro + 0.4);
+  if (ti > 0){
+    const y1 = lerp(330, 150, k), y2 = lerp(440, 150, k), sz = lerp(104, 50, k);
+    if (k < 1){
+      txt("LE RETOUR", W/2, y1, {size:sz, scale:0.7 + 0.3*ti, alpha:ti*(1 - k), glow:null});
+      txt("DU LOUP", W/2, y2, {size:sz*1.1, color:Y1, scale:0.7 + 0.3*ti, alpha:ti*(1 - k), glow:"rgba(255,214,10,.55)"});
+      txt("EN FRANCE  •  1992 → 2025", W/2, y2 + 70, {size:34, weight:800, alpha:EO(prog(t, 0.6, 1.1))*(1 - k), spacing:4});
+    }
+    if (k > 0) richLine([{t:"LE RETOUR ", c:"#fff"}, {t:"DU LOUP", c:Y1}], W/2, 150, {size:54, alpha:k*outroHide});
+  }
+  // --- chapitres
+  CHAPTERS.forEach(([id, n, name], i) => {
+    const t0 = S(id) - 0.4, t1 = i + 1 < CHAPTERS.length ? S(CHAPTERS[i+1][0]) - 0.6 : C.outro;
+    const a = EO(prog(t, t0, t0 + 0.5)) * (1 - prog(t, t1, t1 + 0.3));
+    if (a <= 0) return;
+    const dx = (1 - a)*-80;
+    richLine([{t:`${n}  `, c:Y1}, {t:name, c:"#fff"}], W/2 + dx, 215, {size:34, weight:800, alpha:a, spacing:5});
+  });
+  // --- accroche : badge +1 000
+  const ba = EBig(prog(t, S("h2") + 1.25, S("h2") + 1.8)) * (1 - prog(t, C.zoomFR[0] + 0.2, C.zoomFR[0] + 0.6));
+  if (ba > 0){
+    ctx.save(); ctx.translate(250, 1250); ctx.rotate(-0.12); ctx.scale(ba, ba);
+    ctx.fillStyle = Y1; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 30;
+    ctx.beginPath(); ctx.arc(0, 0, 135, 0, 7); ctx.fill(); ctx.restore();
+    txt("+1 000", 250, 1255, {size:70, color:"#111", scale:ba, rot:-0.12});
+    txt("LOUPS", 250, 1310, {size:36, color:"#111", scale:ba, rot:-0.12});
+  }
+  // --- tampon DISPARU
+  const sa = prog(t, C.stamp, C.stamp + 0.18), sOut = 1 - prog(t, C.toItaly[0], C.toItaly[0] + 0.4);
+  if (sa > 0 && sOut > 0){
+    const sc = lerp(2.4, 1, d3.easeQuadIn(sa));
+    ctx.save(); ctx.translate(W/2, 1010); ctx.rotate(-0.16); ctx.scale(sc, sc); ctx.globalAlpha = sa*sOut;
+    ctx.strokeStyle = RED; ctx.lineWidth = 9; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 16;
+    ctx.strokeRect(-250, -78, 500, 156); ctx.restore();
+    txt("DISPARU", W/2, 1010 + 36*sc, {size:110, color:RED, scale:sc, rot:-0.16, alpha:sa*sOut, stroke:0});
+    txt("DE FRANCE DANS LES ANNÉES 1930", W/2, 1160, {size:34, weight:800, alpha:prog(t, C.stamp + 0.3, C.stamp + 0.7)*sOut, stroke:8});
+  }
+  // --- frise des années
+  const fa = EO(prog(t, C.tickerShow[0], C.tickerShow[0] + 0.5)) * (1 - prog(t, C.tickerShow[1], C.tickerShow[1] + 0.4));
+  if (fa > 0){
+    const {v, step} = yearAt(t), y = 440, gap = 250;
+    ctx.save(); ctx.globalAlpha = fa; ctx.strokeStyle = Y1; ctx.lineWidth = 4; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.restore();
+    const base = Math.round(v/step)*step;
+    for (let j = -3; j <= 3; j++){
+      const yv = base + j*step, x = W/2 + (yv - v)/step*gap;
+      if (x < -150 || x > W + 150 || yv > 2025) continue;
+      const act = clamp(1 - Math.abs(yv - v)/step);
+      ctx.save(); ctx.globalAlpha = fa; ctx.fillStyle = Y1; ctx.fillRect(x - 2, y - 14, 4, 28); ctx.restore();
+      txt(String(yv), x, y + 66 + act*16, {size:46 + act*40, color:act > 0.5 ? ORANGE : Y1, alpha:fa*(0.5 + 0.5*act), stroke:8,
+        glow:act > 0.5 ? "rgba(255,159,28,0.6)" : null});
+    }
+  }
+  // --- compteur de loups pendant la reconquête
+  const ca = EO(prog(t, C.expand[0], C.expand[0] + 0.5)) * (1 - prog(t, C.count - 0.4, C.count));
+  if (ca > 0){
+    const n = wolvesAt(yr);
+    txt("LOUPS EN FRANCE", 70, 1290, {size:28, weight:800, align:"left", alpha:ca, stroke:7, spacing:2});
+    txt(nf(n), 70, 1372, {size:86, color:Y1, align:"left", alpha:ca, stroke:10, glow:"rgba(255,214,10,.45)"});
+  }
+  // --- grand compteur OFB
+  const co = EB(prog(t, C.count, C.count + 0.5)) * (1 - prog(t, C.prey - 0.5, C.prey - 0.1));
+  const dim = Math.max(prog(t, C.count - 0.3, C.count + 0.2)*(1 - prog(t, C.outro - 0.2, C.outro + 0.6)), 0);
+  if (dim > 0){ ctx.fillStyle = `rgba(0,0,0,${0.55*dim})`; ctx.fillRect(0, 300, W, 1350); }
+  if (co > 0){
+    const roll = EO(prog(t, C.count, C.count + 1.4));
+    txt("EN 2025, L'OFB ESTIME", W/2, 830, {size:38, weight:800, alpha:co, stroke:8});
+    txt(nf(1082*roll), W/2, 1010, {size:210, color:Y1, scale:co, stroke:14, glow:"rgba(255,214,10,.5)"});
+    txt("LOUPS EN FRANCE", W/2, 1100, {size:58, scale:co, stroke:10});
+    txt("intervalle : 989 – 1 187", W/2, 1165, {size:30, weight:600, alpha:co*prog(t, C.count + 1, C.count + 1.5), stroke:6});
+  }
+  // --- prédation
+  const pr = EB(prog(t, C.prey, C.prey + 0.5)) * (1 - prog(t, C.downgrade - 0.5, C.downgrade - 0.1));
+  if (pr > 0){
+    txt("12 000", W/2, 960, {size:200, color:RED, scale:pr, stroke:14, glow:"rgba(255,68,51,.45)"});
+    txt("ANIMAUX D'ÉLEVAGE TUÉS", W/2, 1050, {size:52, scale:pr, stroke:10});
+    txt("EN 2024 (BILAN PROVISOIRE)", W/2, 1105, {size:32, weight:800, alpha:pr, stroke:7, spacing:2});
+    for (let i = 0; i < 7; i++){
+      const a = EB(prog(t, C.prey + 0.4 + i*0.08, C.prey + 0.8 + i*0.08));
+      sheep(W/2 + (i - 3)*110, 1210, 1.6*a + 0.0001, pr*Math.min(a, 1));
+    }
+  }
+  // --- déclassement
+  const dg = EO(prog(t, C.downgrade, C.downgrade + 0.4)) * (1 - prog(t, C.outro - 0.3, C.outro + 0.1));
+  if (dg > 0){
+    txt("STATUT EN EUROPE · 2025", W/2, 820, {size:34, weight:800, alpha:dg, stroke:7, spacing:3});
+    txt("STRICTEMENT PROTÉGÉ", W/2, 930, {size:66, alpha:dg, stroke:10});
+    const st = E(prog(t, C.downgrade + 0.35, C.downgrade + 0.7));
+    if (st > 0){ ctx.save(); ctx.globalAlpha = dg; ctx.strokeStyle = RED; ctx.lineWidth = 10; ctx.lineCap = "round";
+      ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.moveTo(W/2 - 380, 912); ctx.lineTo(W/2 - 380 + 760*st, 905); ctx.stroke(); ctx.restore(); }
+    const ar = EB(prog(t, C.downgrade + 0.6, C.downgrade + 1.0));
+    txt("↓", W/2, 1040, {size:90, color:Y1, scale:ar, stroke:10});
+    txt("PROTÉGÉ", W/2, 1150, {size:96, color:Y1, scale:ar, stroke:12, glow:"rgba(255,214,10,.5)"});
+  }
+  // --- outro
+  const oa = EB(prog(t, C.outro + 0.2, C.outro + 0.7));
+  if (oa > 0){
+    txt("LE LOUP A-T-IL", W/2, 330, {size:76, scale:oa, stroke:12});
+    txt("SA PLACE EN FRANCE ?", W/2, 420, {size:76, color:Y1, scale:oa, stroke:12, glow:"rgba(255,214,10,.5)"});
+    const na = EB(prog(t, C.next, C.next + 0.5));
+    if (na > 0){
+      ctx.save(); ctx.translate(W/2, 540); ctx.scale(na, na); ctx.fillStyle = "rgba(0,0,0,.6)";
+      ctx.strokeStyle = Y1; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(-330, -45, 660, 90, 45); ctx.fill(); ctx.stroke(); ctx.restore();
+      richLine([{t:"PROCHAIN ÉPISODE : ", c:"#fff"}, {t:"LE LION DE L'ATLAS", c:Y1}], W/2, 552, {size:34, weight:900, scale:na});
+    }
+  }
+  // --- stickers
+  sticker("hurle_clair", 770, 1500, 640, t, 0.15, C.zoomFR[0] + 0.1);
+  const g = prog(t, C.fade[0], C.stamp);
+  sticker("face", 820, 1480, 540, t, S("a1") + 0.6, C.toItaly[0] - 0.2, {gray:g, alpha:1 - 0.45*prog(t, C.stamp, C.stamp + 0.4)});
+  sticker("debout", 790, 1500, 470, t, C.merc, C.toFR[0]);
+  sticker("hurle_sombre", 540, 1560, 720, t, C.outro, DUR + 10);
+
+  // --- sous-titres
+  let cur = null;
+  for (const c of CAPS) if (c.s <= t) cur = c;
+  if (cur && t <= cur.e + 0.35){
+    const a = EB(prog(t, cur.s, cur.s + 0.18));
+    const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.toUpperCase(), c:w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 1620, {size:56, weight:900, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:12});
+  }
+}
+// effectif estimé (points d'appui OFB : 2018 ≈ 430, 2022 ≈ 921, 2023 ≈ 1 104, 2024 ≈ 1 013, 2025 ≈ 1 082)
+function wolvesAt(y){
+  const P = [[1992,2],[2018,430],[2022,921],[2023,1104],[2024,1013],[2025,1082]];
+  if (y <= 1992) return 2;
+  for (let i = 1; i < P.length; i++) if (y <= P[i][0]){
+    const [y0,v0] = P[i-1], [y1,v1] = P[i], k = (y - y0)/(y1 - y0);
+    return i === 1 ? Math.exp(lerp(Math.log(v0), Math.log(v1), k)) : lerp(v0, v1, k);
+  }
+  return 1082;
+}
+
+// ------------------------------------------------------------------ lecture
+window.DURATION = DUR;
+window.renderAt = render;
+window.ready = Promise.all([loadTex(TEX.world, 0), loadTex(TEX.eu, 1),
+  ...Object.entries(IMG_SRC).map(([k, s]) => loadImg(k, s)),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M"), document.fonts.load("600 60px M")]);
+if (new URLSearchParams(location.search).has("capture")) document.body.classList.add("capture");
+else window.ready.then(() => {
+  const audio = new Audio("__AUDIO__");
+  let start = null; render(0);
+  const tc = document.getElementById("tc");
+  document.getElementById("play").onclick = () => { audio.currentTime = 0; audio.play().catch(() => {}); start = performance.now(); };
+  const loop = now => {
+    if (start !== null){ const t = Math.min(audio.paused ? (now - start)/1000 : audio.currentTime, DUR);
+      render(t); tc.textContent = t.toFixed(1) + " s / " + DUR.toFixed(0) + " s"; }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>
