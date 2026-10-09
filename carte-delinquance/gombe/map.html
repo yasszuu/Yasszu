@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Carte à plat — démo Gombe</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:600;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-600-normal.woff2) format("woff2");}
+html,body{margin:0;background:#0b1622}
+#c{width:540px;height:960px;display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="../node_modules/d3/dist/d3.min.js"></script>
+<script>
+const W = 1080, H = 1920, TS = 256, ZMIN = 3, ZMAX = 13;
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x));
+const prog = (t, a, b) => clamp((t - a)/(b - a));
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.7);
+const Y1 = "#ffd60a", RED = "#ff3b30";
+
+// ------------------------------------------------------------------ Web Mercator (coordonnées « monde » à z=0 : 0..256)
+const mx = lon => (lon + 180)/360*TS;
+const my = lat => { const r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2*TS; };
+// caméra : [cx, cy, w] (w = largeur visible en unités monde)
+const view = (lon, lat, z) => [mx(lon), my(lat), W/2**z];
+const KEYS = [
+  [0.0, view(19, 3, 3.95)],              // Afrique entière
+  [0.5, view(20, 2, 4.02)],
+  [2.2, view(34.6, -6.2, 6.25)],          // Tanzanie
+  [2.8, view(33.8, -5.8, 6.4)],
+  [4.0, view(29.615, -4.655, 13.1)],      // Gombe
+  [5.2, view(29.615, -4.66, 13.25)],
+];
+function camera(t){
+  let i = 0; while (i < KEYS.length - 2 && t > KEYS[i+1][0]) i++;
+  const [ta, va] = KEYS[i], [tb, vb] = KEYS[i+1], k = E(prog(t, ta, tb));
+  const v = d3.interpolateZoom(va, vb)(k);
+  return {cx:v[0], cy:v[1], z:Math.log2(W/v[2])};
+}
+let CAM = camera(0);
+const P = (lon, lat) => { const s = 2**CAM.z; return [(mx(lon) - CAM.cx)*s + W/2, (my(lat) - CAM.cy)*s + H/2]; };
+
+// ------------------------------------------------------------------ tuiles (précalculées : relief + couleurs)
+const TILES = {};
+function visibleTiles(cam, z){
+  const s = 2**cam.z, n = 2**z, ts = TS*2**(cam.z - z);       // taille écran d'une tuile du niveau z
+  const x0 = (cam.cx*2**z - W/2/ts*TS)/TS, y0 = (cam.cy*2**z - H/2/ts*TS)/TS;
+  const out = [];
+  const tx0 = Math.floor((cam.cx - W/2/s)*n/TS), tx1 = Math.floor((cam.cx + W/2/s)*n/TS);
+  const ty0 = Math.floor((cam.cy - H/2/s)*n/TS), ty1 = Math.floor((cam.cy + H/2/s)*n/TS);
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) if (y >= 0 && y < n) out.push([z, ((x % n) + n) % n, y]);
+  return out;
+}
+const levelFor = z => Math.max(ZMIN, Math.min(ZMAX, Math.floor(z + 0.35)));
+window.plan = () => { const set = new Set();
+  for (let f = 0; f < 5.2*30; f++){ const c = camera(f/30), L = levelFor(c.z);
+    for (const zz of [L, Math.max(ZMIN, L - 1)]) for (const [z, x, y] of visibleTiles(c, zz)) set.add(`${z}/${x}/${y}`); }
+  return [...set]; };
+window.prep = async t => {
+  const c = camera(t), L = levelFor(c.z), need = [...visibleTiles(c, L), ...visibleTiles(c, Math.max(ZMIN, L - 1))];
+  await Promise.all(need.map(([z, x, y]) => { const k = `${z}/${x}/${y}`; if (TILES[k]) return null;
+    return new Promise(r => { const i = new Image(); i.onload = () => { TILES[k] = i; r(); }; i.onerror = () => { TILES[k] = null; r(); }; i.src = `tiles/${k}.jpg`; }); }));
+};
+function drawTiles(){
+  const L = levelFor(CAM.z), s = 2**CAM.z;
+  for (const zz of [Math.max(ZMIN, L - 1), L]){
+    const ts = TS*2**(CAM.z - zz);
+    for (const [z, x, y] of visibleTiles(CAM, zz)){ const img = TILES[`${z}/${x}/${y}`]; if (!img) continue;
+      const sx = (x*TS/2**z - CAM.cx)*s + W/2, sy = (y*TS/2**z - CAM.cy)*s + H/2;
+      ctx.drawImage(img, Math.floor(sx), Math.floor(sy), Math.ceil(ts) + 1, Math.ceil(ts) + 1); }
+  }
+}
+
+// ------------------------------------------------------------------ vecteurs
+let AFR = null, LAKES = null, TZA = null;
+function ring(coords){ coords.forEach(([lon, lat], i) => { const [x, y] = P(lon, lat); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.closePath(); }
+function geoPath(g){ ctx.beginPath(); const polys = g.type === "Polygon" ? [g.coordinates] : g.coordinates; for (const p of polys) for (const r of p) ring(r); }
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", alpha=1, stroke=12, scale=1, align="center", spacing=0} = o; if (alpha <= 0 || scale <= 0.01) return;
+  ctx.save(); ctx.globalAlpha = Math.min(alpha, 1); ctx.translate(x, y); ctx.scale(scale, scale); ctx.font = `${weight} ${size}px M`; ctx.textAlign = align;
+  if (spacing) ctx.letterSpacing = spacing + "px";
+  ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,.75)"; ctx.strokeText(s, 0, 0);
+  ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 10; ctx.fillStyle = color; ctx.fillText(s, 0, 0); ctx.restore();
+}
+// rive est du lac au niveau de Gombe (calculée depuis le MNT) + limite intérieure du parc
+const SHORE = __SHORE__;
+const PARK = [...SHORE.map(([lat, lon]) => [lon, lat]), ...SHORE.slice().reverse().map(([lat, lon]) => [lon + 0.042 + 0.006*Math.sin(lat*90), lat])];
+const SPLIT = -4.695;                                                       // frontière Kasakela (nord) / Kahama (sud)
+const half = north => { const sh = SHORE.filter(([lat]) => north ? lat >= SPLIT : lat <= SPLIT);
+  return [...sh.map(([lat, lon]) => [lon, lat]), ...sh.slice().reverse().map(([lat, lon]) => [lon + 0.042 + 0.006*Math.sin(lat*90), lat])]; };
+const KAS = half(true), KAH = half(false);
+
+function render(t){
+  CAM = camera(t);
+  ctx.fillStyle = "#0b1622"; ctx.fillRect(0, 0, W, H);
+  drawTiles();
+  const s = 2**CAM.z;
+  // frontières des pays (fines, blanches) — s'effacent quand on zoome sur le parc
+  const ba = 1 - prog(CAM.z, 9, 10.5);
+  if (ba > 0){ ctx.save(); ctx.globalAlpha = ba; ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1.6; ctx.lineJoin = "round";
+    for (const f of AFR.features){ geoPath(f.geometry); ctx.stroke(); } ctx.restore(); }
+  // Tanzanie : ombre autour + contour lumineux
+  const tz = prog(t, 1.4, 2.1)*(1 - prog(CAM.z, 9.5, 11)), tzl = tz*(1 - prog(t, 2.45, 2.7));
+  if (tz > 0){
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, H); const polys = TZA.geometry.type === "Polygon" ? [TZA.geometry.coordinates] : TZA.geometry.coordinates;
+    for (const p of polys) for (const r of p) ring(r);
+    ctx.fillStyle = `rgba(5,12,22,${0.5*tz})`; ctx.fill("evenodd"); ctx.restore();
+    ctx.save(); geoPath(TZA.geometry); ctx.strokeStyle = `rgba(255,214,10,${tz})`; ctx.lineWidth = 6; ctx.shadowColor = Y1; ctx.shadowBlur = 18; ctx.stroke(); ctx.restore();
+    const [x, y] = P(35.0, -6.6); txt("TANZANIE", x, y, {size:78, scale:EB(prog(t, 1.7, 2.2)), alpha:tzl});
+  }
+  // lac Tanganyika
+  const la = prog(t, 2.7, 3.1)*(1 - prog(t, 3.7, 3.9));
+  if (la > 0){ const [x, y] = P(29.55, -5.6); txt("LAC", x, y - 34, {size:40, weight:800, alpha:la, color:"#bfe8ff", stroke:8, spacing:6});
+    txt("TANGANYIKA", x, y + 16, {size:52, weight:800, alpha:la, color:"#bfe8ff", stroke:9, spacing:4}); }
+  // Gombe : contour du parc puis les deux territoires
+  const pa = prog(t, 3.4, 3.9);
+  if (pa > 0){ ctx.save(); ctx.beginPath(); ring(PARK); ctx.setLineDash([18, 12]); ctx.strokeStyle = `rgba(255,255,255,${pa})`; ctx.lineWidth = 5;
+    ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 8; ctx.stroke(); ctx.restore();
+    const [x, y] = P(29.60, -4.60); txt("PARC", x - 20, y - 26, {size:46, weight:800, alpha:pa*(1 - prog(t, 4.3, 4.6)), align:"right", stroke:9}); txt("DE GOMBE", x - 20, y + 26, {size:46, weight:800, alpha:pa*(1 - prog(t, 4.3, 4.6)), align:"right", stroke:9}); }
+  const ka = EO(prog(t, 4.1, 4.6)), kb = EO(prog(t, 4.35, 4.85));
+  const fillT = (poly, col, a) => { if (a <= 0) return; ctx.save(); ctx.beginPath(); ring(poly); ctx.fillStyle = col.replace("A", 0.42*a); ctx.fill();
+    ctx.strokeStyle = col.replace("A", a); ctx.lineWidth = 5; ctx.stroke(); ctx.restore(); };
+  fillT(KAS, "rgba(255,214,10,A)", ka); fillT(KAH, "rgba(255,59,48,A)", kb);
+  if (ka > 0){ const [x, y] = P(29.625, -4.645); txt("KASAKELA", x - 30, y, {size:54, color:Y1, scale:EB(prog(t, 4.2, 4.6)), align:"right", stroke:11}); }
+  if (kb > 0){ const [x, y] = P(29.605, -4.725); txt("KAHAMA", x - 30, y, {size:54, color:RED, scale:EB(prog(t, 4.45, 4.85)), align:"right", stroke:11}); }
+  // titre
+  const ha = EO(prog(t, 0.1, 0.5));
+  txt("LA GUERRE", W/2, 230, {size:104, alpha:ha, stroke:14}); txt("DES CHIMPANZÉS", W/2, 340, {size:92, color:Y1, alpha:ha, stroke:14});
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.45, W/2, H/2, H*0.85); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.3)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+window.renderAt = render;
+window.ready = Promise.all([
+  fetch("africa.json").then(r => r.json()).then(j => { AFR = j; TZA = j.features.find(f => f.properties.ADM0_A3 === "TZA"); }),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M")]).then(() => true);
+</script>
+</body>
+</html>
