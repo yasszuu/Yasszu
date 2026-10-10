@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Animal national</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2) format("woff2");}
+html,body{margin:0;background:#0b1622}
+#c{width:540px;height:960px;display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="../node_modules/d3/dist/d3.min.js"></script>
+<script>
+const LN = __LINES__, DUR = __DUR__;
+const W = 1080, H = 1920, TS = 256, ZMIN = 3, ZMAX = 9;
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a)*k;
+const prog = (t, a, b) => clamp((t - a)/(b - a));
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EX = d3.easeExpInOut;
+const Y1 = "#ffd60a";
+// temps clés (voix) : début de réplique, et instant où l'animal est dit (après la pause)
+const ON = i => LN[i].on, OFF = i => LN[i].off, ANI = i => { const g = LN[i].gaps; return g.length ? g.reduce((a, b) => (b[1] - b[0] > a[1] - a[0] ? b : a))[1] : LN[i].on; };
+
+// ------------------------------------------------------------------ Web Mercator + caméra
+const mx = lon => (lon + 180)/360*TS;
+const my = lat => { const r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2*TS; };
+const view = (lon, lat, z, dy=-90) => [mx(lon), my(lat) - dy/2**z, W/2**z];      // dy : le pays est placé un peu au-dessus du centre
+const C = [   // pays, centre caméra, zoom, ancre du texte, drapeau
+  {id:"FRA", flag:"fr", name:"FRANCE",      animal:"LE COQ",     cam:[2.4, 46.6, 6.25],  lab:[2.4, 46.7]},
+  {id:"ESP", flag:"es", name:"ESPAGNE",     animal:"LE TAUREAU", cam:[-3.6, 40.0, 6.2],  lab:[-3.7, 40.1]},
+  {id:"DEU", flag:"de", name:"ALLEMAGNE",   animal:"L'AIGLE",    cam:[10.4, 51.1, 6.45], lab:[10.3, 51.0]},
+  {id:"ITA", flag:"it", name:"ITALIE",      animal:"LE LOUP",    cam:[12.9, 42.2, 6.3],  lab:[12.6, 42.9]},
+  {id:"RUS", flag:"ru", name:"RUSSIE",      animal:"L'OURS BRUN",cam:[42, 57.5, 3.75],   lab:[42, 57.0]},
+  {id:"GBR", flag:"gb", name:"ROYAUME-UNI", animal:"LE LION",    cam:[-2.6, 54.4, 6.0],  lab:[-1.6, 52.7]},
+  {id:"SCT", flag:"gb-sct", name:"ÉCOSSE",  animal:"LA LICORNE", cam:[-4.3, 56.9, 6.75], lab:[-4.0, 56.75]},
+];
+const ARR = i => ON(i + 1) + 0.12;                              // arrivée de la caméra sur le pays i (réplique i+1)
+const EU = view(14, 52, 4.0), EU0 = view(15, 54, 3.6), EUout = view(16, 53, 3.8);
+const KEYS = [[0, EU0, EO], [1.0, EU, EO], [ARR(0) - 0.5, view(13, 49.5, 4.05)]];
+C.forEach((c, i) => { const v = view(...c.cam); const v2 = view(c.cam[0], c.cam[1], c.cam[2] + 0.12);
+  KEYS.push([ARR(i), v, EX]); KEYS.push([(i < C.length - 1 ? ARR(i + 1) : ON(8)) - 0.48, v2, d3.easeLinear]); });
+KEYS.push([ON(8) + 0.25, EUout, EX]); KEYS.push([DUR, view(16, 52, 3.82), d3.easeLinear]);
+function camera(t){
+  let i = 0; while (i < KEYS.length - 2 && t > KEYS[i+1][0]) i++;
+  const [ta, va] = KEYS[i], [tb, vb, eb] = KEYS[i+1], k = (eb || E)(prog(t, ta, tb));
+  const v = d3.interpolateZoom(va, vb)(k);
+  return {cx:v[0], cy:v[1], z:Math.log2(W/v[2])};
+}
+let CAM = camera(0);
+const P = (lon, lat) => { const s = 2**CAM.z; return [(mx(lon) - CAM.cx)*s + W/2, (my(lat) - CAM.cy)*s + H/2]; };
+
+// ------------------------------------------------------------------ tuiles
+const TILES = {};
+function visibleTiles(cam, z){
+  const s = 2**cam.z, n = 2**z, out = [], m = 1.12;                 // marge pour les secousses/punchs
+  const tx0 = Math.floor((cam.cx - W*m/2/s)*n/TS), tx1 = Math.floor((cam.cx + W*m/2/s)*n/TS);
+  const ty0 = Math.floor((cam.cy - H*m/2/s)*n/TS), ty1 = Math.floor((cam.cy + H*m/2/s)*n/TS);
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) if (y >= 0 && y < n) out.push([z, ((x % n) + n) % n, y]);
+  return out;
+}
+const levelFor = z => Math.max(ZMIN, Math.min(ZMAX, Math.floor(z + 0.5)));
+window.plan = () => { const set = new Set();
+  for (let f = 0; f < DUR*30; f++){ const c = camera(f/30), L = levelFor(c.z);
+    for (const zz of [L, Math.max(ZMIN, L - 1)]) for (const [z, x, y] of visibleTiles(c, zz)) set.add(`${z}/${x}/${y}`); }
+  return [...set]; };
+window.prep = async t => {
+  const c = camera(t), L = levelFor(c.z), need = [...visibleTiles(c, L), ...visibleTiles(c, Math.max(ZMIN, L - 1))];
+  await Promise.all(need.map(([z, x, y]) => { const k = `${z}/${x}/${y}`; if (k in TILES) return null;
+    return new Promise(r => { const i = new Image(); i.onload = () => { TILES[k] = i; r(); }; i.onerror = () => { TILES[k] = null; r(); }; i.src = `tiles/${k}.jpg`; }); }));
+};
+function drawTiles(){
+  const L = levelFor(CAM.z), s = 2**CAM.z;
+  for (const zz of [Math.max(ZMIN, L - 1), L]){
+    const ts = TS*2**(CAM.z - zz);
+    for (const [z, x, y] of visibleTiles(CAM, zz)){ const img = TILES[`${z}/${x}/${y}`]; if (!img) continue;
+      const sx = (x*TS/2**z - CAM.cx)*s + W/2, sy = (y*TS/2**z - CAM.cy)*s + H/2;
+      ctx.drawImage(img, Math.floor(sx), Math.floor(sy), Math.ceil(ts) + 1, Math.ceil(ts) + 1); } }
+}
+
+// ------------------------------------------------------------------ dessin
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", alpha=1, stroke=14, scale=1, align="center", glow=null} = o; if (alpha <= 0.003 || scale <= 0.01) return;
+  ctx.save(); ctx.globalAlpha = Math.min(alpha, 1); ctx.translate(x, y); ctx.scale(scale, scale); ctx.font = `${weight} ${size}px M`; ctx.textAlign = align; ctx.textBaseline = "middle";
+  ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,.82)"; ctx.strokeText(s, 0, 0);
+  ctx.shadowColor = glow || "rgba(0,0,0,.6)"; ctx.shadowBlur = glow ? 30 : 14; ctx.shadowOffsetY = glow ? 0 : 4; ctx.fillStyle = color; ctx.fillText(s, 0, 0); ctx.restore();
+}
+function kin(str, x, y, t, t0, o={}){
+  const {size=110, color="#fff", out=1e9, step=0.03} = o;
+  const outK = prog(t, out, out + 0.25); if (t < t0 || outK >= 1) return;
+  ctx.save(); ctx.globalAlpha = 1 - outK; ctx.translate(x, y - 40*outK); ctx.font = `900 ${size}px M`;
+  const chars = [...str], ws = chars.map(c => ctx.measureText(c).width), tot = d3.sum(ws); let cx = -tot/2;
+  chars.forEach((c, i) => { const a = EB(prog(t, t0 + i*step, t0 + i*step + 0.22)), w = ws[i];
+    if (a > 0){ ctx.save(); ctx.translate(cx + w/2, -size*0.3*(1 - Math.min(a, 1))); ctx.scale(a, a);
+      ctx.lineJoin = "round"; ctx.lineWidth = size*0.15; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(c, -w/2, size*0.35);
+      ctx.shadowColor = color === "#fff" ? "rgba(0,0,0,.6)" : color; ctx.shadowBlur = color === "#fff" ? 10 : 26; ctx.fillStyle = color; ctx.fillText(c, -w/2, size*0.35); ctx.restore(); }
+    cx += w; });
+  ctx.restore();
+}
+let GEO = null; const FLAG = {};
+function path(rings){ ctx.beginPath(); for (const r of rings) r.forEach(([lon, lat], i) => { const [x, y] = P(lon, lat); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); }
+function bbox(rings){ let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const r of rings) for (const [lon, lat] of r){ const [x, y] = P(lon, lat); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return [x0, y0, x1, y1]; }
+// pays rempli par son drapeau : révélation circulaire depuis le centre + pop, contour blanc, ombre portée
+function flagFill(c, rings, k, lift=0, dim=0){
+  if (k <= 0) return;
+  const [x0, y0, x1, y1] = bbox(rings), w = x1 - x0, h = y1 - y0, img = FLAG[c.flag]; if (!img) return;
+  const cx = (x0 + x1)/2, cy = (y0 + y1)/2, sc = 1 + 0.06*Math.sin(Math.PI*clamp(k*1.4))*(k < 1 ? 1 : 0) + lift;
+  ctx.save(); ctx.translate(cx, cy - lift*260); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
+  // ombre
+  for (const [o, al] of [[14 + 40*lift, .18], [8 + 24*lift, .22], [4 + 10*lift, .25]]){ ctx.save(); ctx.translate(0, o); path(rings); ctx.fillStyle = `rgba(0,0,0,${al})`; ctx.fill("evenodd"); ctx.restore(); }
+  // drapeau (couvre la boîte du pays) révélé en cercle
+  ctx.save(); path(rings); ctx.clip("evenodd");
+  const R = Math.hypot(w, h)/2*EO(clamp(k*1.25));
+  ctx.beginPath(); ctx.arc(cx, cy, Math.max(1, R), 0, 7); ctx.clip();
+  const ar = img.width/img.height, fw = Math.max(w, h*ar), fh = fw/ar;
+  ctx.drawImage(img, cx - fw/2, cy - fh/2, fw, fh);
+  if (dim > 0){ ctx.fillStyle = `rgba(0,0,0,${dim})`; ctx.fillRect(x0 - 5, y0 - 5, w + 10, h + 10); }
+  // léger dégradé de lumière pour donner du relief
+  const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, "rgba(255,255,255,.14)"); g.addColorStop(1, "rgba(0,0,0,.16)"); ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h);
+  ctx.restore();
+  ctx.save(); path(rings); ctx.lineJoin = "round"; ctx.strokeStyle = `rgba(255,255,255,${0.95*clamp(k*2)})`; ctx.lineWidth = 5; ctx.stroke(); ctx.restore();
+  ctx.restore();
+}
+// paillettes (licorne)
+const rnd = d3.randomLcg(7), SP = d3.range(70).map(() => [rnd()*2 - 1, rnd()*2 - 1, rnd(), rnd()]);
+function sparkles(x, y, t, t0, a){
+  if (a <= 0 || t < t0) return;
+  for (const [u, v, ph, s] of SP){ const d = (t - t0)*0.9 + ph; const k = d % 1, r = 60 + 420*EO(k);
+    const px = x + u*r, py = y + v*r*0.8 - 80*k, al = a*(1 - k*k)*Math.min(1, (t - t0)*3), sz = 12 + 20*s;
+    ctx.save(); ctx.globalAlpha = al; ctx.translate(px, py); ctx.rotate(d*2); ctx.fillStyle = d3.interpolateRainbow(ph + t*0.2); ctx.shadowColor = "#fff"; ctx.shadowBlur = 16;
+    ctx.beginPath(); for (let q = 0; q < 8; q++){ const rr = q % 2 ? sz*0.35 : sz; ctx.lineTo(Math.cos(q*Math.PI/4)*rr, Math.sin(q*Math.PI/4)*rr); } ctx.closePath(); ctx.fill(); ctx.restore(); }
+}
+
+// ------------------------------------------------------------------ rendu
+const HITS = () => [[0.0, 0.05, 0], ...C.map((c, i) => [ANI(i + 1), i === 6 ? 0.09 : 0.06, i === 6 ? 14 : 7]), [ON(8) + 0.25, 0.04, 0]];
+function render(t){
+  let p = 0, sx = 0, sy = 0;
+  for (const [ti, amp, sh] of HITS()) if (t >= ti){ const d = t - ti; p += amp*Math.exp(-d*8); sx += sh*Math.exp(-d*7)*Math.sin(d*50); sy += sh*0.7*Math.exp(-d*7)*Math.cos(d*43); }
+  ctx.save(); ctx.translate(W/2 + sx, H/2 + sy); ctx.scale(1.04 + p, 1.04 + p); ctx.translate(-W/2, -H/2);
+  CAM = camera(t);
+  ctx.fillStyle = "#0b1622"; ctx.fillRect(-60, -60, W + 120, H + 120);
+  drawTiles();
+  // frontières fines
+  ctx.save(); ctx.strokeStyle = "rgba(255,255,255,.28)"; ctx.lineWidth = 1.4; ctx.lineJoin = "round"; for (const r of GEO.b){ path([r]); ctx.stroke(); } ctx.restore();
+  // accroche : les drapeaux défilent sur toute l'Europe
+  C.forEach((c, i) => { if (c.id === "SCT") return; const t0 = 0.25 + i*0.14, k = EO(prog(t, t0, t0 + 0.35))*(1 - prog(t, ON(0) + 2.35, ON(0) + 2.7));
+    if (k > 0 && t < ON(1)) flagFill(c, GEO.c[c.id], k); });
+  // pays révélés un à un (restent remplis, un peu assombris quand on passe au suivant)
+  C.forEach((c, i) => {
+    if (c.id === "SCT") return;
+    const t0 = ARR(i) - 0.15, k = EO(prog(t, t0, t0 + 0.45)); if (k <= 0) return;
+    const later = i < 5 ? prog(t, ARR(i + 1) - 0.2, ARR(i + 1) + 0.3) : 0;
+    const scot = c.id === "GBR" ? prog(t, ON(7), ON(7) + 0.4) : 0;
+    flagFill(c, GEO.c[c.id], k, 0, 0.25*later*(1 - prog(t, ON(8), ON(8) + 0.4)));
+    if (scot > 0) flagFill(C[6], GEO.c.SCT, 1, 0.0, 0);                       // l'Écosse se détache, drapeau écossais
+  });
+  const sct = C[6], sk = prog(t, ON(7) + 0.05, ON(7) + 0.5);
+  if (sk > 0){ const lift = 0.06*EO(sk)*(1 - prog(t, ON(8), ON(8) + 0.4)); flagFill(sct, GEO.c.SCT, 1, lift, 0); }
+  // textes pays + animal
+  C.forEach((c, i) => {
+    const li = i + 1, tin = ARR(i) - 0.12, out = (i < 6 ? ARR(i + 1) - 0.5 : ON(8) - 0.2);
+    if (t < tin || t > out + 0.3) return;
+    const o = 1 - prog(t, out, out + 0.25); let [x, y] = P(...c.lab); x = clamp(x, 300, W - 300); y = clamp(y, 560, 1250);
+    const ta = ANI(li), a = EB(prog(t, ta - 0.05, ta + 0.3));
+    if (c.id === "SCT"){ sparkles(x, y, t, ta, o); const hue = d3.interpolateRainbow((t*0.35) % 1);
+      txt(c.animal, x, y, {size:124, color:Y1, alpha:o*Math.min(a, 1), scale:a, stroke:16, glow:hue}); }
+    else txt(c.animal, x, y, {size:c.animal.length > 9 ? 106 : 124, color:Y1, alpha:o*Math.min(a, 1), scale:a, stroke:16, glow:"rgba(255,214,10,.45)"});
+  });
+  // titre d'accroche + appel aux commentaires
+  kin("L'ANIMAL NATIONAL", W/2, 330, t, 0.15, {size:84, out:ON(1) - 0.35});
+  kin("DE CHAQUE PAYS", W/2, 440, t, 0.55, {size:88, color:Y1, out:ON(1) - 0.35});
+  kin("ET CHEZ TOI ?", W/2, 360, t, ON(8) + 0.1, {size:110, color:Y1});
+  kin("DIS-LE EN COMMENTAIRE", W/2, 490, t, ANI(8) - 0.1, {size:64});
+  ctx.restore();
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.45, W/2, H/2, H*0.85); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.3)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+window.renderAt = render;
+const load = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { FLAG[k] = i; r(); }; i.onerror = r; i.src = src; });
+window.ready = Promise.all([fetch("geo.json").then(r => r.json()).then(j => { GEO = j; }),
+  ...C.map(c => load(c.flag, `flags/${c.flag}.svg`)), document.fonts.load("900 60px M"), document.fonts.load("800 60px M")]).then(() => true);
+</script>
+</body>
+</html>
