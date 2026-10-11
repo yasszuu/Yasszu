@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Le lion de l'Atlas</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2) format("woff2");}
+html,body{margin:0;background:#0b1622}
+#c{width:540px;height:960px;display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="../node_modules/d3/dist/d3.min.js"></script>
+<script>
+const TL = __TL__, DUR = TL.duration;
+const W = 1080, H = 1920, TS = 256, ZMIN = 3, ZMAX = 10;
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a)*k;
+const prog = (t, a, b) => clamp((t - a)/(b - a));
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EX = d3.easeExpInOut, LIN = d3.easeLinear;
+const Y1 = "#ffd60a", RED = "#ff3b30";
+const V = Object.fromEntries(TL.vo.map(v => [v.id, v]));
+const S = k => V[k].start, Ed = k => V[k].end, M = (k, f) => S(k) + (Ed(k) - S(k))*f;
+const CL = TL.clips[0];
+// ------------------------------------------------------------------ lieux
+const MAR = [-6.6, 31.6], RABAT = [-6.85, 33.97], FES = [-4.98, 34.03], CASA = [-7.59, 33.57], TICHKA = [-7.38, 31.29], ROME = [12.49, 41.89];
+const CZOO = [14.52, 50.12];
+// ------------------------------------------------------------------ caméra
+const mx = lon => (lon + 180)/360*TS;
+const my = lat => { const r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2*TS; };
+const view = (lon, lat, z, dy=-90) => [mx(lon), my(lat) - dy/2**z, W/2**z];
+const KEYS = [
+  [0.0,             view(4, 33, 3.75), EO],
+  [1.1,             view(0, 32, 4.15), EO],
+  [M("l01", 0.68),  view(-1, 31.5, 4.25)],
+  [M("l01", 0.8),   view(...MAR, 5.35), EX],            // le Maroc
+  [S("l02") + 0.1,  view(-6.5, 31.6, 5.5)],
+  [Ed("l02"),       view(-6.4, 31.6, 5.65), LIN],
+  [S("l03") + 0.3,  view(-3, 31, 4.6), EX],              // du Maroc jusqu'à l'Égypte
+  [Ed("l03") - 0.3, view(22, 29, 4.5)],
+  [S("l04") + 0.3,  view(-6.5, 31.4, 6.0), EX],          // crinière / 300 kg
+  [Ed("l04"),       view(-6.5, 31.4, 6.2), LIN],
+  [S("l05") + 0.4,  view(9.5, 38.5, 4.75), EX],          // Rome
+  [Ed("l05"),       view(10, 38.8, 4.85), LIN],
+  [S("l06") + 0.3,  view(4, 30.5, 4.35), EX],            // il recule…
+  [M("l06", 0.4),   view(3, 30.8, 4.45), LIN],
+  [CL.a + 0.3,      view(-6.8, 31.3, 6.4), EX],          // … jusque dans l'Atlas
+  [S("l07") + 0.2,  view(-7.2, 32.2, 6.0), EX],          // 1925 : l'avion
+  [Ed("l07"),       view(-7.6, 31.0, 6.2), LIN],
+  [S("l08") + 0.4,  view(...TICHKA, 7.6), EX],           // 1942 : Tizi n'Tichka
+  [Ed("l09"),       view(TICHKA[0], TICHKA[1], 7.9), LIN],
+  [S("l10") + 0.5,  view(-6.4, 32.2, 6.0), EX],
+  [S("l11") + 0.3,  view(-6.0, 32.6, 6.2), EX],          // les sultans
+  [Ed("l12"),       view(-6.2, 33.0, 6.5), LIN],
+  [S("l13") + 0.3,  view(...RABAT, 8.4), EX],            // zoo de Rabat
+  [Ed("l13"),       view(RABAT[0], RABAT[1], 8.6), LIN],
+  [S("l14") + 0.3,  view(4, 42, 3.85), EX],              // les zoos du monde
+  [Ed("l15"),       view(4, 42, 4.0), LIN],
+  [S("l16") + 0.3,  view(15.4, 49.8, 6.1), EX],          // Tchéquie
+  [Ed("l16"),       view(15.4, 49.8, 6.3), LIN],
+  [S("l17") + 0.3,  view(4, 41, 4.1), EX],               // retour au Maroc ?
+  [Ed("l17"),       view(0, 38, 4.2), LIN],
+  [S("l18") + 0.3,  view(...MAR, 5.5), EX],              // symbole du pays
+  [Ed("l18"),       view(MAR[0], MAR[1], 5.7), LIN],
+  [S("l19") + 0.4,  view(TICHKA[0], TICHKA[1] + 0.2, 6.9), EX],
+  [DUR,             view(TICHKA[0], TICHKA[1] + 0.2, 7.3), LIN],
+];
+function camera(t){
+  let i = 0; while (i < KEYS.length - 2 && t > KEYS[i+1][0]) i++;
+  const [ta, va] = KEYS[i], [tb, vb, eb] = KEYS[i+1], k = (eb || E)(prog(t, ta, tb));
+  const v = d3.interpolateZoom(va, vb)(k); return {cx:v[0], cy:v[1], z:Math.log2(W/v[2])};
+}
+let CAM = camera(0);
+const P = (lon, lat) => { const s = 2**CAM.z; return [(mx(lon) - CAM.cx)*s + W/2, (my(lat) - CAM.cy)*s + H/2]; };
+// ------------------------------------------------------------------ tuiles + plan 3D
+const TILES = {};
+function visibleTiles(cam, z){
+  const s = 2**cam.z, n = 2**z, out = [], m = 1.12;
+  const tx0 = Math.floor((cam.cx - W*m/2/s)*n/TS), tx1 = Math.floor((cam.cx + W*m/2/s)*n/TS);
+  const ty0 = Math.floor((cam.cy - H*m/2/s)*n/TS), ty1 = Math.floor((cam.cy + H*m/2/s)*n/TS);
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) if (y >= 0 && y < n) out.push([z, ((x % n) + n) % n, y]);
+  return out;
+}
+const levelFor = z => Math.max(ZMIN, Math.min(ZMAX, Math.floor(z + 0.5)));
+const inClip = t => t > CL.a + 0.35 && t < CL.b - 0.35;
+window.plan = () => { const set = new Set();
+  for (let f = 0; f < DUR*30; f++){ const t = f/30; if (inClip(t)) continue; const c = camera(t), L = levelFor(c.z);
+    for (const zz of [L, Math.max(ZMIN, L - 1)]) for (const [z, x, y] of visibleTiles(c, zz)) set.add(`${z}/${x}/${y}`); }
+  return [...set]; };
+const CLIPF = {};
+window.prep = async t => {
+  const jobs = [];
+  if (!inClip(t)){ const c = camera(t), L = levelFor(c.z);
+    for (const [z, x, y] of [...visibleTiles(c, L), ...visibleTiles(c, Math.max(ZMIN, L - 1))]){ const k = `${z}/${x}/${y}`; if (k in TILES) continue;
+      jobs.push(new Promise(r => { const i = new Image(); i.onload = () => { TILES[k] = i; r(); }; i.onerror = () => { TILES[k] = null; r(); }; i.src = `tiles/${k}.jpg`; })); } }
+  if (t >= CL.a && t < CL.b){ const f = Math.min(Math.floor((t - CL.a)*30), 137), key = "c" + f;
+    if (!CLIPF[key]){ for (const k of Object.keys(CLIPF)) delete CLIPF[k];
+      jobs.push(new Promise(r => { const i = new Image(); i.onload = () => { CLIPF[key] = i; r(); }; i.onerror = r; i.src = `../atlas3d/clip/${String(f).padStart(4, "0")}.jpg`; })); } }
+  await Promise.all(jobs);
+};
+function drawTiles(gray){
+  const L = levelFor(CAM.z), s = 2**CAM.z; if (gray > 0) ctx.filter = `grayscale(${gray}) brightness(${1 - 0.25*gray})`;
+  for (const zz of [Math.max(ZMIN, L - 1), L]){ const ts = TS*2**(CAM.z - zz);
+    for (const [z, x, y] of visibleTiles(CAM, zz)){ const img = TILES[`${z}/${x}/${y}`]; if (!img) continue;
+      const sx = (x*TS/2**z - CAM.cx)*s + W/2, sy = (y*TS/2**z - CAM.cy)*s + H/2;
+      ctx.drawImage(img, Math.floor(sx), Math.floor(sy), Math.ceil(ts) + 1, Math.ceil(ts) + 1); } }
+  ctx.filter = "none";
+}
+// ------------------------------------------------------------------ outils de dessin
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", alpha=1, stroke=14, scale=1, glow=null, align="center"} = o; if (alpha <= 0.003 || scale <= 0.01) return;
+  ctx.save(); ctx.globalAlpha = Math.min(alpha, 1); ctx.translate(x, y); ctx.scale(scale, scale); ctx.font = `${weight} ${size}px M`; ctx.textAlign = align; ctx.textBaseline = "middle";
+  ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,.82)"; ctx.strokeText(s, 0, 0);
+  ctx.shadowColor = glow || "rgba(0,0,0,.6)"; ctx.shadowBlur = glow ? 30 : 14; ctx.shadowOffsetY = glow ? 0 : 4; ctx.fillStyle = color; ctx.fillText(s, 0, 0); ctx.restore();
+}
+function fit(s, size, maxW){ ctx.font = `900 ${size}px M`; const w = ctx.measureText(s).width; return w > maxW ? size*maxW/w : size; }
+function richLine(segs, x, y, o={}){
+  const {size=56, scale=1} = o; ctx.font = `900 ${size}px M`;
+  const widths = segs.map(s => ctx.measureText(s.t).width), total = d3.sum(widths); let cx = x - total*scale/2;
+  segs.forEach((s, i) => { txt(s.t, cx, y, {...o, align:"left", color:s.c}); cx += widths[i]*scale; });
+}
+function kin(str, x, y, t, t0, o={}){
+  const {size=110, color="#fff", out=1e9, step=0.03} = o;
+  const outK = prog(t, out, out + 0.25); if (t < t0 || outK >= 1) return;
+  const sz = fit(str, size, W - 110);
+  ctx.save(); ctx.globalAlpha = 1 - outK; ctx.translate(x, y - 40*outK); ctx.font = `900 ${sz}px M`;
+  const chars = [...str], ws = chars.map(c => ctx.measureText(c).width), tot = d3.sum(ws); let cx = -tot/2;
+  chars.forEach((c, i) => { const a = EB(prog(t, t0 + i*step, t0 + i*step + 0.22)), w = ws[i];
+    if (a > 0){ ctx.save(); ctx.translate(cx + w/2, -sz*0.3*(1 - Math.min(a, 1))); ctx.scale(a, a);
+      ctx.lineJoin = "round"; ctx.lineWidth = sz*0.15; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(c, -w/2, sz*0.35);
+      ctx.shadowColor = color === "#fff" ? "rgba(0,0,0,.6)" : color; ctx.shadowBlur = color === "#fff" ? 10 : 26; ctx.fillStyle = color; ctx.fillText(c, -w/2, sz*0.35); ctx.restore(); }
+    cx += w; });
+  ctx.restore();
+}
+function pin(x, y, a, color=Y1, r=14){ if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = Math.min(a, 1); ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 20;
+  ctx.beginPath(); ctx.arc(x, y, r*Math.min(a, 1.3), 0, 7); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#fff"; ctx.shadowBlur = 0; ctx.stroke(); ctx.restore(); }
+function pulse(x, y, t, a, color=Y1, max=110){ if (a <= 0) return;
+  for (let k = 0; k < 2; k++){ const ph = (t*0.9 + k*0.5) % 1; ctx.save(); ctx.globalAlpha = (1 - ph)*a; ctx.strokeStyle = color; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(x, y, 16 + ph*max, 0, 7); ctx.stroke(); ctx.restore(); } }
+function arrow(pts, k, alpha, color=Y1, w=10){
+  if (k <= 0 || alpha <= 0) return;
+  const line = d3.line().curve(d3.curveCatmullRom)(pts.map(p => P(...p))), path = new Path2D(line);
+  const tmp = document.createElementNS("http://www.w3.org/2000/svg", "path"); tmp.setAttribute("d", line);
+  const L = tmp.getTotalLength(), e = tmp.getPointAtLength(L*k), e0 = tmp.getPointAtLength(Math.max(0, L*k - 8));
+  ctx.save(); ctx.globalAlpha = Math.min(alpha, 1); ctx.lineCap = "round"; ctx.lineWidth = w; ctx.strokeStyle = color; ctx.shadowColor = "rgba(0,0,0,.75)"; ctx.shadowBlur = 10;
+  ctx.setLineDash([L*k, L]); ctx.stroke(path); ctx.setLineDash([]);
+  const an = Math.atan2(e.y - e0.y, e.x - e0.x); ctx.translate(e.x, e.y); ctx.rotate(an); ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(w*2.6, 0); ctx.lineTo(-w*1.4, -w*2.1); ctx.lineTo(-w*1.4, w*2.1); ctx.closePath(); ctx.fill(); ctx.restore();
+}
+let GEO = null; const FLAG = {};
+function path(rings){ ctx.beginPath(); for (const r of rings) r.forEach(([lon, lat], i) => { const [x, y] = P(lon, lat); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); }
+function bbox(rings){ let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const r of rings) for (const [lon, lat] of r){ const [x, y] = P(lon, lat); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return [x0, y0, x1, y1]; }
+function flagFill(id, flag, k, gray=0){
+  if (k <= 0) return; const rings = GEO.c[id], img = FLAG[flag]; if (!img) return;
+  const [x0, y0, x1, y1] = bbox(rings), w = x1 - x0, h = y1 - y0; if (x1 < -200 || x0 > W + 200 || y1 < -200 || y0 > H + 200) return;
+  const cx = (x0 + x1)/2, cy = (y0 + y1)/2, sc = 1 + 0.06*Math.sin(Math.PI*clamp(k*1.4))*(k < 1 ? 1 : 0);
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
+  for (const [o, al] of [[14, .18], [8, .22], [4, .25]]){ ctx.save(); ctx.translate(0, o); path(rings); ctx.fillStyle = `rgba(0,0,0,${al*Math.min(1, k*2)})`; ctx.fill(); ctx.restore(); }
+  ctx.save(); path(rings); ctx.clip(); const R = Math.hypot(w, h)/2*EO(clamp(k*1.25)); ctx.beginPath(); ctx.arc(cx, cy, Math.max(1, R), 0, 7); ctx.clip();
+  if (gray > 0) ctx.filter = `grayscale(${gray}) brightness(${1 - 0.45*gray})`;
+  const ar = img.width/img.height, fw = Math.max(w, h*ar), fh = fw/ar; ctx.drawImage(img, cx - fw/2, cy - fh/2, fw, fh);
+  if (id === "MAR"){ const nr = rings.map(r => r.filter(p => p[1] > 27.7)).filter(r => r.length), [a0, b0, a1, b1] = bbox(nr), mw = a1 - a0, mh = b1 - b0;   // étoile centrée sur le nord du pays
+    const gw = Math.max(mw, mh*ar)*1.02, gh = gw/ar; ctx.drawImage(img, (a0 + a1)/2 - gw/2, (b0 + b1)/2 - gh/2, gw, gh); }
+  ctx.filter = "none";
+  const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, "rgba(255,255,255,.14)"); g.addColorStop(1, "rgba(0,0,0,.16)"); ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h);
+  ctx.restore();
+  ctx.save(); path(rings); ctx.lineJoin = "round"; ctx.strokeStyle = `rgba(255,255,255,${0.95*clamp(k*2)*(1 - 0.5*gray)})`; ctx.lineWidth = 5; ctx.stroke(); ctx.restore();
+  ctx.restore();
+}
+function plane(x, y, ang, s, a){ if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.rotate(ang); ctx.scale(s, s); ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 14;
+  ctx.beginPath(); ctx.moveTo(34, 0); ctx.lineTo(18, -5); ctx.lineTo(4, -5); ctx.lineTo(-6, -34); ctx.lineTo(-14, -34); ctx.lineTo(-8, -5); ctx.lineTo(-24, -5); ctx.lineTo(-30, -16); ctx.lineTo(-36, -16);
+  ctx.lineTo(-32, 0); ctx.lineTo(-36, 16); ctx.lineTo(-30, 16); ctx.lineTo(-24, 5); ctx.lineTo(-8, 5); ctx.lineTo(-14, 34); ctx.lineTo(-6, 34); ctx.lineTo(4, 5); ctx.lineTo(18, 5); ctx.closePath(); ctx.fill(); ctx.restore(); }
+function cross(x, y, a, s=34){ if (a <= 0) return; ctx.save(); ctx.globalAlpha = Math.min(a, 1); ctx.strokeStyle = RED; ctx.lineWidth = 12; ctx.lineCap = "round"; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 12;
+  const k = EB(clamp(a)); ctx.beginPath(); ctx.moveTo(x - s*k, y - s*k); ctx.lineTo(x + s*k, y + s*k); ctx.moveTo(x + s*k, y - s*k); ctx.lineTo(x - s*k, y + s*k); ctx.stroke(); ctx.restore(); }
+// ------------------------------------------------------------------ carte
+const NA = [["MAR", "ma"], ["DZA", "dz"], ["TUN", "tn"], ["LBY", "ly"], ["EGY", "eg"]];
+const ZOOS = [[-6.85, 33.97], [-0.13, 51.53], [2.35, 48.84], [4.4, 50.9], [8.7, 50.1], [13.4, 52.5], [14.52, 50.12], [16.4, 48.2], [12.5, 41.9], [-3.7, 40.4], [2.15, 41.4], [5.4, 43.3], [11.6, 48.1], [4.9, 52.4]];
+function renderMap(t){
+  CAM = camera(t);
+  const extinct = prog(t, M("l09", 0.1), M("l09", 0.5))*(1 - prog(t, S("l10") + 0.4, S("l10") + 0.9));
+  ctx.fillStyle = "#0b1622"; ctx.fillRect(-60, -60, W + 120, H + 120);
+  drawTiles(extinct);
+  ctx.save(); ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 1.5; ctx.lineJoin = "round"; for (const r of GEO.b){ path([r]); ctx.stroke(); } ctx.restore();
+  // Maroc (drapeau) : apparaît sur « il vivait au Maroc », reste jusqu'à l'Afrique du Nord
+  const mar1 = EO(prog(t, M("l01", 0.78), M("l01", 0.95)))*(1 - prog(t, S("l04") + 0.2, S("l04") + 0.5));
+  // l03 : l'aire du lion, du Maroc à l'Égypte, pays par pays ; l06 : elle se vide d'est en ouest
+  NA.forEach(([id, fl], i) => {
+    const kin_ = id === "MAR" ? mar1 : 0;
+    const k = Math.max(kin_, EO(prog(t, M("l03", 0.4) + i*0.24, M("l03", 0.4) + i*0.24 + 0.4))*(1 - prog(t, Ed("l03") + 0.2, Ed("l03") + 0.5)));
+    flagFill(id, fl, k);
+    const k6 = (1 - prog(t, M("l06", 0.15) + (4 - i)*0.25, M("l06", 0.15) + (4 - i)*0.25 + 0.4)*(id === "MAR" ? 0 : 1))*prog(t, S("l06") - 0.1, S("l06") + 0.3)*(1 - prog(t, CL.a - 0.2, CL.a + 0.2));
+    if (k6 > 0) flagFill(id, fl, Math.max(k6, id === "MAR" ? 1 : 0), 0);
+  });
+  // l05 : Rome, des milliers de captures
+  const romA = prog(t, S("l05"), S("l05") + 0.3)*(1 - prog(t, Ed("l05"), Ed("l05") + 0.3));
+  if (romA > 0){ flagFill("ITA", "it", EO(prog(t, S("l05") + 0.2, S("l05") + 0.6)));
+    const [rx, ry] = P(...ROME); pulse(rx, ry, t, romA, Y1, 120); pin(rx, ry, romA, Y1, 18);
+    txt("ROME", rx + 34, ry - 4, {size:52, align:"left", alpha:romA, stroke:11});
+    const SRC = [[-5.5, 35.2], [-1, 35.6], [3, 36.7], [7.7, 36.9], [10.2, 36.8], [11, 35.5], [13.2, 32.9], [6, 36.4]];
+    SRC.forEach((p, i) => { const t0 = M("l05", 0.3) + i*0.12; arrow([p, [lerp(p[0], ROME[0], 0.5) + 1.5, lerp(p[1], ROME[1], 0.5)], ROME], E(prog(t, t0, t0 + 0.6)), romA, Y1, 6); }); }
+  // l07 : 1925, l'avion Casablanca → sud, photo
+  const plA = prog(t, S("l07"), S("l07") + 0.3)*(1 - prog(t, Ed("l07") - 0.2, Ed("l07") + 0.1));
+  if (plA > 0){ const k = E(prog(t, S("l07") + 0.1, Ed("l07") - 0.2)), pts = [CASA, [-7.9, 32.4], [-7.6, 31.3], [-8.3, 30.2]];
+    const ln = d3.line().curve(d3.curveCatmullRom)(pts.map(p => P(...p))), tmp = document.createElementNS("http://www.w3.org/2000/svg", "path"); tmp.setAttribute("d", ln);
+    const Lp = tmp.getTotalLength(), e = tmp.getPointAtLength(Lp*k), e0 = tmp.getPointAtLength(Math.max(0, Lp*k - 6));
+    ctx.save(); ctx.globalAlpha = plA; ctx.setLineDash([16, 12]); ctx.lineWidth = 6; ctx.strokeStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 8;
+    ctx.beginPath(); for (let q = 0; q <= 40; q++){ const pt = tmp.getPointAtLength(Lp*k*q/40); q ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y); } ctx.stroke(); ctx.restore();
+    plane(e.x, e.y, Math.atan2(e.y - e0.y, e.x - e0.x), 1.6, plA);
+    const [cx_, cy_] = P(...CASA); pin(cx_, cy_, plA, "#fff", 12); txt("CASABLANCA", cx_ + 28, cy_ - 2, {size:40, weight:800, align:"left", alpha:plA, stroke:9}); }
+  // l08 : 1942, le dernier lion, Tizi n'Tichka
+  const tkA = prog(t, S("l08") + 0.2, S("l08") + 0.5)*(1 - prog(t, Ed("l09"), Ed("l09") + 0.3));
+  if (tkA > 0){ const [x, y] = P(...TICHKA); pulse(x, y, t, tkA*(1 - prog(t, M("l08", 0.6), M("l08", 0.65))), RED, 130);
+    pin(x, y, tkA, RED, 18); cross(x, y, prog(t, M("l08", 0.62), M("l08", 0.75))*tkA, 40);
+    txt("TIZI N'TICHKA", x, y + 90, {size:50, alpha:tkA, stroke:11}); }
+  // l11-l12 : les tribus offrent des lions aux sultans (Fès)
+  const suA = prog(t, S("l11"), S("l11") + 0.3)*(1 - prog(t, Ed("l12"), Ed("l12") + 0.3));
+  if (suA > 0){ flagFill("MAR", "ma", EO(prog(t, S("l11"), S("l11") + 0.5)));
+    const TR = [[-8.0, 31.6], [-5.5, 32.5], [-4.0, 32.9], [-6.6, 33.2], [-7.6, 30.6]];
+    TR.forEach((p, i) => { const t0 = M("l11", 0.3) + i*0.2, [x, y] = P(...p); pin(x, y, EB(prog(t, t0, t0 + 0.3))*suA, "#fff", 10);
+      arrow([p, [lerp(p[0], FES[0], 0.5), lerp(p[1], FES[1], 0.5) + 0.3], FES], E(prog(t, t0 + 0.1, t0 + 0.7)), suA, Y1, 7); });
+    const [fx, fy] = P(...FES); pulse(fx, fy, t, suA, Y1, 100); pin(fx, fy, suA, Y1, 18); txt("FÈS", fx + 32, fy, {size:52, align:"left", alpha:suA, stroke:11}); }
+  // l13 : zoo de Rabat
+  const raA = prog(t, S("l13"), S("l13") + 0.3)*(1 - prog(t, Ed("l13"), Ed("l13") + 0.3));
+  if (raA > 0){ const [x, y] = P(...RABAT); pulse(x, y, t, raA, Y1, 140); pin(x, y, raA, Y1, 20); }
+  // l14 : les zoos du monde (moins de 100)
+  const zoA = prog(t, S("l14") + 0.2, S("l14") + 0.5)*(1 - prog(t, Ed("l15"), Ed("l15") + 0.3));
+  if (zoA > 0) ZOOS.forEach((p, i) => { const t0 = M("l14", 0.25) + i*0.09, [x, y] = P(...p); pin(x, y, EB(prog(t, t0, t0 + 0.3))*zoA, i ? Y1 : RED, 13); });
+  // l16-l17 : Tchéquie, 4 lionceaux, puis direction le Maroc
+  const czA = prog(t, S("l16"), S("l16") + 0.3)*(1 - prog(t, Ed("l17") + 0.1, Ed("l17") + 0.4));
+  if (czA > 0){ flagFill("CZE", "cz", EO(prog(t, S("l16") + 0.2, S("l16") + 0.7))); flagFill("MAR", "ma", EO(prog(t, M("l17", 0.6), M("l17", 0.9))));
+    arrow([CZOO, [5, 45], [-3, 37], [-6.5, 32]], E(prog(t, S("l17") + 0.1, M("l17", 0.85))), czA, Y1, 11); }
+  // l18-l20 : le Maroc, symbole
+  const syA = prog(t, S("l18"), S("l18") + 0.3);
+  if (syA > 0) flagFill("MAR", "ma", EO(prog(t, S("l18") + 0.1, S("l18") + 0.6))*(1 - prog(t, S("l19") - 0.2, S("l19") + 0.4)));
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.45, W/2, H/2, H*0.85); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.32)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  const tg = ctx.createLinearGradient(0, 0, 0, 560); tg.addColorStop(0, "rgba(0,0,0,.35)"); tg.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 560);
+}
+// ------------------------------------------------------------------ plan 3D
+function clipAlpha(t){ return Math.min(EO(prog(t, CL.a, CL.a + 0.35)), 1 - prog(t, CL.b - 0.35, CL.b)); }
+function drawClip(t){
+  if (t < CL.a || t >= CL.b) return; const f = Math.min(Math.floor((t - CL.a)*30), 137), img = CLIPF["c" + f]; if (!img) return;
+  const a = clipAlpha(t), z = 1 + 0.15*(1 - EO(prog(t, CL.a, CL.a + 0.35)));
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(W/2, H/2); ctx.scale(z, z); ctx.drawImage(img, -W/2, -H/2, W, H); ctx.restore();
+  const fl = Math.exp(-(t - CL.a)*9); if (fl > 0.02){ ctx.save(); ctx.fillStyle = `rgba(255,255,255,${0.45*fl})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+}
+// ------------------------------------------------------------------ sous-titres (gros, en haut) + frise des années
+const CAPS = TL.vo.filter(v => !["l01", "l02", "l20"].includes(v.id)).map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){ const o = {hi:/\*/.test(w), w:w.replace(/\*/g, "")}; const p = words[words.length-1];
+    if (p && (/^[:;!?…]$/.test(o.w) || (/^\d+$/.test(p.w) && /^\d{3}/.test(o.w)))) { p.w += " " + o.w; p.hi = p.hi || o.hi; } else words.push(o); }
+  const groups = []; let cur = [];
+  for (const w of words){ const len = cur.map(x => x.w).join(" ").length + w.w.length + 1;
+    if (cur.length && len > 15){ groups.push(cur); cur = []; } cur.push(w); if (/[.,:!?…]$/.test(w.w)){ groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const tot = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4); let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4; const s = v.start + (v.end - v.start)*acc/tot; acc += l; return {g, s, e:v.start + (v.end - v.start)*acc/tot}; });
+}).flat();
+function yearAt(t){ let v = null; for (const [t0, t1, y0, y1] of TL.ticker) if (t >= t0) v = lerp(y0, y1, E(prog(t, t0, t1))); return v; }
+const HITS = () => [[0.03, 0.08, 14], [0.75, 0.05, 8], [M("l01", 0.8), 0.07, 10], [M("l02", 0.6), 0.06, 6], [M("l04", 0.8), 0.06, 8], [M("l05", 0.5), 0.04, 6],
+  [CL.a, 0.05, 0], [M("l07", 0.62), 0.06, 0], [M("l08", 0.62), 0.09, 16], [M("l09", 0.45), 0.07, 10], [S("l10") + 0.5, 0.06, 0], [M("l13", 0.3), 0.05, 0],
+  [M("l16", 0.55), 0.05, 6], [M("l17", 0.8), 0.05, 6], [M("l18", 0.62), 0.07, 10]];
+function render(t){
+  let p = 0, sx = 0, sy = 0;
+  for (const [ti, amp, sh] of HITS()) if (t >= ti){ const d = t - ti; p += amp*Math.exp(-d*8); sx += sh*Math.exp(-d*7)*Math.sin(d*50); sy += sh*0.7*Math.exp(-d*7)*Math.cos(d*43); }
+  ctx.save(); ctx.translate(W/2 + sx, H/2 + sy); ctx.scale(1.04 + p, 1.04 + p); ctx.translate(-W/2, -H/2);
+  const ca = clipAlpha(t) * (t >= CL.a && t < CL.b ? 1 : 0);
+  if (ca < 0.999) renderMap(t); else { ctx.fillStyle = "#000"; ctx.fillRect(-60, -60, W + 120, H + 120); }
+  drawClip(t);
+  overlay(t, 1 - ca);
+  ctx.restore();
+  // flash de l'appareil photo (1925)
+  const ph = Math.exp(-Math.max(0, t - M("l07", 0.62))*10)*(t >= M("l07", 0.62) ? 1 : 0); if (ph > 0.02){ ctx.fillStyle = `rgba(255,255,255,${0.8*ph})`; ctx.fillRect(0, 0, W, H); }
+  const rf = Math.exp(-Math.max(0, t - M("l08", 0.62))*8)*(t >= M("l08", 0.62) ? 1 : 0); if (rf > 0.02){ ctx.fillStyle = `rgba(255,40,30,${0.35*rf})`; ctx.fillRect(0, 0, W, H); }
+}
+function overlay(t, mapA){
+  // ---- accroche : lion (PNG fourni) + rugissement, seulement au début
+  lionIntro(t);
+  kin("LE PLUS GRAND LION", W/2, 470, t, M("l01", 0.05), {size:92, out:M("l01", 0.7)});
+  kin("DU MONDE ?", W/2, 590, t, M("l01", 0.3), {size:110, color:Y1, out:M("l01", 0.7)});
+  kin("… AU MAROC !", W/2, 560, t, M("l01", 0.76), {size:110, color:Y1, out:Ed("l01") + 0.2});
+  const hd = EO(prog(t, S("l02") - 0.1, S("l02") + 0.4))*(1 - prog(t, S("l03") - 0.1, S("l03") + 0.2));
+  if (hd > 0){ txt("LE LION", W/2, 300, {size:130, alpha:hd, stroke:16, scale:0.85 + 0.15*hd}); txt("DE L'ATLAS", W/2, 430, {size:118, color:Y1, alpha:hd, stroke:16, scale:0.85 + 0.15*hd, glow:"rgba(255,214,10,.45)"}); }
+  // ---- faits marquants (textes droits, sans cadre)
+  kin("IL Y A 2 000 ANS", W/2, 560, t, S("l03") + 0.1, {size:96, color:Y1, out:M("l03", 0.38)});
+  const kg = Math.round(300*EO(prog(t, M("l04", 0.62), M("l04", 0.9)))), kgA = EB(prog(t, M("l04", 0.6), M("l04", 0.75)))*(1 - prog(t, Ed("l04") + 0.1, Ed("l04") + 0.35))*mapA;
+  if (kgA > 0) txt(`${kg} KG`, W/2, 620, {size:170, color:Y1, scale:kgA, alpha:Math.min(kgA, 1), stroke:20, glow:"rgba(255,214,10,.45)"});
+  kin("CRINIÈRE SOMBRE", W/2, 600, t, M("l04", 0.05), {size:92, out:M("l04", 0.55)});
+  kin("DES MILLIERS", W/2, 1250, t, M("l05", 0.3), {size:96, color:Y1, out:Ed("l05") + 0.1});
+  kin("1942", W/2, 600, t, S("l08") + 0.3, {size:170, color:RED, out:Ed("l08")});
+  kin("DISPARU", W/2, 620, t, M("l09", 0.4), {size:140, color:RED, out:Ed("l09") + 0.2});
+  kin("MAIS…", W/2, 620, t, S("l10") + 0.3, {size:140, color:Y1, out:Ed("l10")});
+  kin("MÉNAGERIE ROYALE", W/2, 600, t, S("l12") + 0.1, {size:92, color:Y1, out:Ed("l12") + 0.1});
+  kin("ZOO DE RABAT", W/2, 560, t, M("l13", 0.25), {size:104, color:Y1, out:M("l13", 0.75)});
+  kin("N°1 MONDIAL", W/2, 680, t, M("l13", 0.55), {size:88, out:Ed("l13") + 0.1});
+  const cA = EB(prog(t, M("l14", 0.3), M("l14", 0.45)))*(1 - prog(t, Ed("l14") + 0.2, Ed("l14") + 0.5));
+  if (cA > 0) txt("< 100", W/2, 640, {size:180, color:Y1, scale:cA, alpha:Math.min(cA, 1), stroke:20, glow:"rgba(255,214,10,.45)"});
+  kin("PURETÉ GÉNÉTIQUE ?", W/2, 620, t, M("l15", 0.25), {size:88, out:Ed("l15") + 0.1});
+  kin("4 LIONCEAUX", W/2, 600, t, M("l16", 0.5), {size:110, color:Y1, out:Ed("l16") + 0.2});
+  kin("RETOUR AU MAROC ?", W/2, 620, t, M("l17", 0.4), {size:92, color:Y1, out:Ed("l17") + 0.2});
+  kin("LES LIONS", W/2, 560, t, M("l18", 0.6), {size:120, color:Y1, out:Ed("l18") + 0.2});
+  kin("DE L'ATLAS", W/2, 690, t, M("l18", 0.7), {size:120, out:Ed("l18") + 0.2});
+  kin("REVOIR RUGIR ?", W/2, 600, t, M("l19", 0.5), {size:110, color:Y1, out:S("l20") + 0.2});
+  if (t > S("l20")){ const a = EB(prog(t, S("l20") + 0.1, S("l20") + 0.5)); txt("DIS-LE", W/2, 560, {size:120, color:Y1, scale:a, alpha:Math.min(a, 1), stroke:16});
+    const b = EB(prog(t, S("l20") + 0.35, S("l20") + 0.75)); txt("EN COMMENTAIRE !", W/2, 680, {size:84, scale:b, alpha:Math.min(b, 1), stroke:13}); }
+  // ---- frise des années
+  const yv = yearAt(t), ya = mapA*(yv === null ? 0 : 1)*EO(prog(t, S("l06") - 0.2, S("l06") + 0.2))*(1 - prog(t, Ed("l09"), Ed("l09") + 0.3) + prog(t, S("l12"), S("l12") + 0.3)*(1 - prog(t, Ed("l13"), Ed("l13") + 0.3)) + prog(t, S("l16"), S("l16") + 0.3)*(1 - prog(t, Ed("l16"), Ed("l16") + 0.3)));
+  if (ya > 0 && !(t >= CL.a && t < CL.b)){ const base = Math.round(yv);
+    for (let j = -2; j <= 2; j++){ const v = base + j, x = W/2 + (v - yv)*300; if (x < -200 || x > W + 200) continue; const act = clamp(1 - Math.abs(v - yv));
+      txt(String(v), x, 450, {size:44 + act*40, color:act > 0.5 ? Y1 : "#fff", alpha:Math.min(ya, 1)*(0.35 + 0.65*act), stroke:9, glow:act > 0.5 ? "rgba(255,214,10,.45)" : null}); } }
+  // ---- sous-titres
+  let cur = null; for (const g of CAPS) if (g.s <= t) cur = g;
+  if (cur && t <= cur.e + 0.25){ const a = EB(prog(t, cur.s, cur.s + 0.15));
+    const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.replace(/[.,]+$/, "").toUpperCase(), c:w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 300, {size:80, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:16}); }
+}
+let LION = null;
+function lionIntro(t){
+  if (!LION) return; const out = E(prog(t, S("l01") + 1.2, S("l01") + 1.6)); if (out >= 1) return;
+  const a = EB(prog(t, 0, 0.3)), roar = [0.03, 0.75].reduce((m, q) => m + (t >= q ? Math.exp(-(t - q)*6) : 0), 0);
+  const h = 620*(1 + 0.08*roar), w = h*LION.width/LION.height;
+  ctx.save(); ctx.translate(W/2 + Math.sin(t*55)*10*roar, 1330 + out*900); ctx.scale(a, a);
+  ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18; ctx.drawImage(LION, -w/2, -h, w, h); ctx.restore();
+}
+function outlined(img, r=9){ const c = document.createElement("canvas"); c.width = img.width + 2*r; c.height = img.height + 2*r; const g = c.getContext("2d");
+  for (let a = 0; a < 32; a++) g.drawImage(img, r + Math.cos(a/32*6.283)*r, r + Math.sin(a/32*6.283)*r);
+  g.globalCompositeOperation = "source-in"; g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.globalCompositeOperation = "source-over"; g.drawImage(img, r, r); return c; }
+window.renderAt = render;
+const load = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { FLAG[k] = i; r(); }; i.onerror = r; i.src = src; });
+window.ready = Promise.all([fetch("geo.json").then(r => r.json()).then(j => { GEO = j; }),
+  ...["ma", "dz", "tn", "ly", "eg", "it", "cz"].map(f => load(f, `flags/${f}.svg`)),
+  new Promise(r => { const i = new Image(); i.onload = () => { LION = outlined(i); r(); }; i.onerror = r; i.src = "assets/lion.png"; }),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M")]).then(() => true);
+</script>
+</body>
+</html>

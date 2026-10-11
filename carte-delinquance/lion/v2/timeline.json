@@ -1,0 +1,715 @@
+{
+ "vo": [
+  {
+   "id": "l01",
+   "start": 1.7,
+   "end": 6.067,
+   "cap": "On le disait le *plus grand lion du monde*… et il vivait au *Maroc*."
+  },
+  {
+   "id": "l02",
+   "start": 6.367,
+   "end": 8.655,
+   "cap": "Voici l'histoire du *lion de l'Atlas*."
+  },
+  {
+   "id": "l03",
+   "start": 9.155,
+   "end": 15.16,
+   "cap": "Il y a *2 000 ans*, il régnait sur toute l'*Afrique du Nord*, du Maroc jusqu'à l'Égypte."
+  },
+  {
+   "id": "l04",
+   "start": 15.61,
+   "end": 22.357,
+   "cap": "Sa *crinière sombre* descendait jusqu'au ventre, et les chasseurs parlaient de mâles de près de *300 kilos*."
+  },
+  {
+   "id": "l05",
+   "start": 22.857,
+   "end": 27.24,
+   "cap": "Mais les *Romains* en capturent des milliers, pour les jeux du *Colisée*."
+  },
+  {
+   "id": "l06",
+   "start": 27.69,
+   "end": 34.943,
+   "cap": "Puis, avec les *fusils* et les primes à la chasse, il recule jusque dans les montagnes de l'*Atlas*."
+  },
+  {
+   "id": "l07",
+   "start": 37.843,
+   "end": 45.479,
+   "cap": "En *1925*, depuis un avion, un photographe capture l'une des *dernières images* d'un lion sauvage."
+  },
+  {
+   "id": "l08",
+   "start": 45.879,
+   "end": 51.819,
+   "cap": "Et en *1942*, le *dernier lion connu* est abattu près du col du *Tizi n'Tichka*."
+  },
+  {
+   "id": "l09",
+   "start": 52.269,
+   "end": 55.085,
+   "cap": "Le lion de l'Atlas a *disparu de la nature*."
+  },
+  {
+   "id": "l10",
+   "start": 55.785,
+   "end": 58.272,
+   "cap": "Pourtant… l'histoire *ne s'arrête pas là*."
+  },
+  {
+   "id": "l11",
+   "start": 58.772,
+   "end": 62.959,
+   "cap": "Pendant des siècles, les tribus offraient des lions aux *sultans du Maroc*."
+  },
+  {
+   "id": "l12",
+   "start": 63.259,
+   "end": 65.983,
+   "cap": "Et la *ménagerie royale* les a gardés… jusqu'à aujourd'hui."
+  },
+  {
+   "id": "l13",
+   "start": 66.433,
+   "end": 72.638,
+   "cap": "Leurs descendants vivent au *zoo de Rabat*, qui abrite le plus grand groupe de lions de l'Atlas au monde."
+  },
+  {
+   "id": "l14",
+   "start": 73.038,
+   "end": 77.01,
+   "cap": "Dans tous les zoos de la planète, ils sont *moins d'une centaine*."
+  },
+  {
+   "id": "l15",
+   "start": 77.36,
+   "end": 83.15,
+   "cap": "Et même si leur *pureté génétique* fait débat, ils sont le dernier lien avec ce lion légendaire."
+  },
+  {
+   "id": "l16",
+   "start": 83.65,
+   "end": 89.688,
+   "cap": "En *2025*, *quatre lionceaux* de l'Atlas sont nés dans un zoo, en *Tchéquie*…"
+  },
+  {
+   "id": "l17",
+   "start": 89.938,
+   "end": 92.94,
+   "cap": "et on parle même de les *réintroduire* un jour au *Maroc* !"
+  },
+  {
+   "id": "l18",
+   "start": 93.44,
+   "end": 100.324,
+   "cap": "Aujourd'hui, il reste le *symbole du pays*… au point de donner son nom à l'*équipe nationale* de football."
+  },
+  {
+   "id": "l19",
+   "start": 101.024,
+   "end": 105.554,
+   "cap": "Alors… est-ce que tu aimerais le revoir rugir dans les montagnes de l'Atlas ?"
+  },
+  {
+   "id": "l20",
+   "start": 105.854,
+   "end": 110.443,
+   "cap": "Dis-le en commentaire ! Et abonne-toi pour ne pas rater le prochain épisode."
+  }
+ ],
+ "cue": {
+  "intro": [
+   0.0,
+   4.10185,
+   6.267
+  ],
+  "roarIn": 4.40754,
+  "maroc": 6.267,
+  "range": [
+   8.754999999999999,
+   14.5595
+  ],
+  "mane": 15.41,
+  "rome": [
+   22.357,
+   23.457
+  ],
+  "arcs": [
+   23.256999999999998,
+   27.24
+  ],
+  "shrink": [
+   27.39,
+   34.943
+  ],
+  "plane": [
+   37.643,
+   45.479
+  ],
+  "photo": 42.57732,
+  "tichka": [
+   45.278999999999996,
+   46.479
+  ],
+  "shot": 49.5618,
+  "extinct": 52.469,
+  "revive": 56.285,
+  "tribes": [
+   58.772,
+   62.959
+  ],
+  "menagerie": 63.459,
+  "rabat": [
+   65.933,
+   67.033
+  ],
+  "zoos": [
+   72.63799999999999,
+   77.01
+  ],
+  "dna": 77.56,
+  "czech": [
+   83.05000000000001,
+   84.25
+  ],
+  "cubs": 86.9709,
+  "reintro": [
+   89.738,
+   92.94
+  ],
+  "foot": [
+   92.94,
+   97.57039999999999
+  ],
+  "outro": 100.524,
+  "cta": 106.054,
+  "tickerShow": [
+   27.39,
+   55.085
+  ]
+ },
+ "ticker": [
+  [
+   27.69,
+   34.943,
+   1830,
+   1920,
+   10
+  ],
+  [
+   37.843,
+   38.443000000000005,
+   1920,
+   1925,
+   1
+  ],
+  [
+   45.879,
+   46.678999999999995,
+   1925,
+   1942,
+   1
+  ],
+  [
+   63.559,
+   65.983,
+   1942,
+   2025,
+   10
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "impact",
+   "t": 0.02,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 4.844,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 5.194,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh_long",
+   "t": 6.167,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 7.74,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 8.855,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 12.458,
+   "gain": 0.55
+  },
+  {
+   "name": "pop",
+   "t": 12.678,
+   "gain": 0.55
+  },
+  {
+   "name": "pop",
+   "t": 12.898,
+   "gain": 0.55
+  },
+  {
+   "name": "pop",
+   "t": 13.118,
+   "gain": 0.55
+  },
+  {
+   "name": "pop",
+   "t": 13.338,
+   "gain": 0.55
+  },
+  {
+   "name": "whoosh",
+   "t": 15.41,
+   "gain": 0.6
+  },
+  {
+   "name": "hit",
+   "t": 21.008,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 22.457,
+   "gain": 0.8
+  },
+  {
+   "name": "crowd",
+   "t": 25.048,
+   "gain": 0.55
+  },
+  {
+   "name": "pop",
+   "t": 24.391,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 24.511,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 24.631,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 24.751,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 24.871,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 24.991,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 25.111,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 25.231,
+   "gain": 0.35
+  },
+  {
+   "name": "whoosh",
+   "t": 27.49,
+   "gain": 0.6
+  },
+  {
+   "name": "gunshot",
+   "t": 28.56,
+   "gain": 0.35
+  },
+  {
+   "name": "gunshot",
+   "t": 28.88,
+   "gain": 0.35
+  },
+  {
+   "name": "gunshot",
+   "t": 29.2,
+   "gain": 0.35
+  },
+  {
+   "name": "gunshot",
+   "t": 29.52,
+   "gain": 0.35
+  },
+  {
+   "name": "whoosh_long",
+   "t": 31.429,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 35.879,
+   "gain": 0.6
+  },
+  {
+   "name": "plane",
+   "t": 37.643,
+   "gain": 0.6
+  },
+  {
+   "name": "shutter",
+   "t": 42.577,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh_long",
+   "t": 45.479,
+   "gain": 0.8
+  },
+  {
+   "name": "gunshot",
+   "t": 49.562,
+   "gain": 0.85
+  },
+  {
+   "name": "stamp",
+   "t": 53.536,
+   "gain": 1.0
+  },
+  {
+   "name": "riser",
+   "t": 56.285,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 56.285,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 60.237,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 60.437,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 60.637,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 60.837,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 61.037,
+   "gain": 0.5
+  },
+  {
+   "name": "bell",
+   "t": 63.804,
+   "gain": 0.45
+  },
+  {
+   "name": "whoosh_long",
+   "t": 66.033,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 68.294,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 72.738,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 74.23,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 74.35,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 74.47,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 74.59,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 74.71,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 74.83,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 74.95,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 75.07,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 75.19,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 75.31,
+   "gain": 0.35
+  },
+  {
+   "name": "hit",
+   "t": 79.676,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh_long",
+   "t": 83.25,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 86.971,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 87.151,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 87.331,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 87.511,
+   "gain": 0.6
+  },
+  {
+   "name": "shimmer",
+   "t": 86.971,
+   "gain": 0.45
+  },
+  {
+   "name": "whoosh_long",
+   "t": 89.738,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 92.34,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 93.14,
+   "gain": 0.7
+  },
+  {
+   "name": "crowd",
+   "t": 97.708,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 97.708,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh_long",
+   "t": 100.624,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 106.054,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 28.496,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 29.302,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 30.108,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 30.914,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 31.719,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 32.525,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 33.331,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 34.137,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 34.943,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 37.963,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 38.203,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 38.443,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 45.926,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 46.067,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 46.208,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 46.35,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 46.491,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 46.632,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 63.851,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 64.143,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 64.435,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 64.727,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 65.019,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 65.311,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 65.603,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 65.895,
+   "gain": 0.5
+  }
+ ],
+ "clips": [
+  {
+   "name": "atlas",
+   "a": 31.679,
+   "b": 36.179
+  }
+ ],
+ "duration": 112.443
+}
