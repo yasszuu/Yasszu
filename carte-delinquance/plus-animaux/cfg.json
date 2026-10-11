@@ -1,0 +1,191 @@
+{
+ "offset": 1.0,
+ "dur": 32.0,
+ "music_in": 0.9,
+ "key": 0,
+ "cry": {
+  "file": "assets/belement.mp3",
+  "ss": 0.0,
+  "t": 1.3
+ },
+ "intro": {
+  "img": "assets/mouton.png",
+  "h": 470,
+  "beats": [
+   0.05
+  ],
+  "out": 2.6
+ },
+ "title1": "PLUS D'ANIMAUX",
+ "title2": "QUE D'HUMAINS !",
+ "cta1": "ET CHEZ TOI ?",
+ "v0": [
+  60,
+  35,
+  3.3
+ ],
+ "v1": [
+  62,
+  32,
+  3.42
+ ],
+ "v2": [
+  110,
+  -10,
+  3.3
+ ],
+ "vOut": [
+  40,
+  38,
+  3.3
+ ],
+ "vEnd": [
+  40,
+  38,
+  3.4
+ ],
+ "script": [
+  "Dans certains pays, les animaux sont plus nombreux que les humains.",
+  "En Nouvelle-Zélande : presque cinq moutons par habitant.",
+  "En Uruguay : plus de trois vaches par habitant.",
+  "Au pays de Galles : trois moutons par habitant.",
+  "Au Danemark : deux cochons par habitant.",
+  "En Australie : plus de kangourous que d'humains.",
+  "En Mongolie : plus de chevaux que d'habitants.",
+  "Mais le record… c'est aux îles Malouines : plus de cent moutons par habitant !",
+  "Et chez toi, il y a quoi ? Dis-le en commentaire !"
+ ],
+ "countries": [
+  {
+   "id": "NZL",
+   "unit": "New Zealand",
+   "flag": "nz",
+   "big": "≈ # MOUTONS",
+   "count": 5,
+   "small": "PAR HABITANT",
+   "cam": [
+    172.5,
+    -41.5,
+    5.25
+   ],
+   "lab": [
+    172.5,
+    -41.0
+   ],
+   "lonr": [
+    160,
+    180
+   ],
+   "lead": 0.6
+  },
+  {
+   "id": "URY",
+   "unit": "Uruguay",
+   "flag": "uy",
+   "big": "+ DE # VACHES",
+   "count": 3,
+   "small": "PAR HABITANT",
+   "cam": [
+    -56.0,
+    -32.8,
+    6.6
+   ],
+   "lab": [
+    -56.0,
+    -32.6
+   ],
+   "lead": 0.6
+  },
+  {
+   "id": "WLS",
+   "unit": "Wales",
+   "flag": "gb-wls",
+   "big": "# MOUTONS",
+   "count": 3,
+   "small": "PAR HABITANT",
+   "cam": [
+    -3.8,
+    52.3,
+    7.3
+   ],
+   "lab": [
+    -3.7,
+    52.4
+   ],
+   "hook": true
+  },
+  {
+   "id": "DNK",
+   "unit": "Denmark",
+   "flag": "dk",
+   "big": "# COCHONS",
+   "count": 2,
+   "small": "PAR HABITANT",
+   "cam": [
+    10.2,
+    56.0,
+    6.9
+   ],
+   "lab": [
+    9.6,
+    56.1
+   ],
+   "hook": true,
+   "lead": 0.6
+  },
+  {
+   "id": "AUS",
+   "unit": "Australia",
+   "flag": "au",
+   "big": "+ DE KANGOUROUS",
+   "small": "QUE D'HUMAINS",
+   "cam": [
+    134.0,
+    -26.0,
+    4.25
+   ],
+   "lab": [
+    134.0,
+    -25.0
+   ],
+   "hook": true,
+   "minA": 0.02
+  },
+  {
+   "id": "MNG",
+   "unit": "Mongolia",
+   "flag": "mn",
+   "big": "+ DE CHEVAUX",
+   "small": "QUE D'HABITANTS",
+   "cam": [
+    103.5,
+    46.8,
+    4.9
+   ],
+   "lab": [
+    103.0,
+    46.8
+   ],
+   "hook": true,
+   "lead": 0.65
+  },
+  {
+   "id": "FLK",
+   "unit": "Falkland Islands",
+   "flag": "fk",
+   "big": "+ DE # MOUTONS",
+   "count": 100,
+   "small": "PAR HABITANT !",
+   "cam": [
+    -59.4,
+    -51.75,
+    8.0
+   ],
+   "lab": [
+    -59.3,
+    -51.7
+   ],
+   "minA": 0.0005
+  }
+ ]
+}
