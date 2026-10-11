@@ -1,0 +1,183 @@
+{
+ "offset": 0.3,
+ "dur": 28.6,
+ "music_in": 0.0,
+ "key": 5,
+ "textAt": "on",
+ "intro": {
+  "img": "assets/lemurien.png",
+  "h": 520,
+  "beats": [
+   0.05
+  ],
+  "out": 1.9
+ },
+ "title1": "ILS N'EXISTENT QUE",
+ "title2": "DANS UN SEUL PAYS",
+ "cta1": "TU EN CONNAIS D'AUTRES ?",
+ "v0": [
+  60,
+  30,
+  3.3
+ ],
+ "v1": [
+  62,
+  27,
+  3.42
+ ],
+ "v2": [
+  50,
+  -12,
+  3.5
+ ],
+ "vOut": [
+  20,
+  33,
+  3.3
+ ],
+ "vEnd": [
+  20,
+  33,
+  3.4
+ ],
+ "script": [
+  "Ces animaux n'existent à l'état sauvage que dans un seul pays au monde.",
+  "Le lémurien : à Madagascar.",
+  "L'ornithorynque : en Australie.",
+  "Le kiwi : en Nouvelle-Zélande.",
+  "Le panda géant : en Chine.",
+  "Le dragon de Komodo : en Indonésie.",
+  "La tortue géante des Galápagos : en Équateur.",
+  "Et l'axolotl… on ne le trouve plus que dans les canaux de Mexico !",
+  "Et toi, tu en connais d'autres ? Dis-le en commentaire !"
+ ],
+ "countries": [
+  {
+   "id": "MDG",
+   "unit": "Madagascar",
+   "flag": "mg",
+   "big": "LE LÉMURIEN",
+   "cam": [
+    46.8,
+    -19.0,
+    5.45
+   ],
+   "lab": [
+    46.8,
+    -19.0
+   ],
+   "hook": true
+  },
+  {
+   "id": "AUS",
+   "unit": "Australia",
+   "flag": "au",
+   "big": "L'ORNITHORYNQUE",
+   "cam": [
+    134.0,
+    -26.0,
+    4.25
+   ],
+   "lab": [
+    134.0,
+    -25.0
+   ],
+   "hook": true,
+   "minA": 0.02
+  },
+  {
+   "id": "NZL",
+   "unit": "New Zealand",
+   "flag": "nz",
+   "big": "LE KIWI",
+   "cam": [
+    172.5,
+    -41.5,
+    5.25
+   ],
+   "lab": [
+    172.5,
+    -41.0
+   ],
+   "lonr": [
+    160,
+    180
+   ]
+  },
+  {
+   "id": "CHN",
+   "unit": "China",
+   "flag": "cn",
+   "big": "LE PANDA GÉANT",
+   "cam": [
+    104.0,
+    35.0,
+    4.15
+   ],
+   "lab": [
+    104.0,
+    35.0
+   ],
+   "hook": true,
+   "minA": 0.02
+  },
+  {
+   "id": "IDN",
+   "unit": "Indonesia",
+   "flag": "id",
+   "big": "LE DRAGON",
+   "small": "DE KOMODO",
+   "cam": [
+    118.0,
+    -2.5,
+    4.3
+   ],
+   "lab": [
+    117.0,
+    -2.0
+   ],
+   "hook": true,
+   "minA": 0.01,
+   "lead": 0.65
+  },
+  {
+   "id": "ECU",
+   "unit": "Ecuador",
+   "flag": "ec",
+   "big": "LA TORTUE GÉANTE",
+   "small": "DES GALÁPAGOS",
+   "cam": [
+    -84.0,
+    -1.0,
+    6.15
+   ],
+   "lab": [
+    -84.0,
+    -1.0
+   ],
+   "minA": 0.001,
+   "flagMain": true
+  },
+  {
+   "id": "MEX",
+   "unit": "Mexico",
+   "flag": "mx",
+   "big": "L'AXOLOTL",
+   "small": "UNIQUEMENT À MEXICO",
+   "cam": [
+    -101.5,
+    22.5,
+    4.75
+   ],
+   "lab": [
+    -101.0,
+    25.0
+   ],
+   "ping": [
+    -99.1,
+    19.26
+   ],
+   "minA": 0.01
+  }
+ ]
+}
