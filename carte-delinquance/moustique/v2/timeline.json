@@ -1,0 +1,742 @@
+{
+ "vo": [
+  {
+   "id": "m01",
+   "start": 1.6,
+   "end": 6.502,
+   "cap": "En *2004*, un minuscule moustique est repéré à *Menton*, sur la Côte d'Azur."
+  },
+  {
+   "id": "m02",
+   "start": 6.902,
+   "end": 10.43,
+   "cap": "Vingt ans plus tard, il a envahi plus de *80 départements*."
+  },
+  {
+   "id": "m03",
+   "start": 10.83,
+   "end": 13.851,
+   "cap": "Voici comment le *moustique tigre* a conquis la France."
+  },
+  {
+   "id": "m04",
+   "start": 14.651,
+   "end": 17.276,
+   "cap": "Tout commence ici, dans les forêts d'*Asie du Sud-Est*."
+  },
+  {
+   "id": "m05",
+   "start": 17.676,
+   "end": 20.303,
+   "cap": "Pendant des siècles, il ne quitte pas sa région."
+  },
+  {
+   "id": "m06",
+   "start": 20.803,
+   "end": 25.491,
+   "cap": "Mais au *XXe siècle*, il trouve un moyen de transport parfait : les *vieux pneus*."
+  },
+  {
+   "id": "m07",
+   "start": 25.991,
+   "end": 32.193,
+   "cap": "Il pond ses œufs dans l'*eau de pluie* qui stagne à l'intérieur… et les pneus voyagent par *bateau*, dans le monde entier."
+  },
+  {
+   "id": "m08",
+   "start": 32.793,
+   "end": 36.588,
+   "cap": "En *1979*, il débarque en Europe, en *Albanie*."
+  },
+  {
+   "id": "m09",
+   "start": 37.188,
+   "end": 41.548,
+   "cap": "En *1985*, il atteint les *États-Unis*, au Texas."
+  },
+  {
+   "id": "m10",
+   "start": 42.148,
+   "end": 46.976,
+   "cap": "Puis, en *1990*, il arrive en *Italie*, à Gênes."
+  },
+  {
+   "id": "m11",
+   "start": 47.476,
+   "end": 51.658,
+   "cap": "De là, il n'a plus qu'à longer la côte… jusqu'à *Menton*, en *2004*."
+  },
+  {
+   "id": "m12",
+   "start": 52.258,
+   "end": 55.77,
+   "cap": "Et ses œufs ont un super-pouvoir : ils *résistent au froid* de l'hiver."
+  },
+  {
+   "id": "m13",
+   "start": 56.27,
+   "end": 60.683,
+   "cap": "Alors il remonte la *vallée du Rhône*, caché dans les *voitures* et les *camions*."
+  },
+  {
+   "id": "m14",
+   "start": 61.083,
+   "end": 64.225,
+   "cap": "Il conquiert le *Sud-Ouest*, puis le *centre* de la France."
+  },
+  {
+   "id": "m15",
+   "start": 64.625,
+   "end": 66.509,
+   "cap": "Il atteint même la *région parisienne*."
+  },
+  {
+   "id": "m16",
+   "start": 67.109,
+   "end": 73.163,
+   "cap": "Au 1er janvier *2025*, il est installé dans *81 départements* : plus de *4 sur 5* !"
+  },
+  {
+   "id": "m17",
+   "start": 73.863,
+   "end": 76.257,
+   "cap": "Et le problème, ce ne sont pas seulement ses piqûres."
+  },
+  {
+   "id": "m18",
+   "start": 76.657,
+   "end": 79.32,
+   "cap": "Il peut transmettre la *dengue* et le *chikungunya*."
+  },
+  {
+   "id": "m19",
+   "start": 79.82,
+   "end": 86.441,
+   "cap": "En *2025*, la France bat un *record* : plus de *800 cas* de chikungunya contractés sur place, en métropole."
+  },
+  {
+   "id": "m20",
+   "start": 87.041,
+   "end": 89.518,
+   "cap": "Le moustique tigre est désormais là pour *rester*."
+  },
+  {
+   "id": "m21",
+   "start": 90.318,
+   "end": 96.629,
+   "cap": "Et toi, il est déjà arrivé dans ton département ? Dis-le en commentaire ! Et abonne-toi pour le prochain épisode."
+  }
+ ],
+ "cue": {},
+ "ticker": [
+  [
+   32.793,
+   32.803,
+   1979,
+   1979,
+   1
+  ],
+  [
+   37.188,
+   37.788000000000004,
+   1979,
+   1985,
+   1
+  ],
+  [
+   42.148,
+   42.748000000000005,
+   1985,
+   1990,
+   1
+  ],
+  [
+   47.476,
+   51.0307,
+   1990,
+   2004,
+   1
+  ],
+  [
+   56.27,
+   60.683,
+   2004,
+   2012,
+   1
+  ],
+  [
+   61.083,
+   64.225,
+   2012,
+   2017,
+   1
+  ],
+  [
+   64.625,
+   66.509,
+   2017,
+   2019,
+   1
+  ],
+  [
+   67.109,
+   69.8333,
+   2019,
+   2025,
+   1
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "pop",
+   "t": 0.3,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 1.2,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 2.188,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 4.051,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 5.031,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 6.652,
+   "gain": 0.9
+  },
+  {
+   "name": "riser",
+   "t": 9.548,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 9.548,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh",
+   "t": 10.73,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 12.643,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 14.351,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 16.62,
+   "gain": 0.8
+  },
+  {
+   "name": "shimmer",
+   "t": 17.976,
+   "gain": 0.4
+  },
+  {
+   "name": "whoosh",
+   "t": 20.603,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 22.209,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 24.178,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 28.782,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 29.092,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 29.212,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 29.332,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 29.452,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 29.572,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 29.692,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 29.812,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 29.932,
+   "gain": 0.4
+  },
+  {
+   "name": "whoosh",
+   "t": 32.493,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 35.905,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 36.888,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 37.288,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 37.488,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 37.688,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 40.763,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 41.848,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 42.268,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 42.508,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 42.748,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 46.107,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 47.276,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 47.73,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 47.984,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 48.238,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 48.492,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 48.746,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 48.999,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.253,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.507,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.761,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.015,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.269,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.523,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.777,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 50.905,
+   "gain": 0.9
+  },
+  {
+   "name": "tick",
+   "t": 51.031,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh",
+   "t": 52.058,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 53.838,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 54.716,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 55.97,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 56.822,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 57.373,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 57.925,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 58.477,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 59.028,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 59.58,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 60.131,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 60.683,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh",
+   "t": 60.883,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 61.711,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 62.34,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 62.968,
+   "gain": 0.6
+  },
+  {
+   "name": "tick",
+   "t": 62.968,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 63.597,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 64.225,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh",
+   "t": 64.425,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 65.567,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 65.755,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 66.509,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh",
+   "t": 66.809,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 67.563,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 68.017,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 68.471,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 68.925,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 69.379,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 69.833,
+   "gain": 0.5
+  },
+  {
+   "name": "riser",
+   "t": 70.741,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 70.741,
+   "gain": 1.0
+  },
+  {
+   "name": "hit",
+   "t": 72.437,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 73.663,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 73.913,
+   "gain": 0.8
+  },
+  {
+   "name": "hit",
+   "t": 77.722,
+   "gain": 0.8
+  },
+  {
+   "name": "hit",
+   "t": 78.574,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 79.52,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 82.137,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 82.287,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 82.437,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 82.587,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 82.737,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 82.887,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 83.037,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 83.187,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 83.337,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 83.487,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 83.637,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 83.787,
+   "gain": 0.35
+  },
+  {
+   "name": "riser",
+   "t": 83.925,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 83.925,
+   "gain": 1.0
+  },
+  {
+   "name": "pop",
+   "t": 83.937,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 84.087,
+   "gain": 0.35
+  },
+  {
+   "name": "whoosh",
+   "t": 86.841,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 88.775,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 90.518,
+   "gain": 0.7
+  }
+ ],
+ "duration": 98.229
+}
