@@ -1,0 +1,474 @@
+{
+ "vo": [
+  {
+   "id": "s01",
+   "start": 0.9,
+   "end": 5.472,
+   "cap": "Cet oiseau de *100 grammes* fait, chaque année, le *plus long voyage* du monde."
+  },
+  {
+   "id": "s02",
+   "start": 5.872,
+   "end": 9.653,
+   "cap": "Plus de *70 000 kilomètres*… et parfois bien plus."
+  },
+  {
+   "id": "s03",
+   "start": 10.053,
+   "end": 13.46,
+   "cap": "Voici l'incroyable migration de la *sterne arctique*."
+  },
+  {
+   "id": "s04",
+   "start": 14.26,
+   "end": 17.642,
+   "cap": "Tout commence en *juin*, au *Groenland*, tout près du pôle Nord."
+  },
+  {
+   "id": "s05",
+   "start": 18.042,
+   "end": 21.382,
+   "cap": "Là-bas, c'est l'été : le soleil ne se *couche jamais*."
+  },
+  {
+   "id": "s06",
+   "start": 21.782,
+   "end": 24.644,
+   "cap": "La sterne y pond ses *œufs*, et élève ses *petits*."
+  },
+  {
+   "id": "s07",
+   "start": 25.144,
+   "end": 27.997,
+   "cap": "Mais dès la fin de l'été, elle s'envole vers le *sud*."
+  },
+  {
+   "id": "s08",
+   "start": 28.397,
+   "end": 31.842,
+   "cap": "Direction : l'autre bout du monde. L'*Antarctique*."
+  },
+  {
+   "id": "s09",
+   "start": 32.442,
+   "end": 37.541,
+   "cap": "Elle commence par faire une *pause* en plein milieu de l'Atlantique Nord… pour faire le plein de *poissons*."
+  },
+  {
+   "id": "s10",
+   "start": 38.041,
+   "end": 45.969,
+   "cap": "Puis, au large de l'Afrique, la route se *sépare* : certaines longent les côtes *africaines*… d'autres traversent jusqu'au *Brésil*."
+  },
+  {
+   "id": "s11",
+   "start": 46.569,
+   "end": 50.205,
+   "cap": "Après des semaines de vol, elle atteint enfin l'*Antarctique*."
+  },
+  {
+   "id": "s12",
+   "start": 50.605,
+   "end": 53.611,
+   "cap": "Et là-bas… c'est l'été. *Encore l'été* !"
+  },
+  {
+   "id": "s13",
+   "start": 54.111,
+   "end": 60.057,
+   "cap": "La sterne vit donc *deux étés* par an : c'est sans doute l'animal qui voit le plus la *lumière du jour* sur Terre."
+  },
+  {
+   "id": "s14",
+   "start": 60.657,
+   "end": 66.007,
+   "cap": "Au printemps, elle repart vers le *nord*, en dessinant un immense *S* à travers l'Atlantique."
+  },
+  {
+   "id": "s15",
+   "start": 66.607,
+   "end": 73.144,
+   "cap": "En *2016*, une sterne partie d'*Angleterre* a parcouru *96 000 kilomètres*… en *dix mois*."
+  },
+  {
+   "id": "s16",
+   "start": 73.744,
+   "end": 75.638,
+   "cap": "Et comme elle peut vivre plus de *30 ans*…"
+  },
+  {
+   "id": "s17",
+   "start": 75.938,
+   "end": 79.451,
+   "cap": "elle parcourt, dans sa vie, plus de *deux millions* de kilomètres."
+  },
+  {
+   "id": "s18",
+   "start": 79.851,
+   "end": 82.713,
+   "cap": "C'est *trois allers-retours* entre la Terre et la *Lune* !"
+  },
+  {
+   "id": "s19",
+   "start": 83.213,
+   "end": 85.171,
+   "cap": "Pas mal, pour un oiseau de *100 grammes*."
+  },
+  {
+   "id": "s20",
+   "start": 85.971,
+   "end": 91.821,
+   "cap": "Et toi, tu connaissais la sterne arctique ? Dis-le en commentaire ! Et abonne-toi pour le prochain épisode."
+  }
+ ],
+ "cue": {
+  "title": 0.3,
+  "preview": [
+   5.672,
+   9.653
+  ],
+  "k70": 6.43915,
+  "globe": [
+   9.753,
+   13.46
+  ],
+  "green": [
+   13.86,
+   16.1201
+  ],
+  "colony": [
+   17.842,
+   24.843999999999998
+  ],
+  "south": [
+   24.944,
+   28.197
+  ],
+  "anta": [
+   28.197,
+   31.842
+  ],
+  "stop": [
+   32.142,
+   34.22665
+  ],
+  "split": [
+   37.641,
+   45.969
+  ],
+  "arrive": [
+   46.269000000000005,
+   48.2052
+  ],
+  "summers": [
+   53.711,
+   60.057
+  ],
+  "north": [
+   60.357,
+   66.20700000000001
+  ],
+  "farne": [
+   66.307,
+   73.34400000000001
+  ],
+  "life": [
+   73.444,
+   79.451
+  ],
+  "moon": [
+   79.351,
+   83.31299999999999
+  ],
+  "g100": [
+   83.01299999999999,
+   85.171
+  ],
+  "outro": 85.671
+ },
+ "ticker": [
+  [
+   14.26,
+   14.27,
+   6,
+   6,
+   1
+  ],
+  [
+   25.144,
+   27.997,
+   6,
+   8,
+   1
+  ],
+  [
+   32.442,
+   33.9717,
+   8,
+   9,
+   1
+  ],
+  [
+   38.041,
+   45.969,
+   9,
+   10,
+   1
+  ],
+  [
+   46.569,
+   48.0234,
+   10,
+   12,
+   1
+  ],
+  [
+   60.657,
+   66.007,
+   12,
+   17,
+   1
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "cri",
+   "t": 0.25,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 0.3,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 5.672,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 6.439,
+   "gain": 0.55
+  },
+  {
+   "name": "woosh",
+   "t": 9.753,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 13.86,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 15.92,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 20.47,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 34.027,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 38.377,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 48.005,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 52.555,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 18.142,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 24.944,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 28.197,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 30.981,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 33.142,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 37.641,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 42.005,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 46.269,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 53.711,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 55.597,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 60.357,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 66.307,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 71.183,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 73.444,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 77.87,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 79.351,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 80.151,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 80.601,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 81.051,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 83.413,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 85.671,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 26.57,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 27.997,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 33.972,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 45.969,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 47.296,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 48.023,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 61.727,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 62.797,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 63.867,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 64.937,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 66.007,
+   "gain": 0.45
+  }
+ ],
+ "photos": [],
+ "clips": [
+  {
+   "name": "groenland",
+   "a": 16.12,
+   "b": 20.72
+  },
+  {
+   "name": "ocean",
+   "a": 34.227,
+   "b": 38.627
+  },
+  {
+   "name": "antarctique",
+   "a": 48.205,
+   "b": 52.805
+  }
+ ],
+ "duration": 93.821
+}

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sterne 3D</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2) format("woff2");}
+html,body{margin:0;background:#02040a;overflow:hidden}
+#c{width:540px;height:960px;display:block}
+#gl{display:none}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.min.js"}}</script>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, R = 6371, EXAG = 3.2, HMAX = 4000;
+const BOX = {L:-40, Rr:-14, B:62, T:75};
+const D2R = Math.PI/180;
+const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b, x));
+const prog = (t,a,b) => clamp((t-a)/(b-a));
+const lerp = (a,b,k) => a + (b-a)*k;
+const ease = k => k<.5 ? 4*k*k*k : 1 - Math.pow(-2*k+2, 3)/2;
+const dir = (lon, lat) => new THREE.Vector3(Math.cos(lat*D2R)*Math.cos(lon*D2R), Math.sin(lat*D2R), -Math.cos(lat*D2R)*Math.sin(lon*D2R));
+
+const glc = document.getElementById("gl");
+const renderer = new THREE.WebGLRenderer({canvas:glc, antialias:true, preserveDrawingBuffer:true, logarithmicDepthBuffer:true});
+renderer.setSize(W, H, false); renderer.setPixelRatio(1);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(42, W/H, 1, 60000);
+
+const loadImg = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });
+const SUN = dir(-60, 25).normalize();
+
+// ---------- globe lointain (texture mondiale)
+const worldTex = new THREE.Texture(await loadImg("../moustique/tex_world.jpg")); worldTex.needsUpdate = true;
+worldTex.colorSpace = THREE.SRGBColorSpace; worldTex.anisotropy = 8;
+const globe = new THREE.Mesh(new THREE.SphereGeometry(R - 0.6, 256, 128),
+  new THREE.ShaderMaterial({uniforms:{map:{value:worldTex}, sun:{value:SUN}},
+    vertexShader:`varying vec2 vUv; varying vec3 vN; varying vec3 vW;
+      #include <common>
+      #include <logdepthbuf_pars_vertex>
+      void main(){ vUv = uv; vN = normalize(position); vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz;
+        gl_Position = projectionMatrix*viewMatrix*w;
+        #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader:`uniform sampler2D map; uniform vec3 sun; varying vec2 vUv; varying vec3 vN; varying vec3 vW;
+      #include <logdepthbuf_pars_fragment>
+      void main(){
+        #include <logdepthbuf_fragment>
+        vec3 c = texture2D(map, vUv).rgb; float l = .45 + .75*max(dot(vN, sun), 0.);
+        float d = length(vW - cameraPosition); vec3 haze = vec3(.50,.66,.88);
+        c = mix(c*l, haze, clamp((d - 700.)/4200., 0., .55));
+        gl_FragColor = vec4(pow(c, vec3(1./2.2)), 1.); }`}));
+// SphereGeometry : u=0 à lon -180 si on tourne de 90° (alignement avec dir())
+
+scene.add(globe);
+
+// ---------- terrain 3D (MNT AWS Terrarium : patch large z7 + patch fin z9 sur le survol)
+const tex = img => { const t = new THREE.Texture(img); t.needsUpdate = true; t.anisotropy = 16; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; return t; };
+const HAZE = "vec3(.50,.66,.88)";
+async function patch(name, box, lift, order){
+  const [hImg, cImg, nImg] = await Promise.all([loadImg(name + "_height.png"), loadImg(name + "_color.jpg"), loadImg(name + "_normal.png")]);
+  const hc = document.createElement("canvas"); hc.width = hImg.width; hc.height = hImg.height;
+  const hx = hc.getContext("2d"); hx.drawImage(hImg, 0, 0); const hd = hx.getImageData(0, 0, hc.width, hc.height).data;
+  const GW = hImg.width, GH = hImg.height;
+  const pos = new Float32Array(GW*GH*3), uvs = new Float32Array(GW*GH*2), east = new Float32Array(GW*GH*3), north = new Float32Array(GW*GH*3);
+  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++){
+    const u = i/(GW-1), v = j/(GH-1), lon = lerp(box.L, box.Rr, u), lat = lerp(box.T, box.B, v);
+    const h = hd[(j*GW + i)*4]/255*HMAX/1000*EXAG + lift, d = dir(lon, lat), k = j*GW + i;
+    pos.set([d.x*(R+h), d.y*(R+h), d.z*(R+h)], k*3); uvs.set([u, 1 - v], k*2);
+    const e = new THREE.Vector3(-Math.sin(lon*D2R), 0, -Math.cos(lon*D2R));
+    const n = new THREE.Vector3().crossVectors(d, e);
+    east.set([e.x, e.y, e.z], k*3); north.set([n.x, n.y, n.z], k*3);
+  }
+  const idx = new Uint32Array((GW-1)*(GH-1)*6); let q = 0;
+  for (let j = 0; j < GH-1; j++) for (let i = 0; i < GW-1; i++){ const a = j*GW+i, b = a+1, c = a+GW, d = c+1; idx.set([a,c,b, b,c,d], q); q += 6; }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+  geo.setAttribute("east", new THREE.BufferAttribute(east, 3)); geo.setAttribute("north", new THREE.BufferAttribute(north, 3));
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  const colTex = tex(cImg); colTex.colorSpace = THREE.SRGBColorSpace; const norTex = tex(nImg);
+  const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({
+    uniforms:{map:{value:colTex}, nmap:{value:norTex}, sun:{value:SUN}},
+    vertexShader:`attribute vec3 east; attribute vec3 north; varying vec2 vUv; varying vec3 vE; varying vec3 vNo; varying vec3 vUp; varying vec3 vW;
+      #include <common>
+      #include <logdepthbuf_pars_vertex>
+      void main(){ vUv = uv; vE = east; vNo = north; vUp = normalize(position); vW = position;
+        gl_Position = projectionMatrix*viewMatrix*vec4(position,1.);
+        #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader:`uniform sampler2D map; uniform sampler2D nmap; uniform vec3 sun; varying vec2 vUv; varying vec3 vE; varying vec3 vNo; varying vec3 vUp; varying vec3 vW;
+      #include <logdepthbuf_pars_fragment>
+      void main(){
+        #include <logdepthbuf_fragment>
+        vec3 c = texture2D(map, vUv).rgb;
+        vec3 tn = texture2D(nmap, vUv).rgb*2. - 1.;
+        vec3 n = normalize(tn.x*vE + tn.y*vNo + tn.z*vUp);
+        float diff = max(dot(n, sun), 0.);
+        vec3 col = c*(.42 + 1.0*diff) + c*vec3(.06,.09,.16);
+        float water = step(c.b, .6)*step(c.r, .14)*step(c.r + .05, c.b);
+        vec3 V = normalize(cameraPosition - vW); col += water*pow(max(dot(reflect(-sun, vUp), V), 0.), 30.)*vec3(.55,.62,.7);
+        float d = length(vW - cameraPosition);
+        col = mix(col, ${HAZE}, clamp((d - 700.)/4200., 0., .55));
+        float edge = smoothstep(0., .05, vUv.x)*smoothstep(1., .95, vUv.x)*smoothstep(0., .06, vUv.y)*smoothstep(1., .94, vUv.y);
+        gl_FragColor = vec4(pow(col, vec3(1./2.2)), edge); }`,
+    transparent:true, depthWrite:true}));
+  m.renderOrder = order; scene.add(m);
+}
+await patch("coarse", {L:-62, Rr:-10, B:58, T:81}, 0, 1);
+await patch("fine", {L:-34, Rr:-15, B:66, T:75}, 0.08, 2);
+
+// ---------- atmosphère (halo sur le limbe)
+const atm = new THREE.Mesh(new THREE.SphereGeometry(R + 160, 128, 64), new THREE.ShaderMaterial({
+  vertexShader:`varying vec3 vN; varying vec3 vW;
+    #include <common>
+    #include <logdepthbuf_pars_vertex>
+    void main(){ vN = normalize(position); vW = position; gl_Position = projectionMatrix*viewMatrix*vec4(position,1.);
+      #include <logdepthbuf_vertex>
+    }`,
+  fragmentShader:`varying vec3 vN; varying vec3 vW;
+    #include <logdepthbuf_pars_fragment>
+    void main(){
+      #include <logdepthbuf_fragment>
+      vec3 V = normalize(vW - cameraPosition); float f = pow(1. - abs(dot(V, vN)), 3.);
+      gl_FragColor = vec4(vec3(.45,.68,1.)*f*1.3, f); }`,
+  side:THREE.BackSide, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending}));
+scene.add(atm);
+
+// ---------- caméra : survol vers le sud le long de la côte est du Groenland
+const P0 = {lon:-19.2, lat:73.4, alt:330}, P1 = {lon:-24.8, lat:70.2, alt:175};
+function camAt(t){
+  const k = ease(prog(t, 0, 5));
+  const lon = lerp(P0.lon, P1.lon, k), lat = lerp(P0.lat, P1.lat, k), alt = lerp(P0.alt, P1.alt, k);
+  const p = dir(lon, lat).multiplyScalar(R + alt);
+  // regarde vers l'avant (sud-sud-ouest), point au sol à ~650 km
+  const tg = dir(lon - 10.5, lat - 3.6 - 0.6*k).multiplyScalar(R);
+  camera.position.copy(p); camera.up.copy(dir(lon, lat)); camera.lookAt(tg);
+  return {lon, lat};
+}
+
+// ---------- surcouche 2D : titre, route de la sterne
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const ROUTE = [[-21.9, 71.6], [-22.4, 70.4], [-24.0, 69.3], [-26.5, 68.2], [-29.5, 67.0], [-33.0, 65.8], [-36.5, 64.6], [-39.5, 63.4]];
+function proj3(lon, lat, alt=8){ const v = dir(lon, lat).multiplyScalar(R + alt).project(camera); return v.z < 1 ? [(v.x*.5 + .5)*W, (-v.y*.5 + .5)*H] : null; }
+function txt(s, x, y, o={}){ const {size=60, color="#fff", alpha=1, stroke=14} = o; if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.font = `900 ${size}px M`; ctx.textAlign = "center";
+  ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,.85)"; ctx.strokeText(s, x, y);
+  ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 12; ctx.fillStyle = color; ctx.fillText(s, x, y); ctx.restore(); }
+function render(t){
+  camAt(t); renderer.render(scene, camera);
+  // ciel : dégradé derrière le globe
+  const g = ctx.createLinearGradient(0, 0, 0, H*0.5); g.addColorStop(0, "#02040a"); g.addColorStop(1, "#0b1e44");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(glc, 0, 0);
+  // route de la sterne : part de la colonie (Scoresby Sund) et suit la côte ; la sterne vole devant la caméra
+  const c = camAt(t); camera.updateMatrixWorld();
+  // la sterne vole toujours devant la caméra (rayon écran → sol)
+  const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(-0.08, -0.32), camera);
+  const sph = new THREE.Sphere(new THREE.Vector3(), R), hit = new THREE.Vector3(); ray.ray.intersectSphere(sph, hit);
+  const bird = [Math.atan2(-hit.z, hit.x)/D2R, Math.asin(hit.y/hit.length())/D2R];
+  const START = [-21.6, 71.6], pts = [];
+  const way = [START, [-22.4, 70.8], bird];
+  for (let i = 0; i < way.length - 1; i++) for (let s = 0; s <= 24; s++){ const f = s/24, p = proj3(lerp(way[i][0], way[i+1][0], f), lerp(way[i][1], way[i+1][1], f), 20); if (p) pts.push(p); }
+  const ra = prog(t, 0.4, 1.0); if (window.DBG) console.log("pts", pts.length, JSON.stringify(pts.slice(-2)));
+  if (pts.length > 1 && ra > 0){ ctx.save(); ctx.globalAlpha = ra; ctx.setLineDash([22, 14]); ctx.lineWidth = 9; ctx.lineCap = "round"; ctx.strokeStyle = "#ffd60a";
+    ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 10; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.stroke(); ctx.restore();
+    const [x, y] = pts[pts.length - 1]; for (let r = 0; r < 2; r++){ const ph = (t*1.2 + r*.5) % 1;
+      ctx.save(); ctx.globalAlpha = (1 - ph)*ra; ctx.strokeStyle = "#ffe45c"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 12 + ph*70, 0, 7); ctx.stroke(); ctx.restore(); }
+    ctx.save(); ctx.globalAlpha = ra; ctx.fillStyle = "#ffd60a"; ctx.shadowColor = "#ffd60a"; ctx.shadowBlur = 26; ctx.beginPath(); ctx.arc(x, y, 14, 0, 7); ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = "#fff"; ctx.shadowBlur = 0; ctx.stroke(); ctx.restore();
+    const sp = proj3(...START, 20); if (sp){ txt("COLONIE", sp[0], sp[1] - 30, {size:40, alpha:ra*(1 - prog(t, 3.5, 4.2)), stroke:10}); } }
+  const gp = proj3(-37, 72.5, 2600); if (gp) txt("GROENLAND", gp[0], gp[1], {size:58, alpha:prog(t, 0.8, 1.4)});
+  const a = prog(t, 0.2, 0.8);
+  txt("LA STERNE", W/2, 250, {size:104, alpha:a}); txt("ARCTIQUE", W/2, 360, {size:112, color:"#ffd60a", alpha:a});
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.42, W/2, H/2, H*0.8); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.35)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+await document.fonts.load("900 60px M");
+window.renderAt = render; window.ready = true;
+render(0);
+</script>
+</body>
+</html>

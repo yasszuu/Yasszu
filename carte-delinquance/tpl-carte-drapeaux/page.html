@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Carte drapeaux</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2) format("woff2");}
+html,body{margin:0;background:#0b1622}
+#c{width:540px;height:960px;display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="../node_modules/d3/dist/d3.min.js"></script>
+<script>
+const LN = __LINES__, CFG = __CFG__, DUR = CFG.dur;
+const W = 1080, H = 1920, TS = 256, ZMIN = 2, ZMAX = 9;
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a)*k;
+const prog = (t, a, b) => clamp((t - a)/(b - a));
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EX = d3.easeExpInOut;
+const Y1 = "#ffd60a";
+const ON = i => LN[i].on, OFF = i => LN[i].off, ANI = i => { const g = LN[i].gaps; return g.length ? g.reduce((a, b) => (b[1] - b[0] > a[1] - a[0] ? b : a))[1] : LN[i].on; };
+const C = CFG.countries, NC = C.length, LAST = NC + 1;
+// ------------------------------------------------------------------ caméra (Web Mercator)
+const mx = lon => (lon + 180)/360*TS;
+const my = lat => { const r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2*TS; };
+const view = (lon, lat, z, dy=-90) => [mx(lon), my(lat) - dy/2**z, W/2**z];
+const ARR = i => ON(i + 1) + 0.12;
+const KEYS = [[0, view(...CFG.v0), EO], [1.0, view(...CFG.v1), EO], [ARR(0) - 0.5, view(...CFG.v2)]];
+C.forEach((c, i) => { KEYS.push([ARR(i), view(...c.cam), EX]); KEYS.push([(i < NC - 1 ? ARR(i + 1) - (c.lead || 0.48) : ON(LAST)), view(c.cam[0], c.cam[1], c.cam[2] + 0.12), d3.easeLinear]); });
+KEYS.push([ON(LAST) + 0.6, view(...CFG.vOut), EX]); KEYS.push([DUR, view(...CFG.vEnd), d3.easeLinear]);
+function camera(t){
+  let i = 0; while (i < KEYS.length - 2 && t > KEYS[i+1][0]) i++;
+  const [ta, va] = KEYS[i], [tb, vb, eb] = KEYS[i+1], k = (eb || E)(prog(t, ta, tb));
+  const v = d3.interpolateZoom(va, vb)(k); return {cx:v[0], cy:v[1], z:Math.log2(W/v[2])};
+}
+let CAM = camera(0);
+const P = (lon, lat) => { const s = 2**CAM.z; return [(mx(lon) - CAM.cx)*s + W/2, (my(lat) - CAM.cy)*s + H/2]; };
+// ------------------------------------------------------------------ tuiles
+const TILES = {};
+function visibleTiles(cam, z){
+  const s = 2**cam.z, n = 2**z, out = [], m = 1.12;
+  const tx0 = Math.floor((cam.cx - W*m/2/s)*n/TS), tx1 = Math.floor((cam.cx + W*m/2/s)*n/TS);
+  const ty0 = Math.floor((cam.cy - H*m/2/s)*n/TS), ty1 = Math.floor((cam.cy + H*m/2/s)*n/TS);
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) if (y >= 0 && y < n) out.push([z, ((x % n) + n) % n, y, x]);
+  return out;
+}
+const levelFor = z => Math.max(ZMIN, Math.min(ZMAX, Math.floor(z + 0.5)));
+window.plan = () => { const set = new Set();
+  for (let f = 0; f < DUR*30; f++){ const c = camera(f/30), L = levelFor(c.z);
+    for (const zz of [L, Math.max(ZMIN, L - 1)]) for (const [z, x, y] of visibleTiles(c, zz)) set.add(`${z}/${x}/${y}`); }
+  return [...set]; };
+window.prep = async t => {
+  const c = camera(t), L = levelFor(c.z), need = [...visibleTiles(c, L), ...visibleTiles(c, Math.max(ZMIN, L - 1))];
+  await Promise.all(need.map(([z, x, y]) => { const k = `${z}/${x}/${y}`; if (k in TILES) return null;
+    return new Promise(r => { const i = new Image(); i.onload = () => { TILES[k] = i; r(); }; i.onerror = () => { TILES[k] = null; r(); }; i.src = `tiles/${k}.jpg`; }); }));
+};
+function drawTiles(){
+  const L = levelFor(CAM.z), s = 2**CAM.z;
+  for (const zz of [Math.max(ZMIN, L - 1), L]){ const ts = TS*2**(CAM.z - zz);
+    for (const [z, x, y, xr] of visibleTiles(CAM, zz)){ const img = TILES[`${z}/${x}/${y}`]; if (!img) continue;
+      const sx = (xr*TS/2**z - CAM.cx)*s + W/2, sy = (y*TS/2**z - CAM.cy)*s + H/2;
+      ctx.drawImage(img, Math.floor(sx), Math.floor(sy), Math.ceil(ts) + 1, Math.ceil(ts) + 1); } }
+}
+// ------------------------------------------------------------------ dessin
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", alpha=1, stroke=14, scale=1, glow=null} = o; if (alpha <= 0.003 || scale <= 0.01) return;
+  ctx.save(); ctx.globalAlpha = Math.min(alpha, 1); ctx.translate(x, y); ctx.scale(scale, scale); ctx.font = `${weight} ${size}px M`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,.82)"; ctx.strokeText(s, 0, 0);
+  ctx.shadowColor = glow || "rgba(0,0,0,.6)"; ctx.shadowBlur = glow ? 30 : 14; ctx.shadowOffsetY = glow ? 0 : 4; ctx.fillStyle = color; ctx.fillText(s, 0, 0); ctx.restore();
+}
+function fit(s, size, weight, maxW){ ctx.font = `${weight} ${size}px M`; const w = ctx.measureText(s).width; return w > maxW ? size*maxW/w : size; }
+function kin(str, x, y, t, t0, o={}){
+  const {size=110, color="#fff", out=1e9, step=0.03} = o;
+  const outK = prog(t, out, out + 0.25); if (t < t0 || outK >= 1) return;
+  const sz = fit(str, size, 900, W - 120);
+  ctx.save(); ctx.globalAlpha = 1 - outK; ctx.translate(x, y - 40*outK); ctx.font = `900 ${sz}px M`;
+  const chars = [...str], ws = chars.map(c => ctx.measureText(c).width), tot = d3.sum(ws); let cx = -tot/2;
+  chars.forEach((c, i) => { const a = EB(prog(t, t0 + i*step, t0 + i*step + 0.22)), w = ws[i];
+    if (a > 0){ ctx.save(); ctx.translate(cx + w/2, -sz*0.3*(1 - Math.min(a, 1))); ctx.scale(a, a);
+      ctx.lineJoin = "round"; ctx.lineWidth = sz*0.15; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(c, -w/2, sz*0.35);
+      ctx.shadowColor = color === "#fff" ? "rgba(0,0,0,.6)" : color; ctx.shadowBlur = color === "#fff" ? 10 : 26; ctx.fillStyle = color; ctx.fillText(c, -w/2, sz*0.35); ctx.restore(); }
+    cx += w; });
+  ctx.restore();
+}
+let GEO = null; const FLAG = {};
+function path(rings){ ctx.beginPath(); for (const r of rings) r.forEach(([lon, lat], i) => { const [x, y] = P(lon, lat); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); }
+function bbox(rings){ let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const r of rings) for (const [lon, lat] of r){ const [x, y] = P(lon, lat); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return [x0, y0, x1, y1]; }
+function flagFill(c, rings, k, dim=0){
+  if (k <= 0) return;
+  const [x0, y0, x1, y1] = bbox(rings), w = x1 - x0, h = y1 - y0, img = FLAG[c.flag]; if (!img) return;
+  if (x1 < -200 || x0 > W + 200 || y1 < -200 || y0 > H + 200) return;
+  const cx = (x0 + x1)/2, cy = (y0 + y1)/2, sc = 1 + 0.06*Math.sin(Math.PI*clamp(k*1.4))*(k < 1 ? 1 : 0);
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
+  for (const [o, al] of [[14, .18], [8, .22], [4, .25]]){ ctx.save(); ctx.translate(0, o); path(rings); ctx.fillStyle = `rgba(0,0,0,${al})`; ctx.fill("evenodd"); ctx.restore(); }
+  ctx.save(); path(rings); ctx.clip("evenodd");
+  const R = Math.hypot(w, h)/2*EO(clamp(k*1.25)); ctx.beginPath(); ctx.arc(cx, cy, Math.max(1, R), 0, 7); ctx.clip();
+  const fw0 = c.flagW || 1, ar = img.width/img.height, fw = Math.max(w, h*ar)*fw0, fh = fw/ar;
+  ctx.drawImage(img, cx - fw/2, cy - fh/2, fw, fh);
+  if (c.flagMain){   // drapeau recalé sur le territoire principal (îles lointaines exclues du cadrage)
+    const main = rings.reduce((m, r) => (r.length > m.length ? r : m), []), [a0, b0, a1, b1] = bbox([main]), mw = a1 - a0, mh = b1 - b0;
+    const gw = Math.max(mw, mh*ar)*1.04, gh = gw/ar; ctx.drawImage(img, (a0 + a1)/2 - gw/2, (b0 + b1)/2 - gh/2, gw, gh); }
+  if (dim > 0){ ctx.fillStyle = `rgba(0,0,0,${dim})`; ctx.fillRect(x0 - 5, y0 - 5, w + 10, h + 10); }
+  const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, "rgba(255,255,255,.14)"); g.addColorStop(1, "rgba(0,0,0,.16)"); ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h);
+  ctx.restore();
+  ctx.save(); path(rings); ctx.lineJoin = "round"; ctx.strokeStyle = `rgba(255,255,255,${0.95*clamp(k*2)})`; ctx.lineWidth = 5; ctx.stroke(); ctx.restore();
+  ctx.restore();
+}
+function ping(x, y, t, a){ if (a <= 0) return;
+  for (let k = 0; k < 2; k++){ const ph = (t*0.9 + k*0.5) % 1; ctx.save(); ctx.globalAlpha = (1 - ph)*a; ctx.strokeStyle = Y1; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(x, y, 18 + ph*110, 0, 7); ctx.stroke(); ctx.restore(); }
+  ctx.save(); ctx.globalAlpha = Math.min(a, 1); ctx.fillStyle = Y1; ctx.shadowColor = Y1; ctx.shadowBlur = 20; ctx.beginPath(); ctx.arc(x, y, 16, 0, 7); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#fff"; ctx.stroke(); ctx.restore(); }
+// ------------------------------------------------------------------ rendu
+const HITS = () => [...CFG.intro.beats.map((b, i) => [b, 0.06, i ? 8 : 10]), ...C.map((c, i) => [ANI(i + 1), i === NC - 1 ? 0.09 : 0.06, i === NC - 1 ? 12 : 7]), [ON(LAST) + 0.25, 0.04, 0]];
+function render(t){
+  let p = 0, sx = 0, sy = 0;
+  for (const [ti, amp, sh] of HITS()) if (t >= ti){ const d = t - ti; p += amp*Math.exp(-d*8); sx += sh*Math.exp(-d*7)*Math.sin(d*50); sy += sh*0.7*Math.exp(-d*7)*Math.cos(d*43); }
+  ctx.save(); ctx.translate(W/2 + sx, H/2 + sy); ctx.scale(1.04 + p, 1.04 + p); ctx.translate(-W/2, -H/2);
+  CAM = camera(t);
+  ctx.fillStyle = "#0b1622"; ctx.fillRect(-60, -60, W + 120, H + 120);
+  drawTiles();
+  ctx.save(); ctx.strokeStyle = "rgba(255,255,255,.28)"; ctx.lineWidth = 1.4; ctx.lineJoin = "round"; for (const r of GEO.b){ path([r]); ctx.stroke(); } ctx.restore();
+  // accroche : quelques drapeaux éclatent sur la carte
+  C.forEach((c, i) => { if (!c.hook) return; const t0 = ON(0) + 0.2 + i*0.14, k = EO(prog(t, t0, t0 + 0.35))*(1 - prog(t, OFF(0) + 0.1, OFF(0) + 0.4));
+    if (k > 0 && t < ON(1)) flagFill(c, GEO.c[c.id], k); });
+  C.forEach((c, i) => { const t0 = ARR(i) - 0.15, k = EO(prog(t, t0, t0 + 0.45)); if (k <= 0) return;
+    const later = i < NC - 1 ? prog(t, ARR(i + 1) - 0.2, ARR(i + 1) + 0.3) : 0;
+    flagFill(c, GEO.c[c.id], k, 0.25*later*(1 - prog(t, ON(LAST), ON(LAST) + 0.4))); });
+  // textes : grand (jaune, compteur éventuel) + petit (blanc)
+  C.forEach((c, i) => {
+    const li = i + 1, tin = ARR(i) - 0.12, out = (i < NC - 1 ? ARR(i + 1) - 0.5 : ON(LAST) - 0.2);
+    if (t < tin || t > out + 0.3) return;
+    const o = 1 - prog(t, out, out + 0.25); let [x, y] = P(...c.lab); x = clamp(x, 300, W - 300);
+    const bt = bbox(GEO.c[c.id])[1]; y = clamp(Math.min(y, bt - (c.small ? 150 : 90)), 600, 1180);      // texte au-dessus du pays : il ne le cache pas
+    if (c.ping){ const [px, py] = P(...c.ping); ping(px, py, t, o*EO(prog(t, ANI(li) + 0.2, ANI(li) + 0.5))); }
+    const ta = CFG.textAt === "on" ? ON(li) + 0.1 : ANI(li), a = EB(prog(t, ta - 0.05, ta + 0.3));
+    let big = c.big; if (c.count){ const n = Math.round(c.count*EO(prog(t, ta - 0.05, ta + 0.6))); big = big.replace("#", n); }
+    const sz = fit(big, 120, 900, W - 90); ctx.font = `900 ${sz}px M`; const hw = ctx.measureText(big).width/2 + 40; x = clamp(x, hw, W - hw);   // jamais coupé au bord
+    txt(big, x, y - (c.small ? 40 : 0), {size:sz, color:Y1, alpha:o*Math.min(a, 1), scale:a, stroke:16, glow:"rgba(255,214,10,.45)"});
+    if (c.small){ const a2 = EB(prog(t, ta + 0.2, ta + 0.5)); txt(c.small, x, y + 65, {size:fit(c.small, 62, 900, W - 120), alpha:o*Math.min(a2, 1), scale:a2, stroke:12}); }
+  });
+  kin(CFG.title1, W/2, 330, t, ON(0) - 0.1, {size:84, out:ON(1) - 0.35});
+  kin(CFG.title2, W/2, 440, t, ON(0) + 0.5, {size:92, color:Y1, out:ON(1) - 0.35});
+  kin(CFG.cta1, W/2, 360, t, ON(LAST) + 0.1, {size:104, color:Y1});
+  kin("DIS-LE EN COMMENTAIRE", W/2, 490, t, ANI(LAST) - 0.1, {size:64});
+  ctx.restore();
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.45, W/2, H/2, H*0.85); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.3)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  intro(t);
+}
+let STK = null;
+function intro(t){   // l'animal (PNG fourni) : seulement au début, avec son cri
+  if (!STK) return; const I = CFG.intro, tout = I.out;
+  const a = EB(prog(t, 0, 0.35)), out = E(prog(t, tout, tout + 0.4)); if (a <= 0 || out >= 1) return;
+  const b = I.beats.reduce((m, q) => m + (t >= q ? Math.exp(-(t - q)*9) : 0), 0);
+  const h = I.h*(1 + 0.08*b), w = h*STK.width/STK.height;
+  ctx.save(); ctx.translate(W/2 + Math.sin(t*60)*8*b, 1300 + out*900); ctx.scale(a, a);
+  ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18; ctx.drawImage(STK, -w/2, -h, w, h); ctx.restore();
+}
+function outlined(img, r=9){ const c = document.createElement("canvas"); c.width = img.width + 2*r; c.height = img.height + 2*r; const g = c.getContext("2d");
+  for (let a = 0; a < 32; a++) g.drawImage(img, r + Math.cos(a/32*6.283)*r, r + Math.sin(a/32*6.283)*r);
+  g.globalCompositeOperation = "source-in"; g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.globalCompositeOperation = "source-over"; g.drawImage(img, r, r); return c; }
+window.renderAt = render;
+const load = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { FLAG[k] = i; r(); }; i.onerror = r; i.src = src; });
+window.ready = Promise.all([fetch("geo.json").then(r => r.json()).then(j => { GEO = j; }), ...C.map(c => load(c.flag, `flags/${c.flag}.svg`)),
+  new Promise(r => { const i = new Image(); i.onload = () => { STK = outlined(i); r(); }; i.onerror = r; i.src = CFG.intro.img; }),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M")]).then(() => true);
+</script>
+</body>
+</html>

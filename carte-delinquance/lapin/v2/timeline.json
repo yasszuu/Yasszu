@@ -1,0 +1,938 @@
+{
+ "vo": [
+  {
+   "id": "r01",
+   "start": 1.0,
+   "end": 6.174,
+   "cap": "En *1859*, un homme relâche *24 lapins* en Australie."
+  },
+  {
+   "id": "r02",
+   "start": 6.524,
+   "end": 9.818,
+   "cap": "Aujourd'hui, ils sont environ *200 millions*."
+  },
+  {
+   "id": "r03",
+   "start": 10.318,
+   "end": 14.806,
+   "cap": "Voici comment *24 lapins* ont envahi tout un *continent*."
+  },
+  {
+   "id": "r04",
+   "start": 15.506,
+   "end": 21.014,
+   "cap": "*Thomas Austin* est un colon anglais, installé près de *Geelong*, dans le sud de l'Australie."
+  },
+  {
+   "id": "r05",
+   "start": 21.514,
+   "end": 26.295,
+   "cap": "Il veut chasser comme en *Angleterre*… alors il fait venir des lapins d'*Europe*."
+  },
+  {
+   "id": "r06",
+   "start": 27.095,
+   "end": 33.846,
+   "cap": "Le jour de *Noël 1859*, *24 lapins* arrivent sur sa propriété."
+  },
+  {
+   "id": "r07",
+   "start": 34.296,
+   "end": 38.519,
+   "cap": "Six ans plus tard, il en a déjà tué *20 000* sur ses terres."
+  },
+  {
+   "id": "r08",
+   "start": 39.019,
+   "end": 46.338,
+   "cap": "Car en Australie, le lapin n'a presque *aucun prédateur*… et une lapine peut avoir *plusieurs dizaines* de petits par an."
+  },
+  {
+   "id": "r09",
+   "start": 46.938,
+   "end": 53.761,
+   "cap": "Ils avancent jusqu'à *100 kilomètres* par an : l'invasion de mammifère la *plus rapide* jamais enregistrée."
+  },
+  {
+   "id": "r10",
+   "start": 54.111,
+   "end": 57.508,
+   "cap": "En *50 ans*, ils colonisent presque *tout le continent*."
+  },
+  {
+   "id": "r11",
+   "start": 58.208,
+   "end": 63.288,
+   "cap": "Alors, l'Australie tente un plan fou : une *clôture géante*."
+  },
+  {
+   "id": "r12",
+   "start": 63.688,
+   "end": 69.996,
+   "cap": "Entre *1901* et *1907*, trois clôtures sont construites, sur plus de *3 000 kilomètres*."
+  },
+  {
+   "id": "r13",
+   "start": 70.396,
+   "end": 74.359,
+   "cap": "Mais c'est *trop tard* : les lapins sont déjà passés de l'autre côté."
+  },
+  {
+   "id": "r14",
+   "start": 75.159,
+   "end": 80.873,
+   "cap": "En *1950*, on essaie une autre arme : un virus, la *myxomatose*."
+  },
+  {
+   "id": "r15",
+   "start": 81.323,
+   "end": 85.663,
+   "cap": "En deux ans, la population passe de *600 millions*… à *100 millions*."
+  },
+  {
+   "id": "r16",
+   "start": 86.113,
+   "end": 90.053,
+   "cap": "Mais les survivants deviennent *résistants*… et les lapins *reviennent*."
+  },
+  {
+   "id": "r17",
+   "start": 90.553,
+   "end": 93.849,
+   "cap": "Aujourd'hui, ils occupent *70 %* du pays."
+  },
+  {
+   "id": "r18",
+   "start": 94.549,
+   "end": 97.787,
+   "cap": "Tout ça… à cause de *24 lapins*."
+  },
+  {
+   "id": "r19",
+   "start": 98.687,
+   "end": 106.594,
+   "cap": "Et toi, tu connais d'autres animaux qui ont envahi un pays ? Dis-le en commentaire !"
+  }
+ ],
+ "cue": {},
+ "ticker": [
+  [
+   27.095,
+   27.105,
+   1859,
+   1859,
+   1
+  ],
+  [
+   34.296,
+   36.8298,
+   1859,
+   1865,
+   1
+  ],
+  [
+   46.938,
+   57.508,
+   1865,
+   1910,
+   5
+  ],
+  [
+   63.688,
+   69.696,
+   1901,
+   1907,
+   1
+  ],
+  [
+   75.159,
+   75.16900000000001,
+   1950,
+   1950,
+   1
+  ],
+  [
+   81.323,
+   85.663,
+   1950,
+   1952,
+   1
+  ],
+  [
+   90.353,
+   91.353,
+   1952,
+   2025,
+   10
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "impact",
+   "t": 0.02,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 0.3,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh_long",
+   "t": 0.55,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 1.621,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 4.001,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.026,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.051,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.076,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.101,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.126,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.151,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.176,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.201,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.226,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.251,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.276,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.301,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.326,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.351,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.376,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.401,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.426,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.451,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.476,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.501,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.526,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.551,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 4.576,
+   "gain": 0.35
+  },
+  {
+   "name": "whoosh",
+   "t": 4.725,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 5.657,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh_long",
+   "t": 6.324,
+   "gain": 0.9
+  },
+  {
+   "name": "riser",
+   "t": 8.566,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 8.566,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh_long",
+   "t": 10.218,
+   "gain": 0.9
+  },
+  {
+   "name": "impact",
+   "t": 12.786,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh_long",
+   "t": 15.206,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 16.167,
+   "gain": 0.8
+  },
+  {
+   "name": "hit",
+   "t": 19.472,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 21.214,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 22.709,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 23.809,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh_long",
+   "t": 26.695,
+   "gain": 0.8
+  },
+  {
+   "name": "bell",
+   "t": 28.445,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 30.808,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 30.868,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 30.928,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 30.988,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.048,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.108,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.168,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.228,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.288,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.348,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.408,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.468,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.528,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.588,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.648,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.708,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.768,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.828,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.888,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 31.948,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 32.008,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 32.068,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 32.128,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 32.188,
+   "gain": 0.45
+  },
+  {
+   "name": "tick",
+   "t": 34.718,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 35.141,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 35.563,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 35.985,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 36.407,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 36.83,
+   "gain": 0.5
+  },
+  {
+   "name": "riser",
+   "t": 36.914,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 36.914,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 38.919,
+   "gain": 0.6
+  },
+  {
+   "name": "hit",
+   "t": 41.215,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 43.118,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.198,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.278,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.358,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.438,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.518,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.598,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.678,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.758,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.838,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.918,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 43.998,
+   "gain": 0.4
+  },
+  {
+   "name": "whoosh_long",
+   "t": 46.638,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 48.112,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 49.19,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 49.287,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.461,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 51.636,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 52.396,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 52.81,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 53.985,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 55.159,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 56.334,
+   "gain": 0.5
+  },
+  {
+   "name": "riser",
+   "t": 56.998,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 56.998,
+   "gain": 0.9
+  },
+  {
+   "name": "tick",
+   "t": 57.508,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh_long",
+   "t": 57.908,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 61.866,
+   "gain": 0.8
+  },
+  {
+   "name": "step",
+   "t": 64.003,
+   "gain": 0.7
+  },
+  {
+   "name": "step",
+   "t": 64.407,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 64.689,
+   "gain": 0.5
+  },
+  {
+   "name": "step",
+   "t": 64.811,
+   "gain": 0.7
+  },
+  {
+   "name": "step",
+   "t": 65.215,
+   "gain": 0.7
+  },
+  {
+   "name": "step",
+   "t": 65.618,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 65.691,
+   "gain": 0.5
+  },
+  {
+   "name": "step",
+   "t": 66.022,
+   "gain": 0.7
+  },
+  {
+   "name": "step",
+   "t": 66.426,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 66.692,
+   "gain": 0.5
+  },
+  {
+   "name": "step",
+   "t": 66.829,
+   "gain": 0.7
+  },
+  {
+   "name": "step",
+   "t": 67.233,
+   "gain": 0.7
+  },
+  {
+   "name": "step",
+   "t": 67.637,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 67.693,
+   "gain": 0.5
+  },
+  {
+   "name": "step",
+   "t": 68.041,
+   "gain": 0.7
+  },
+  {
+   "name": "step",
+   "t": 68.444,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 68.695,
+   "gain": 0.5
+  },
+  {
+   "name": "step",
+   "t": 68.848,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 68.861,
+   "gain": 0.8
+  },
+  {
+   "name": "step",
+   "t": 69.252,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 69.696,
+   "gain": 0.5
+  },
+  {
+   "name": "stamp",
+   "t": 71.268,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh_long",
+   "t": 74.859,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 79.159,
+   "gain": 0.8
+  },
+  {
+   "name": "down",
+   "t": 83.059,
+   "gain": 0.9
+  },
+  {
+   "name": "tick",
+   "t": 83.493,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 84.882,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 85.663,
+   "gain": 0.5
+  },
+  {
+   "name": "shimmer",
+   "t": 86.313,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 88.556,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 88.636,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 88.716,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 88.796,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 88.876,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 88.956,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 89.036,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 89.116,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 89.196,
+   "gain": 0.4
+  },
+  {
+   "name": "pop",
+   "t": 89.276,
+   "gain": 0.4
+  },
+  {
+   "name": "whoosh_long",
+   "t": 90.253,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 90.49,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 90.764,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 91.038,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 91.312,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 92.597,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh_long",
+   "t": 94.249,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 96.557,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 98.887,
+   "gain": 0.7
+  }
+ ],
+ "duration": 108.194
+}

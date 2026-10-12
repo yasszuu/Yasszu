@@ -1,0 +1,603 @@
+{
+ "vo": [
+  {
+   "id": "h01",
+   "start": 1.6,
+   "end": 7.605,
+   "cap": "En Colombie, près de *200 hippopotames* vivent en liberté… à des milliers de kilomètres de l'*Afrique*."
+  },
+  {
+   "id": "h02",
+   "start": 8.005,
+   "end": 10.54,
+   "cap": "Et tout ça… à cause de *Pablo Escobar*."
+  },
+  {
+   "id": "h03",
+   "start": 11.14,
+   "end": 18.167,
+   "cap": "Dans les *années 80*, le baron de la drogue se fait construire un *zoo privé*, dans sa propriété : l'*Hacienda Nápoles*."
+  },
+  {
+   "id": "h04",
+   "start": 18.667,
+   "end": 25.321,
+   "cap": "Girafes, zèbres, éléphants… et *quatre hippopotames* venus d'Afrique : un mâle et trois femelles."
+  },
+  {
+   "id": "h05",
+   "start": 25.921,
+   "end": 30.894,
+   "cap": "En *1993*, Escobar est abattu par la police, à *Medellín*."
+  },
+  {
+   "id": "h06",
+   "start": 31.494,
+   "end": 36.976,
+   "cap": "Les autorités déplacent la plupart des animaux… sauf les hippopotames, *trop dangereux* à transporter."
+  },
+  {
+   "id": "h07",
+   "start": 37.576,
+   "end": 44.673,
+   "cap": "Abandonnés, ils rejoignent le fleuve *Magdalena*… et y trouvent le paradis : de l'eau toute l'année, et *aucun prédateur*."
+  },
+  {
+   "id": "h08",
+   "start": 45.073,
+   "end": 47.433,
+   "cap": "Résultat : la population *explose*."
+  },
+  {
+   "id": "h09",
+   "start": 47.833,
+   "end": 53.781,
+   "cap": "Au départ, ils étaient *quatre*. En *2023*, on en recense environ *170*."
+  },
+  {
+   "id": "h10",
+   "start": 54.481,
+   "end": 58.9,
+   "cap": "Et ils sont *dangereux* : l'hippopotame est l'un des animaux les plus *meurtriers* d'Afrique."
+  },
+  {
+   "id": "h11",
+   "start": 59.4,
+   "end": 64.601,
+   "cap": "Leurs excréments *polluent les rivières*, et ils menacent les espèces locales, comme le *lamantin*."
+  },
+  {
+   "id": "h12",
+   "start": 65.201,
+   "end": 69.47,
+   "cap": "En *2022*, la Colombie les déclare officiellement *espèce invasive*."
+  },
+  {
+   "id": "h13",
+   "start": 70.07,
+   "end": 77.371,
+   "cap": "Le gouvernement essaie tout : la *stérilisation*… puis l'envoi de *70 hippopotames* en *Inde* et au *Mexique*."
+  },
+  {
+   "id": "h14",
+   "start": 77.771,
+   "end": 79.512,
+   "cap": "Mais *aucun pays* ne les accepte."
+  },
+  {
+   "id": "h15",
+   "start": 80.112,
+   "end": 86.672,
+   "cap": "Alors, en *avril 2026*, la Colombie autorise l'*euthanasie* d'environ *80 hippopotames*."
+  },
+  {
+   "id": "h16",
+   "start": 87.272,
+   "end": 93.688,
+   "cap": "Une décision qui *divise* : pour les habitants de la région, ils sont devenus une *attraction*… et un *symbole*."
+  },
+  {
+   "id": "h17",
+   "start": 94.288,
+   "end": 100.666,
+   "cap": "Et selon certaines projections, sans intervention, ils pourraient être *plus de 1 000* d'ici *2035*."
+  },
+  {
+   "id": "h18",
+   "start": 101.466,
+   "end": 105.604,
+   "cap": "Et toi, tu ferais quoi des hippopotames d'Escobar ? Dis-le en commentaire !"
+  }
+ ],
+ "cue": {},
+ "ticker": [
+  [
+   25.921,
+   25.931,
+   1993,
+   1993,
+   1
+  ],
+  [
+   48.132999999999996,
+   51.4018,
+   1993,
+   2023,
+   1
+  ],
+  [
+   65.201,
+   65.211,
+   2022,
+   2022,
+   1
+  ],
+  [
+   80.112,
+   80.122,
+   2026,
+   2026,
+   1
+  ],
+  [
+   94.588,
+   98.7526,
+   2026,
+   2035,
+   1
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "impact",
+   "t": 0.02,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 1.1,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 2.08,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 3.041,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 4.723,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 7.005,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 7.805,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 9.577,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh",
+   "t": 10.84,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 11.983,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 15.497,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 16.199,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 18.367,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 19.199,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 19.865,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 20.53,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 22.792,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 23.125,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 23.458,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 23.791,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 25.621,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 28.656,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh",
+   "t": 31.194,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 35.77,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 37.376,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 37.626,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 39.563,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 43.821,
+   "gain": 0.7
+  },
+  {
+   "name": "riser",
+   "t": 46.725,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 46.725,
+   "gain": 1.0
+  },
+  {
+   "name": "tick",
+   "t": 48.242,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 48.46,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 48.678,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 48.896,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.114,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.332,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.549,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.767,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.985,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.203,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.421,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.639,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.857,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 51.075,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 51.293,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 51.521,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 51.581,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 51.641,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 51.701,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 51.761,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 51.821,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 51.881,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 51.941,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 52.001,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 52.061,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 52.121,
+   "gain": 0.45
+  },
+  {
+   "name": "pop",
+   "t": 52.181,
+   "gain": 0.45
+  },
+  {
+   "name": "impact",
+   "t": 53.067,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 54.281,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 54.531,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 57.795,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 59.1,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 63.665,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 64.901,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 68.189,
+   "gain": 1.0
+  },
+  {
+   "name": "hit",
+   "t": 72.26,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 73.72,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 75.765,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 76.787,
+   "gain": 0.8
+  },
+  {
+   "name": "down",
+   "t": 77.971,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 78.816,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 79.812,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 85.36,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh",
+   "t": 87.072,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 87.322,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 91.507,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 93.175,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 93.988,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 95.051,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 95.513,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 95.976,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 96.439,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 96.902,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 97.364,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 97.827,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 98.29,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 98.753,
+   "gain": 0.5
+  },
+  {
+   "name": "riser",
+   "t": 98.88,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 98.88,
+   "gain": 1.0
+  },
+  {
+   "name": "pop",
+   "t": 101.666,
+   "gain": 0.7
+  }
+ ],
+ "duration": 107.204
+}
