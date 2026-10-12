@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Les lapins d'Australie</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2) format("woff2");}
+html,body{margin:0;background:#0b1622}
+#c{width:540px;height:960px;display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="../node_modules/d3/dist/d3.min.js"></script>
+<script>
+const TL = __TL__, DUR = TL.duration;
+const W = 1080, H = 1920, TS = 256, ZMIN = 3, ZMAX = 8;
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const BUF = document.createElement("canvas"); BUF.width = W; BUF.height = H; const bctx = BUF.getContext("2d");
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a)*k;
+const prog = (t, a, b) => clamp((t - a)/(b - a));
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EX = d3.easeExpInOut, LIN = d3.easeLinear;
+const Y1 = "#ffd60a", RED = "#ff3b30", INV = [255, 92, 38], VIR = "#b6ff3a";
+const V = Object.fromEntries(TL.vo.map(v => [v.id, v]));
+const S = k => V[k].start, Ed = k => V[k].end, M = (k, f) => S(k) + (Ed(k) - S(k))*f;
+const SFX = n => TL.sfx.filter(s => s.name === n).map(s => s.t);
+const near = (n, a, b) => SFX(n).find(x => x >= a && x <= b);
+// ------------------------------------------------------------------ lieux
+const GEELONG = [144.36, -38.15], AUSC = [133.6, -27.2];
+const ROUTE = [[-1.4,50.6],[-9.5,44],[-14,33],[-19,18],[-20,5],[-10,-14],[6,-30],[18.4,-36.5],[35,-40],[60,-42],[90,-42.5],[115,-40.5],[132,-38.5],[144.36,-38.15]];
+const FENCES = [
+  [[120.13,-33.92],[120.5,-31.5],[120.2,-29.4],[119.9,-26.6],[120.3,-24.0],[120.2,-22.0],[119.8,-19.96]],
+  [[118.9,-34.4],[117.9,-32.6],[117.3,-30.3],[116.7,-28.4],[116.4,-26.6]],
+  [[116.9,-27.6],[115.6,-27.6],[114.3,-27.7]],
+];
+// aire actuelle du lapin (~70 % du pays : tout sauf le nord tropical)
+const RANGE = [[110,-21.5],[114,-22],[117.5,-20.6],[121,-19.6],[124,-20.6],[127,-20.2],[130,-19.4],[133.5,-18.8],[136.5,-18.2],[139.5,-19.4],[142.5,-20.6],[145.5,-21.8],[148.5,-22.4],[151,-23.6],[155,-25],[155,-46],[110,-46]];
+const ROUTE_D = (() => { const d = [0]; for (let i = 1; i < ROUTE.length; i++) d.push(d[i-1] + Math.hypot(ROUTE[i][0] - ROUTE[i-1][0], ROUTE[i][1] - ROUTE[i-1][1])); return d; })();
+function routeAt(k){ const L = ROUTE_D[ROUTE_D.length - 1]*clamp(k); let i = 1; while (i < ROUTE.length - 1 && ROUTE_D[i] < L) i++;
+  const q = (L - ROUTE_D[i-1])/(ROUTE_D[i] - ROUTE_D[i-1]); return [lerp(ROUTE[i-1][0], ROUTE[i][0], q), lerp(ROUTE[i-1][1], ROUTE[i][1], q)]; }
+const kmTo = ([lon, lat], d, th) => [lon + d*Math.cos(th)/(111.3*Math.cos(lat*Math.PI/180)), lat + d*Math.sin(th)/111.3];
+const kmBetween = (a, b) => d3.geoDistance(a, b)*6371;
+// ------------------------------------------------------------------ calendrier
+const T_ROUTE = [M("r05", 0.5), S("r06") + 0.25];
+const T_FLAG_AU = near("impact", M("r01", 0.85), Ed("r01"));
+const T_200 = near("impact", S("r02"), Ed("r02")), T_TITLE = near("impact", S("r03"), Ed("r03"));
+const T_20K = near("impact", S("r07"), Ed("r07")), T_100KM = near("impact", S("r09"), M("r09", 0.6)), T_FAST = near("hit", M("r09", 0.6), Ed("r09"));
+const T_CONT = near("impact", S("r10"), Ed("r10")), T_FENCE = near("impact", S("r11"), Ed("r11")), T_3000 = near("impact", S("r12"), Ed("r12"));
+const T_LATE = SFX("stamp")[0], T_MYXO = near("impact", S("r14"), Ed("r14")), T_DOWN = SFX("down")[0], T_100M = near("impact", S("r15"), Ed("r15"));
+const T_70 = near("impact", S("r17"), Ed("r17")), T_24 = near("impact", S("r18"), Ed("r18"));
+const POPS24 = SFX("pop").filter(x => x > M("r06", 0.5) && x < Ed("r06")), POPS1 = SFX("pop").filter(x => x > S("r01") && x < Ed("r01"));
+const THUDS = SFX("step").filter(x => x > S("r12") && x < Ed("r12"));
+// rayon d'invasion (km depuis Geelong)
+function Rkm(t){
+  return 70*E(prog(t, S("r07") + 0.2, T_20K)) + 230*E(prog(t, M("r08", 0.5), Ed("r08"))) + 1950*d3.easeQuadIn(prog(t, S("r09") + 0.3, T_CONT))
+       + 1200*E(prog(t, T_LATE - 0.3, Ed("r13")));
+}
+// ------------------------------------------------------------------ caméra
+const mx = lon => (lon + 180)/360*TS;
+const my = lat => { const r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2*TS; };
+const view = (lon, lat, z, dy=-90) => [mx(lon), my(lat) - dy/2**z, W/2**z];
+const AUS = (z=5.05, dl=0, db=0) => view(AUSC[0] + dl, AUSC[1] + db, z);
+const GEE = (z, dy=-90) => view(GEELONG[0], GEELONG[1], z, dy);
+const RK = [];
+for (let i = 0; i <= 10; i++){ const k = i/10, tt = lerp(T_ROUTE[0] + 0.55, T_ROUTE[1] - 0.2, k); const rp = routeAt(Math.min(1, k + 0.06)); RK.push([tt, view(rp[0], rp[1], lerp(4.0, 4.7, k*k), lerp(-60, 170, clamp((40 - rp[1])/50))), i ? LIN : EX]); }
+const KEYS = [
+  [0.0,   view(118, -20, 4.15)],
+  [0.55,  view(121, -22, 4.45), EO],
+  [1.35,  AUS(5.0), EX],                                           // whip sur l'Australie
+  [M("r01", 0.46), AUS(5.15, 1.2, -0.6), LIN],
+  [M("r01", 0.57), GEE(7.3), EX],                                  // plongée sur Geelong : 24 lapins
+  [M("r01", 0.72), GEE(7.5), LIN],
+  [T_FLAG_AU - 0.1, AUS(5.0), EX],                                 // drapeau
+  [S("r02") - 0.25, AUS(5.12, 0.5), LIN],
+  [S("r02") + 0.65, AUS(4.8, 0.3, -0.6), EX],                      // 200 millions : l'explosion
+  [Ed("r02") + 0.2, AUS(5.05, 0.6, -0.5), LIN],
+  [S("r03") + 0.55, view(119.5, -28.5, 5.85), EX],                 // balayage ouest → est
+  [M("r03", 0.52), view(148.5, -30.5, 5.85), E],
+  [M("r03", 0.7), AUS(5.0), EX],                                   // titre
+  [Ed("r03") + 0.4, AUS(5.2, 0.4), LIN],
+  [S("r04") + 0.5, GEE(7.2, -330), EX],                            // Thomas Austin, Geelong
+  [Ed("r04") - 0.3, view(144.1, -38.0, 7.55, -330), LIN],
+  [S("r05") + 0.7, view(-1.6, 52.6, 5.55), EX],                    // l'Angleterre
+  [T_ROUTE[0] + 0.1, view(-1.4, 52.4, 5.8), LIN],
+  ...RK,                                                           // la traversée
+  [S("r06") + 0.7, GEE(7.3), EX],
+  [Ed("r06"), view(144.2, -38.05, 7.6), LIN],                    // Noël 1859
+  [S("r07") + 0.5, GEE(7.75), EX],
+  [Ed("r07") + 0.2, GEE(7.0), LIN],                               // 20 000
+  [S("r08") + 0.7, view(145, -36.6, 5.95), EX],
+  [Ed("r08"), view(144.4, -35.8, 5.75), LIN],                      // aucun prédateur
+  [S("r09") + 0.5, view(140.5, -32.5, 5.3), EX],                   // le front avance
+  [Ed("r09"), view(134.5, -28.8, 5.1), LIN],
+  [Ed("r10"), view(130.5, -27.5, 4.98), LIN],
+  [S("r11") + 0.6, view(119.5, -28.5, 5.95), EX],                  // Australie-Occidentale
+  [S("r12") - 0.1, view(119.2, -28.0, 6.1), LIN],
+  [THUDS[0] + 0.4, view(120.2, -33.0, 6.35), EX],                  // le long de la clôture n°1
+  [THUDS[6] + 0.2, view(120.0, -21.5, 6.35), LIN],
+  [THUDS[10] + 0.1, view(116.8, -29.5, 6.3), E],                   // clôtures 2 et 3
+  [Ed("r12") + 0.2, view(118.5, -28.2, 5.95), E],
+  [Ed("r13"), view(117.5, -29.0, 6.2), LIN],                       // trop tard
+  [S("r14") + 0.55, AUS(5.05), EX],                                // myxomatose
+  [Ed("r14"), AUS(5.22, 2.5, -2.5), LIN],
+  [Ed("r15"), AUS(5.42, 4.5, -4.5), LIN],
+  [S("r16") + 0.5, AUS(5.1, 0, 0), EX],
+  [Ed("r16"), AUS(5.25, -2, 0.5), LIN],
+  [S("r17") + 0.45, AUS(4.95), EX],                                // 70 %
+  [Ed("r17"), AUS(5.12, 0.4), LIN],
+  [S("r18") + 0.55, GEE(7.4), EX],                                 // 24 lapins
+  [Ed("r18") + 0.3, GEE(7.65), LIN],
+  [S("r19") + 1.0, AUS(5.0), EX],
+  [DUR, AUS(5.35, 1, -1), LIN],
+];
+function camera(t){
+  let i = 0; while (i < KEYS.length - 2 && t > KEYS[i+1][0]) i++;
+  const [ta, va] = KEYS[i], [tb, vb, eb] = KEYS[i+1], k = (eb || E)(prog(t, ta, tb));
+  const v = d3.interpolateZoom(va, vb)(k); return {cx:v[0], cy:v[1], z:Math.log2(W/v[2])};
+}
+let CAM = camera(0);
+const P = (lon, lat) => { const s = 2**CAM.z; return [(mx(lon) - CAM.cx)*s + W/2, (my(lat) - CAM.cy)*s + H/2]; };
+// ------------------------------------------------------------------ tuiles
+const TILES = {};
+function visibleTiles(cam, z){
+  const s = 2**cam.z, n = 2**z, out = [], m = 1.12;
+  const tx0 = Math.floor((cam.cx - W*m/2/s)*n/TS), tx1 = Math.floor((cam.cx + W*m/2/s)*n/TS);
+  const ty0 = Math.floor((cam.cy - H*m/2/s)*n/TS), ty1 = Math.floor((cam.cy + H*m/2/s)*n/TS);
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) if (y >= 0 && y < n) out.push([z, ((x % n) + n) % n, y]);
+  return out;
+}
+const levelFor = z => Math.max(ZMIN, Math.min(ZMAX, Math.floor(z + 0.5)));
+window.plan = () => { const set = new Set();
+  for (let f = 0; f < DUR*30; f++){ const c = camera(f/30), L = levelFor(c.z);
+    for (const zz of [L, Math.max(ZMIN, L - 1)]) for (const [z, x, y] of visibleTiles(c, zz)) set.add(`${z}/${x}/${y}`); }
+  return [...set]; };
+window.prep = async t => {
+  const jobs = [], c = camera(t), L = levelFor(c.z);
+  for (const [z, x, y] of [...visibleTiles(c, L), ...visibleTiles(c, Math.max(ZMIN, L - 1))]){ const k = `${z}/${x}/${y}`; if (k in TILES) continue;
+    jobs.push(new Promise(r => { const i = new Image(); i.onload = () => { TILES[k] = i; r(); }; i.onerror = () => { TILES[k] = null; r(); }; i.src = `tiles/${k}.jpg`; })); }
+  await Promise.all(jobs);
+};
+function drawTiles(){
+  const L = levelFor(CAM.z), s = 2**CAM.z;
+  for (const zz of [Math.max(ZMIN, L - 1), L]){ const ts = TS*2**(CAM.z - zz);
+    for (const [z, x, y] of visibleTiles(CAM, zz)){ const img = TILES[`${z}/${x}/${y}`]; if (!img) continue;
+      const sx = (x*TS/2**z - CAM.cx)*s + W/2, sy = (y*TS/2**z - CAM.cy)*s + H/2;
+      ctx.drawImage(img, Math.floor(sx), Math.floor(sy), Math.ceil(ts) + 1, Math.ceil(ts) + 1); } }
+}
+// ------------------------------------------------------------------ outils de dessin
+__HELPERS__
+function inView(bb, pad=80){ const [a, b] = P(bb[0], bb[3]), [c, d] = P(bb[2], bb[1]); return c > -pad && a < W + pad && d > -pad && b < H + pad; }
+function lineLL(pts, k, alpha, color, w, dash=null){ if (k <= 0 || alpha <= 0) return;
+  const n = Math.max(2, Math.ceil(pts.length*k)); const pp = pts.slice(0, n).map(p => P(...p));
+  ctx.save(); ctx.globalAlpha = Math.min(alpha, 1); ctx.lineCap = "round"; ctx.lineJoin = "round"; if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); pp.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.lineWidth = w + 8; ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); ctx.restore(); return pp[pp.length - 1]; }
+const dense = (pts, n) => { const out = []; for (let i = 0; i < pts.length - 1; i++) for (let j = 0; j < n; j++){ const q = j/n; out.push([lerp(pts[i][0], pts[i+1][0], q), lerp(pts[i][1], pts[i+1][1], q)]); } out.push(pts[pts.length - 1]); return out; };
+// ------------------------------------------------------------------ lapins (points)
+let AUSRING = null, DOTS = [], NEAR = [], BB = [];
+function setup(){
+  AUSRING = GEO.c.AUS.reduce((a, b) => a.length > b.length ? a : b);
+  BB = GEO.b.map(r => [d3.min(r, p => p[0]), d3.min(r, p => p[1]), d3.max(r, p => p[0]), d3.max(r, p => p[1])]);
+  const rnd = d3.randomLcg(42);
+  while (DOTS.length < 1500){ const p = [112 + rnd()*42, -44 + rnd()*34];
+    if (!d3.polygonContains(AUSRING, p) || !d3.polygonContains(RANGE, p)) continue;
+    DOTS.push({p, d:kmBetween(p, GEELONG)*(0.85 + 0.3*rnd()), k:rnd()}); }
+  for (let i = 0; i < 420; i++){ const a = rnd()*6.283, d = 6 + 290*Math.pow(rnd(), 1.6), p = kmTo(GEELONG, d, a);
+    if (!d3.polygonContains(AUSRING, p) || (p[1] < -37.9 && p[1] > -38.35 && p[0] > 144.3 && p[0] < 145.1)) continue;   // sur terre, pas dans la baie
+    DOTS.push({p, d, k:rnd()}); }
+  for (let i = 0; i < 24; i++){ const a = i*2.399, rr = 0.03 + 0.05*Math.sqrt(i); NEAR.push([143.95 + Math.cos(a)*rr*1.3, -38.08 + Math.sin(a)*rr]); }
+  DOTS.sort((a, b) => a.d - b.d);
+}
+// survie pendant la myxomatose (5 sur 6 meurent), puis retour
+function alive(dt, t){ if (dt.k < 0.17) return 1;
+  const die = lerp(T_DOWN, T_100M, dt.k), back = lerp(M("r16", 0.6), Ed("r16") + 0.4, dt.k);
+  return 1 - prog(t, die, die + 0.3) + EB(prog(t, back, back + 0.3)); }
+function drawDots(t){
+  const R = Rkm(t), s = clamp(2**(CAM.z - 5)*3.3, 3.5, 10), cull = 60;
+  const full = prog(t, T_70 - 0.3, T_70 + 0.4);
+  ctx.save(); const live = new Path2D(), dead = new Path2D();
+  for (const dt of DOTS){ const tin = dt.d < R ? 1 : 0; if (!tin) continue;
+    const age = (R - dt.d)/Math.max(30, R*0.08), a = EB(clamp(age)), [x, y] = P(...dt.p);
+    if (x < -cull || x > W + cull || y < -cull || y > H + cull) continue;
+    const al = alive(dt, t), r = s*a*(0.6 + 0.4*Math.min(al, 1.2));
+    if (al < 0.5){ dead.moveTo(x + s*0.5, y); dead.arc(x, y, s*0.5, 0, 7); }
+    else { live.moveTo(x + r, y); live.arc(x, y, r, 0, 7); } }
+  ctx.fillStyle = "rgba(40,40,40,.55)"; ctx.fill(dead);
+  ctx.lineWidth = 2.2; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.fillStyle = `rgb(${INV})`; ctx.fill(live); ctx.stroke(live);
+  ctx.restore();
+}
+// aplat d'invasion : disque « vivant » autour de Geelong, limité à l'aire du lapin
+function drawFront(t){
+  const R = Rkm(t); if (R < 120) return;
+  const myx = 1 - 0.6*prog(t, T_DOWN, T_100M) + 0.6*prog(t, M("r16", 0.6), Ed("r16") + 0.4), full = prog(t, T_70 - 0.3, T_70 + 0.3);
+  const ring = d3.range(0, 361, 3).map(d => { const th = d*Math.PI/180;
+    return kmTo(GEELONG, R*(1 + 0.11*Math.sin(5*th + t*0.7) + 0.06*Math.sin(11*th - t*1.3)), th); });
+  ctx.save(); path([AUSRING]); ctx.clip(); path([RANGE]); ctx.clip();
+  path([ring]); ctx.fillStyle = `rgba(${INV},${(0.34 + 0.2*full)*myx})`; ctx.fill();
+  ctx.lineJoin = "round"; ctx.lineWidth = 7; ctx.strokeStyle = `rgba(255,214,10,${0.9*(1 - prog(t, Ed("r13"), Ed("r13") + 0.5))})`; ctx.stroke();
+  ctx.restore();
+}
+// ------------------------------------------------------------------ carte
+function renderMap(t){
+  CAM = camera(t);
+  ctx.fillStyle = "#0b1622"; ctx.fillRect(-60, -60, W + 120, H + 120);
+  drawTiles();
+  ctx.save(); ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 1.5; ctx.lineJoin = "round";
+  GEO.b.forEach((r, i) => { if (inView(BB[i])){ path([r]); ctx.stroke(); } }); ctx.restore();
+  // ---- drapeaux
+  flagFill("AUS", "au", EO(prog(t, T_FLAG_AU - 0.08, T_FLAG_AU + 0.45))*(1 - prog(t, S("r02") + 0.3, S("r02") + 0.8)));
+  flagFill("ENG", "gb-eng", EO(prog(t, near("impact", S("r05"), M("r05", 0.4)) - 0.05, M("r05", 0.45)))*(1 - prog(t, T_ROUTE[0] + 0.4, T_ROUTE[0] + 1.0)));
+  // ---- hook : 24 lapins à Geelong
+  const h24 = prog(t, POPS1[0] - 0.05, POPS1[0])*(1 - prog(t, T_FLAG_AU - 0.3, T_FLAG_AU));
+  NEAR.forEach((p, i) => { const [x, y] = P(...p), a = EB(prog(t, POPS1[i] || 0, (POPS1[i] || 0) + 0.2))*h24; if (a > 0) pin(x, y, a, `rgb(${INV})`, 11); });
+  // ---- hook : 200 millions, tout le continent explose
+  const boom = prog(t, S("r02") + 0.15, T_200)*(1 - prog(t, S("r04") - 0.4, S("r04") + 0.1));
+  if (boom > 0){ ctx.save(); path([AUSRING]); ctx.clip(); path([RANGE]); ctx.clip();
+    const s = clamp(2**(CAM.z - 5)*3.3, 3.5, 10), nb = Math.floor(DOTS.length*boom), live = new Path2D();
+    for (let i = 0; i < nb; i++){ const [x, y] = P(...DOTS[i].p), a = EB(clamp((boom*DOTS.length - i)/120)); live.moveTo(x + s*a, y); live.arc(x, y, s*a, 0, 7); }
+    ctx.fillStyle = `rgba(${INV},${0.35*boom})`; path([AUSRING]); ctx.fill();
+    ctx.lineWidth = 2.2; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.fillStyle = `rgb(${INV})`; ctx.fill(live); ctx.stroke(live); ctx.restore(); }
+  // ---- Geelong (Thomas Austin)
+  const geA = prog(t, S("r04") + 0.3, S("r04") + 0.6)*(1 - prog(t, Ed("r04"), Ed("r04") + 0.3));
+  const th = near("hit", S("r04"), Ed("r04"));
+  if (geA > 0){ const [x, y] = P(...GEELONG); pulse(x, y, t, geA*prog(t, th - 0.1, th), Y1, 130); pin(x, y, EB(prog(t, th - 0.05, th + 0.25))*geA, Y1, 20);
+    txt("GEELONG", x, y - 74, {size:60, alpha:prog(t, th, th + 0.25)*geA, stroke:12, scale:0.8 + 0.2*EB(prog(t, th, th + 0.3))}); }
+  // ---- la traversée Angleterre → Australie
+  const roA = prog(t, T_ROUTE[0], T_ROUTE[0] + 0.3)*(1 - prog(t, S("r06") + 0.8, S("r06") + 1.3));
+  if (roA > 0){ const k = E(prog(t, T_ROUTE[0] + 0.25, T_ROUTE[1])), pts = dense(ROUTE, 12).filter((_, i, a) => i/(a.length - 1) <= k + 1e-9);
+    pts.push(routeAt(k)); const e = lineLL(pts, 1, roA, "#fff", 7, [18, 14]);
+    if (e){ pulse(e[0], e[1], t, roA, Y1, 70); pin(e[0], e[1], roA, Y1, 15); } }
+  // ---- Noël 1859 : les 24 lapins arrivent
+  const n24 = prog(t, POPS24[0] - 0.1, POPS24[0])*(1 - prog(t, S("r07") + 0.2, S("r07") + 0.5));
+  if (n24 > 0) NEAR.forEach((p, i) => { const [x, y] = P(...p), a = EB(prog(t, POPS24[i], POPS24[i] + 0.25))*n24; pin(x, y, a, `rgb(${INV})`, 12); });
+  // ---- invasion (aplat + points)
+  drawFront(t);
+  if (t > S("r07")) drawDots(t);
+  // ---- clôtures
+  const fA = prog(t, S("r12"), S("r12") + 0.3)*(1 - prog(t, S("r14") - 0.2, S("r14") + 0.4));
+  if (fA > 0){ const seg = [[THUDS[0] - 0.1, THUDS[6] + 0.1], [THUDS[7] - 0.1, THUDS[10] + 0.1], [THUDS[11] - 0.1, THUDS[13] + 0.1]];
+    FENCES.forEach((f, i) => { const k = prog(t, ...seg[i]), d = dense(f, 10);
+      const e = lineLL(d, k, fA, Y1, 9); if (e && k < 1) pulse(e[0], e[1], t, fA, Y1, 60);
+      d.forEach((p, j) => { if (j % 4 || j/(d.length - 1) > k) return; const [x, y] = P(...p); ctx.save(); ctx.globalAlpha = fA; ctx.fillStyle = "#fff"; ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
+        ctx.fillRect(x - 4, y - 4, 8, 8); ctx.strokeRect(x - 4, y - 4, 8, 8); ctx.restore(); }); }); }
+  // ---- myxomatose : vagues de virus
+  const vA = prog(t, S("r14") + 0.4, S("r14") + 0.9)*(1 - prog(t, Ed("r15"), Ed("r15") + 0.5));
+  if (vA > 0){ const SRC = [[142, -35], [146.5, -36.5], [139, -33], [149, -31], [117, -32], [136, -30]];
+    SRC.forEach((p, i) => { const t0 = S("r14") + 0.6 + i*0.45; if (t < t0) return; const [x, y] = P(...p);
+      for (let k = 0; k < 3; k++){ const ph = ((t - t0)*0.55 + k/3) % 1; ctx.save(); ctx.globalAlpha = vA*(1 - ph)*0.9; ctx.strokeStyle = VIR; ctx.lineWidth = 7;
+        ctx.beginPath(); ctx.arc(x, y, 20 + ph*260, 0, 7); ctx.stroke(); ctx.restore(); }
+      pin(x, y, EB(prog(t, t0, t0 + 0.3))*vA, VIR, 14); }); }
+  // ---- 24 lapins (fin)
+  const e24 = prog(t, S("r18") + 0.3, S("r18") + 0.7)*(1 - prog(t, S("r19") + 0.3, S("r19") + 0.8));
+  if (e24 > 0){ ctx.save(); ctx.fillStyle = `rgba(0,0,0,${0.45*e24})`; ctx.fillRect(-60, -60, W + 120, H + 120); ctx.restore();
+    const [gx, gy] = P(143.95, -38.08); pulse(gx, gy, t, e24, Y1, 160);
+    NEAR.forEach((p, i) => { const [x, y] = P(...p); pin(x, y, EB(prog(t, S("r18") + 0.4 + i*0.03, S("r18") + 0.65 + i*0.03))*e24, `rgb(${INV})`, 12); }); }
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.45, W/2, H/2, H*0.85); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.32)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  const tg = ctx.createLinearGradient(0, 0, 0, 560); tg.addColorStop(0, "rgba(0,0,0,.38)"); tg.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 560);
+}
+// flou de mouvement pendant les balayages / zooms rapides
+function motionBlur(t){
+  const a = camera(t), b = camera(t + 1/30), s = 2**a.z;
+  let dx = (b.cx - a.cx)*s, dy = (b.cy - a.cy)*s; const dz = b.z - a.z, sp = Math.hypot(dx, dy);
+  if (sp < 5 && Math.abs(dz) < 0.012) return;
+  const cap = Math.min(1, 140/Math.max(sp, 1)); dx *= cap; dy *= cap;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, W, H); bctx.drawImage(cv, 0, 0);
+  const N = 5, st = clamp(Math.max(sp/60, Math.abs(dz)/0.08));
+  for (let i = 1; i <= N; i++){ const q = i/N, sc = 2**(-clamp(dz, -0.12, 0.12)*q*1.2);
+    ctx.globalAlpha = 0.28*st; ctx.save(); ctx.translate(W/2 - dx*q*0.9, H/2 - dy*q*0.9); ctx.scale(sc, sc); ctx.drawImage(BUF, -W/2, -H/2); ctx.restore(); }
+  ctx.restore();
+}
+// ------------------------------------------------------------------ sous-titres + frise
+const CAPS = TL.vo.filter(v => !["r01", "r02", "r03", "r19"].includes(v.id)).map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){ const o = {hi:/\*/.test(w), w:w.replace(/\*/g, "")}; const p = words[words.length-1];
+    if (p && (/^[:;!?…%]$/.test(o.w) || (/^\d+$/.test(p.w) && /^\d{3}/.test(o.w)))) { p.w += " " + o.w; p.hi = p.hi || o.hi; } else words.push(o); }
+  const groups = []; let cur = [];
+  for (const w of words){ const len = cur.map(x => x.w).join(" ").length + w.w.length + 1;
+    if (cur.length && len > 15){ groups.push(cur); cur = []; } cur.push(w); if (/[.,:!?…]$/.test(w.w)){ groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const tot = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4); let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4; const s = v.start + (v.end - v.start)*acc/tot; acc += l; return {g, s, e:v.start + (v.end - v.start)*acc/tot}; });
+}).flat();
+function yearAt(t){ let v = null; for (const [t0, t1, y0, y1] of TL.ticker) if (t >= t0) v = lerp(y0, y1, E(prog(t, t0, t1))); return v; }
+const TWIN = [[S("r06"), Ed("r10") + 0.2], [S("r12"), Ed("r12") + 0.3], [S("r14"), Ed("r17") + 0.2]];
+const HITS = TL.sfx.filter(s => ["impact", "hit", "stamp"].includes(s.name))
+  .map(s => [s.t, s.name === "hit" ? 0.05 : 0.075, s.name === "hit" ? 7 : 14]);
+HITS.push([0.03, 0.1, 18], [1.35, 0.06, 8], [M("r01", 0.57), 0.05, 6]);
+THUDS.forEach(x => HITS.push([x, 0.012, 3]));
+function render(t){
+  let p = 0, sx = 0, sy = 0;
+  for (const [ti, amp, sh] of HITS) if (t >= ti){ const d = t - ti; p += amp*Math.exp(-d*8); sx += sh*Math.exp(-d*7)*Math.sin(d*50); sy += sh*0.7*Math.exp(-d*7)*Math.cos(d*43); }
+  ctx.save(); ctx.translate(W/2 + sx, H/2 + sy); ctx.scale(1.04 + p, 1.04 + p); ctx.translate(-W/2, -H/2);
+  renderMap(t); motionBlur(t);
+  overlay(t);
+  ctx.restore();
+  const rf = t >= T_LATE ? Math.exp(-(t - T_LATE)*7) : 0; if (rf > 0.02){ ctx.fillStyle = `rgba(255,40,30,${0.35*rf})`; ctx.fillRect(0, 0, W, H); }
+  const gf = t >= T_MYXO ? Math.exp(-(t - T_MYXO)*6) : 0; if (gf > 0.02){ ctx.fillStyle = `rgba(160,255,60,${0.22*gf})`; ctx.fillRect(0, 0, W, H); }
+  const fl = Math.exp(-t*7); if (fl > 0.02){ ctx.fillStyle = `rgba(255,255,255,${0.7*fl})`; ctx.fillRect(0, 0, W, H); }
+}
+function counter(n, t, t0, t1, y, o={}){ const a = EB(prog(t, t0, t0 + 0.2))*(1 - prog(t, t1, t1 + 0.25)); if (a <= 0) return;
+  txt(n, W/2, y, {size:fit(n, o.size || 190, W - 120), color:o.color || Y1, scale:a, alpha:Math.min(a, 1), stroke:22, glow:o.glow || "rgba(255,214,10,.45)"}); }
+const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+function overlay(t){
+  rabbitIntro(t); austin(t);
+  // ---- accroche
+  kin("1859", W/2, 560, t, near("impact", S("r01"), M("r01", 0.3)), {size:190, color:Y1, out:M("r01", 0.52)});
+  kin("24 LAPINS", W/2, 560, t, POPS1[0] - 0.05, {size:150, color:Y1, out:T_FLAG_AU - 0.35});
+  kin("EN AUSTRALIE", W/2, 560, t, T_FLAG_AU - 0.1, {size:120, out:Ed("r01") + 0.15});
+  kin("AUJOURD'HUI", W/2, 470, t, S("r02") + 0.05, {size:110, out:Ed("r02") + 0.15});
+  if (t < T_200) counter(fmt(lerp(24, 200e6, d3.easeExpIn(prog(t, S("r02") + 0.4, T_200)))), t, S("r02") + 0.4, T_200 - 0.02, 640, {size:150});
+  else { counter("200 MILLIONS", t, T_200, Ed("r02") + 0.15, 640, {size:150}); kin("DE LAPINS", W/2, 790, t, T_200 + 0.1, {size:100, out:Ed("r02") + 0.15}); }
+  const hd = EB(prog(t, T_TITLE, T_TITLE + 0.3))*(1 - prog(t, S("r04") - 0.1, S("r04") + 0.25));
+  if (hd > 0){ txt("LES LAPINS", W/2, 480, {size:130, alpha:Math.min(hd, 1), stroke:16, scale:hd});
+    txt("D'AUSTRALIE", W/2, 620, {size:fit("D'AUSTRALIE", 140, W - 110), color:Y1, alpha:Math.min(hd, 1), stroke:18, scale:hd, glow:"rgba(255,214,10,.45)"}); }
+  // ---- histoire
+  kin("NOËL 1859", W/2, 600, t, SFX("bell")[0], {size:130, color:Y1, out:POPS24[0] - 0.1});
+  kin("24 LAPINS", W/2, 600, t, POPS24[0], {size:140, out:Ed("r06") + 0.1});
+  if (t < T_20K) counter(fmt(lerp(24, 20000, d3.easeExpIn(prog(t, M("r07", 0.25), T_20K)))), t, M("r07", 0.25), T_20K - 0.02, 620);
+  else { counter("20 000", t, T_20K, Ed("r07") + 0.15, 620, {size:200}); kin("TUÉS", W/2, 780, t, T_20K + 0.1, {size:110, color:RED, out:Ed("r07") + 0.15}); }
+  const hp = near("hit", S("r08"), Ed("r08")), pp = SFX("pop").find(x => x > M("r08", 0.5) && x < Ed("r08"));
+  kin("AUCUN", W/2, 560, t, hp - 0.05, {size:130, out:pp - 0.3}); kin("PRÉDATEUR", W/2, 700, t, hp + 0.05, {size:140, color:RED, out:pp - 0.3});
+  kin("DES DIZAINES", W/2, 560, t, pp, {size:120, color:Y1, out:Ed("r08") + 0.15}); kin("DE PETITS / AN", W/2, 700, t, pp + 0.12, {size:110, out:Ed("r08") + 0.15});
+  kin("100 KM / AN", W/2, 620, t, T_100KM, {size:150, color:Y1, out:T_FAST - 0.3});
+  kin("RECORD", W/2, 620, t, T_FAST, {size:160, color:Y1, out:Ed("r09") + 0.15});
+  kin("EN 50 ANS", W/2, 620, t, S("r10") + 0.05, {size:140, out:T_CONT - 0.25});
+  kin("TOUT", W/2, 560, t, T_CONT, {size:150, out:Ed("r10") + 0.3}); kin("LE CONTINENT", W/2, 700, t, T_CONT + 0.1, {size:130, color:Y1, out:Ed("r10") + 0.3});
+  kin("CLÔTURE GÉANTE", W/2, 620, t, T_FENCE, {size:120, color:Y1, out:Ed("r11") + 0.2});
+  counter(fmt(lerp(0, 3256, E(prog(t, THUDS[0], T_3000)))) + " KM", t, THUDS[0], Ed("r12") + 0.15, 620, {size:170});
+  kin("TROP TARD", W/2, 620, t, T_LATE, {size:160, color:RED, out:Ed("r13") + 0.2});
+  kin("MYXOMATOSE", W/2, 620, t, T_MYXO, {size:140, color:VIR, out:Ed("r14") + 0.2});
+  if (t < T_100M) counter(fmt(lerp(600, 100, E(prog(t, T_DOWN, T_100M)))) + " M", t, S("r15") + 0.2, T_100M - 0.02, 620, {size:180, color:t > T_DOWN ? RED : Y1, glow:t > T_DOWN ? "rgba(255,59,48,.5)" : null});
+  else { counter("100 MILLIONS", t, T_100M, Ed("r15") + 0.15, 620, {size:150, color:RED, glow:"rgba(255,59,48,.5)"}); }
+  kin("RÉSISTANTS", W/2, 620, t, SFX("shimmer")[0] + 0.1, {size:140, color:Y1, out:M("r16", 0.6) - 0.1});
+  kin("ILS REVIENNENT", W/2, 620, t, M("r16", 0.6), {size:120, out:Ed("r16") + 0.2});
+  counter("70 %", t, T_70, Ed("r17") + 0.2, 640, {size:250}); kin("DU PAYS", W/2, 820, t, T_70 + 0.12, {size:110, out:Ed("r17") + 0.2});
+  kin("24 LAPINS", W/2, 600, t, T_24, {size:160, color:Y1, out:S("r19") + 0.2});
+  if (t > S("r19")){ const o1 = M("r19", 0.62);
+    kin("ET TOI ?", W/2, 480, t, S("r19") + 0.1, {size:130, color:Y1, out:o1});
+    kin("D'AUTRES ANIMAUX", W/2, 620, t, S("r19") + 0.9, {size:100, out:o1}); kin("ENVAHISSEURS ?", W/2, 740, t, S("r19") + 1.3, {size:110, color:Y1, out:o1});
+    const a = EB(prog(t, o1 + 0.2, o1 + 0.6)); txt("DIS-LE", W/2, 560, {size:120, color:Y1, scale:a, alpha:Math.min(a, 1), stroke:16});
+    const b = EB(prog(t, o1 + 0.4, o1 + 0.8)); txt("EN COMMENTAIRE !", W/2, 680, {size:84, scale:b, alpha:Math.min(b, 1), stroke:13}); }
+  // ---- frise des années
+  const yv = yearAt(t), ya = yv === null ? 0 : d3.max(TWIN, ([a, b]) => prog(t, a - 0.1, a + 0.2)*(1 - prog(t, b, b + 0.3)));
+  if (ya > 0){ const base = Math.round(yv);
+    for (let j = -2; j <= 2; j++){ const v = base + j, x = W/2 + (v - yv)*300; if (x < -200 || x > W + 200) continue; const act = clamp(1 - Math.abs(v - yv));
+      txt(String(v), x, 450, {size:44 + act*40, color:act > 0.5 ? Y1 : "#fff", alpha:Math.min(ya, 1)*(0.35 + 0.65*act), stroke:9, glow:act > 0.5 ? "rgba(255,214,10,.45)" : null}); } }
+  // ---- sous-titres
+  let cur = null; for (const g of CAPS) if (g.s <= t) cur = g;
+  if (cur && t <= cur.e + 0.25){ const a = EB(prog(t, cur.s, cur.s + 0.15));
+    const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.replace(/[.,]+$/, "").toUpperCase(), c:w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 300, {size:80, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:16}); }
+}
+let RAB = null, AUSTIN = null;
+// lapin (PNG) : entre en bondissant, atterrit au centre, puis repart d'un saut
+function rabbitIntro(t){
+  if (!RAB || t > 1.9) return;
+  const kin_ = prog(t, 0, 0.42), kout = prog(t, 1.25, 1.85), sq = Math.exp(-Math.max(0, t - 0.42)*9)*(t > 0.42 ? 1 : 0);
+  const x = W/2 + lerp(-700, 0, EO(kin_)) + 900*d3.easeQuadIn(kout), yb = 1360 - 380*Math.sin(Math.PI*kin_)*(kin_ < 1 ? 1 : 0) - 260*Math.sin(Math.PI*kout);
+  const h = 720, w = h*RAB.width/RAB.height;
+  ctx.save(); ctx.translate(x, yb); ctx.scale(1 + 0.12*sq, 1 - 0.14*sq + 0.03*Math.sin(t*9)*(1 - kout));
+  ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18; ctx.drawImage(RAB, -w/2, -h, w, h); ctx.restore();
+}
+// portrait de Thomas Austin (gravure), au centre de l'écran
+function austin(t){
+  if (!AUSTIN) return; const t0 = SFX("pop").find(x => x > S("r04") && x < M("r04", 0.4)), t1 = near("hit", S("r04"), Ed("r04")) - 0.35;
+  const a = EB(prog(t, t0, t0 + 0.35)), out = E(prog(t, t1, t1 + 0.3)); if (a <= 0 || out >= 1) return;
+  const h = 560, w = h*AUSTIN.width/AUSTIN.height, kb = 1 + 0.05*prog(t, t0, t1);
+  ctx.save(); ctx.translate(W/2, 1010 + out*60); ctx.scale(a*(1 - out), a*(1 - out));
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16; ctx.fillRect(-w/2 - 12, -h/2 - 12, w + 24, h + 24); ctx.shadowColor = "transparent";
+  ctx.beginPath(); ctx.rect(-w/2, -h/2, w, h); ctx.clip(); ctx.drawImage(AUSTIN, -w*kb/2, -h*kb/2, w*kb, h*kb); ctx.restore();
+}
+function outlined(img, r=9){ const c = document.createElement("canvas"); c.width = img.width + 2*r; c.height = img.height + 2*r; const g = c.getContext("2d");
+  for (let a = 0; a < 32; a++) g.drawImage(img, r + Math.cos(a/32*6.283)*r, r + Math.sin(a/32*6.283)*r);
+  g.globalCompositeOperation = "source-in"; g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.globalCompositeOperation = "source-over"; g.drawImage(img, r, r); return c; }
+window.renderAt = render;
+const load = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { FLAG[k] = i; r(); }; i.onerror = r; i.src = src; });
+const img = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+window.ready = Promise.all([fetch("geo.json").then(r => r.json()).then(j => { GEO = j; setup(); }),
+  ...["au", "gb-eng"].map(f => load(f, `flags/${f}.svg`)),
+  img("assets/lapin_saute.png").then(i => { RAB = i && outlined(i); }), img("assets/austin_card.jpg").then(i => { AUSTIN = i; }),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M")]).then(() => true);
+</script>
+</body>
+</html>
