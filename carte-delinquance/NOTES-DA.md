@@ -37,3 +37,4 @@
 - **Accroche dynamique, jamais statique** : zooms/punchs de caméra, secousses sur les mots forts, entrées en mouvement des PNG dès la 1re seconde.
 - **Zone sûre TikTok** : aucune image ni texte important dans le bas de l'écran (~les 480 px du bas : pseudo, description) ni collé au bord droit (boutons) ; PNG centrés au milieu de l'écran.
 - **Motion avant tout** : jamais d'effet diaporama — caméra toujours en mouvement (balayages, plongées, dérives), transitions = mouvements de caméra (jamais de cut), éléments qui apparaissent en continu (points, fronts, tracés), flou de mouvement sur les whips.
+- **Marges latérales des textes** : au moins 150 px de chaque côté (sur 1080) pour tous les textes (cinétiques, compteurs, sous-titres, étiquettes) — sinon coupés/peu lisibles sur TikTok.
