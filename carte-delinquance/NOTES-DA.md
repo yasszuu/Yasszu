@@ -41,3 +41,7 @@
 - **Caméra jamais immobile** : même pendant les phrases « monotones », enchaîner de petits zooms / balayages (~1,7 s chacun, couche « beats » ajoutée à la caméra) en plus des grands mouvements.
 - **Mouvement de caméra DOSÉ** (retour lion/loup/hippo/moustique) : jamais statique, mais pas de micro-mouvements incessants qui donnent mal à la tête. Une dérive lente et continue (zoom ou pan doux) pendant les phrases calmes, un seul mouvement marqué par idée/phrase, whips réservés aux changements de lieu ; amplitude des « beats » divisée par ~2 et durée ~3-4 s ; flou de mouvement léger.
 - **Pas de doublon avec les sous-titres** : un texte animé ne doit jamais répéter les mots déjà affichés par les sous-titres (ni étiquette de lieu déjà dite) ; textes animés seulement dans l'accroche et l'appel final (sans sous-titres), le reste = sous-titres + éléments visuels (drapeaux, tracés, épingles, photos).
+- **Beaucoup plus d'images à demander** (retour Wojtek) : dès qu'un passage ne change pas de lieu (la voix raconte sans mouvement géographique),
+  il faut une image pour l'illustrer. Avant chaque vidéo, envoyer à l'utilisateur une **liste d'images numérotée, calée réplique par réplique**
+  (≈ 1 image toutes les 5-8 s hors trajets : photos d'archive, scènes, objets, PNG détourés), avec pour chacune le nom de fichier attendu
+  (`01-xxx.jpg`…), ce qu'elle doit montrer et le moment où elle apparaît. Présentation : photo au centre (~2-3 s) ou PNG qui entre en mouvement.
