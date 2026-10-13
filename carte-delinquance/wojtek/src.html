@@ -73,8 +73,9 @@ const KEYS = [
   [S("w09") + 0.2, view(...HAMADAN, 5.4), E],                 // Irak, Syrie, Palestine, Égypte
   [HITS9[0], view(...along(R_LAND, LAND_T[1][1]), 5.4), LIN],
   [HITS9[1], view(...along(R_LAND, LAND_T[2][1]), 5.45), LIN],
-  [HITS9[2], view(...along(R_LAND, LAND_T[3][1]), 5.5), LIN],
-  [HITS9[3], view(30.4, 31.1, 5.6), LIN],
+  [HITS9[2] - 0.05, view(34.9, 31.5, 7.6), E],
+  [HITS9[2] + 0.45, view(34.8, 31.4, 7.7), LIN],
+  [HITS9[3] + 0.1, view(31.2, 31.0, 6.0), E],
   [S("w10") + 0.5, view(26, 34, 5.0), E],                     // la traversée vers l'Italie
   [M("w10", 0.75), view(...along(R_SEA1, 0.5), 5.1), LIN],
   [M("w11", 0.2), view(...along(R_SEA1, 0.82), 5.3), LIN],
@@ -187,8 +188,7 @@ function renderMap(t){
   flagFill("POL", "pl", EO(prog(t, T_POL - 0.1, T_POL + 0.45))*(1 - prog(t, S("w03") - 0.1, S("w03") + 0.4)) + EO(prog(t, POPS18[1] - 0.1, POPS18[1] + 0.4)));
   flagFill("IRN", "ir", EO(prog(t, T_IRAN - 0.1, T_IRAN + 0.45))*(1 - prog(t, M("w05", 0.2), M("w05", 0.4))));
   [["IRQ", "iq"], ["SYR", "sy"], [null, null], ["EGY", "eg"]].forEach(([id, fl], i) => { if (id) flagFill(id, fl, EO(prog(t, HITS9[i] - 0.15, HITS9[i] + 0.35))*(1 - prog(t, S("w10"), S("w10") + 0.5))); });
-  const palA = prog(t, HITS9[2] - 0.15, HITS9[2] + 0.2)*(1 - prog(t, S("w10"), S("w10") + 0.5));
-  if (palA > 0){ ctx.save(); path(GEO.c.PAL); ctx.fillStyle = `rgba(255,214,10,${0.35*palA})`; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = `rgba(255,255,255,${0.9*palA})`; ctx.stroke(); ctx.restore(); }
+  flagFill("PAL", "ps", EO(prog(t, HITS9[2] - 0.15, HITS9[2] + 0.35))*(1 - prog(t, S("w10"), S("w10") + 0.5)));
   flagFill("ITA", "it", EO(prog(t, M("w11", 0.55), M("w11", 0.8)))*(1 - prog(t, S("w12") + 0.2, S("w12") + 0.7)));
   flagFill("SCT", "gb-sct", EO(prog(t, T_SCOT - 0.1, T_SCOT + 0.45))*(1 - prog(t, S("w16") + 0.1, S("w16") + 0.5)) + EO(prog(t, POPS18[0] - 0.1, POPS18[0] + 0.4)));
   // ---- tout le voyage (titre)
@@ -197,7 +197,7 @@ function renderMap(t){
   // ---- des camps soviétiques jusqu'à Téhéran, puis Hamadan
   const uA = prog(t, S("w05"), S("w05") + 0.3)*(1 - prog(t, M("w06", 0.9), Ed("w06") + 0.2));
   if (uA > 0){ arrow(R_USSR, E(prog(t, S("w05") + 0.3, M("w05", 0.85))), uA, "#fff", 9); arrow(R_HAM, E(prog(t, S("w06") - 0.2, T_HAM)), uA*prog(t, S("w06") - 0.3, S("w06")), Y1, 9); }
-  city(HAMADAN, "HAMADAN", prog(t, T_HAM - 0.05, T_HAM + 0.2)*(1 - prog(t, S("w09") + 0.2, S("w09") + 0.5)), t);
+  city(HAMADAN, null, prog(t, T_HAM - 0.05, T_HAM + 0.2)*(1 - prog(t, S("w09") + 0.2, S("w09") + 0.5)), t);
   // ---- route terrestre jusqu'en Égypte
   const lA = prog(t, S("w09"), S("w09") + 0.3)*(1 - prog(t, M("w10", 0.3), M("w10", 0.5)));
   if (lA > 0){ const k = landK(t); lineLL(upto(R_LAND, k), lA, Y1, 9); const [x, y] = P(...along(R_LAND, k)); pulse(x, y, t, lA*(k < 1 ? 1 : 0), Y1, 70); pin(x, y, lA, Y1, 15); }
@@ -210,12 +210,12 @@ function renderMap(t){
   if (cA > 0){ for (const b of BLASTS){ const ph = (t - b.t)/0.9; if (ph < 0 || ph > 1) continue; const [x, y] = P(...b.p);
       ctx.save(); ctx.globalAlpha = (1 - ph)*cA; ctx.fillStyle = `rgba(255,${Math.round(160 - 120*ph)},40,${0.55*(1 - ph)})`; ctx.beginPath(); ctx.arc(x, y, b.r*EO(ph), 0, 7); ctx.fill();
       ctx.strokeStyle = "#ffd27a"; ctx.lineWidth = 5; ctx.stroke(); ctx.restore(); }
-    city(CASSINO, "MONT-CASSIN", cA*prog(t, T_CASS - 0.1, T_CASS + 0.2), t, RED); }
+    city(CASSINO, null, cA*prog(t, T_CASS - 0.1, T_CASS + 0.2), t, RED); }
   // ---- bateau vers l'Écosse
   const s2 = prog(t, SEA2[0] - 0.3, SEA2[0])*(1 - prog(t, S("w16") + 0.2, S("w16") + 0.6));
   if (s2 > 0){ const k = E(prog(t, ...SEA2)); lineLL(upto(R_SEA2, k), s2, "#fff", 7, [18, 14]); vehicle(PH.ship, R_SEA2, k, 90, s2*(1 - prog(t, SEA2[1], SEA2[1] + 0.4))); }
   // ---- Édimbourg
-  city(EDIN, "ÉDIMBOURG", prog(t, S("w16") + 0.3, S("w16") + 0.6)*(1 - prog(t, Ed("w17"), Ed("w17") + 0.4)), t);
+  city(EDIN, null, prog(t, S("w16") + 0.3, S("w16") + 0.6)*(1 - prog(t, Ed("w17"), Ed("w17") + 0.4)), t);
   // ---- les statues : Édimbourg et Cracovie
   const stA = prog(t, POPS18[0] - 0.2, POPS18[0])*(1 - prog(t, S("w19") + 2.5, S("w19") + 3));
   if (stA > 0){ city(EDIN, null, EB(prog(t, POPS18[0], POPS18[0] + 0.3))*stA, t); city(KRAKOW, null, EB(prog(t, POPS18[1], POPS18[1] + 0.3))*stA, t);
@@ -274,22 +274,6 @@ function overlay(t){
   ["UN GRADE", "DES RATIONS", "DE LA BIÈRE"].forEach((w, i) => kin(w, W/2, 560, t, POPS2[i] - 0.05, {size:130, color:i === 2 ? Y1 : "#fff", out:i < 2 ? POPS2[i + 1] - 0.15 : Ed("w02") + 0.15}));
   const hd = EB(prog(t, T_TITLE, T_TITLE + 0.3))*(1 - prog(t, S("w04") - 0.1, S("w04") + 0.25));
   if (hd > 0){ txt("WOJTEK", W/2, 480, {size:170, color:Y1, alpha:Math.min(hd, 1), stroke:20, scale:hd, glow:"rgba(255,214,10,.45)"}); txt("L'OURS SOLDAT", W/2, 630, {size:fit("L'OURS SOLDAT", 110, W - 2*MARGIN), alpha:Math.min(hd, 1), stroke:16, scale:hd}); }
-  // ---- histoire
-  kin("UN OURSON", W/2, 600, t, T_OURSON, {size:140, color:Y1, out:Ed("w06") + 0.15});
-  ["CONSERVES", "CHOCOLAT", "COUTEAU"].forEach((w, i) => kin(w, W/2, 600, t, POPS7[i] - 0.05, {size:130, out:i < 2 ? POPS7[i + 1] - 0.12 : T_JOY - 0.4}));
-  kin("« LE GUERRIER", W/2, 540, t, T_JOY - 0.1, {size:110, out:Ed("w07") + 0.2}); kin("JOYEUX »", W/2, 670, t, T_JOY, {size:140, color:Y1, out:Ed("w07") + 0.2});
-  kin("CIGARETTES", W/2, 470, t, M("w08", 0.78), {size:120, color:Y1, out:Ed("w08") + 0.2});
-  kin("INTERDITS", W/2, 620, t, T_INTERD, {size:140, color:RED, out:Ed("w10") + 0.2});
-  kin("ENRÔLÉ", W/2, 520, t, T_SOLDAT - 0.15, {size:120, out:Ed("w11") + 0.2}); kin("SOLDAT", W/2, 670, t, T_SOLDAT, {size:170, color:Y1, out:Ed("w11") + 0.2});
-  kin("MAI 1944", W/2, 600, t, S("w12") + 0.2, {size:150, color:Y1, out:T_CASS - 0.1});
-  kin("LA PLUS VIOLENTE", W/2, 600, t, M("w12", 0.75), {size:100, color:RED, out:Ed("w12") + 0.2});
-  if (t < T_45) counter(Math.round(lerp(0, 45, E(prog(t, M("w13", 0.45), T_45)))) + " KG", t, M("w13", 0.45), T_45 - 0.02, 620, {size:200});
-  else { counter("45 KG", t, T_45, Ed("w13") + 0.15, 620, {size:220}); kin("PAR CAISSE", W/2, 790, t, T_45 + 0.1, {size:100, out:Ed("w13") + 0.15}); }
-  kin("EMBLÈME", W/2, 600, t, T_EMBL, {size:140, color:Y1, out:T_CAPO - 0.3});
-  kin("CAPORAL", W/2, 620, t, T_CAPO, {size:170, color:Y1, out:Ed("w14") + 0.25});
-  kin("ZOO D'ÉDIMBOURG", W/2, 600, t, POPS16[0] - 0.05, {size:96, color:Y1, out:Ed("w16") + 0.3});
-  kin("1963", W/2, 560, t, S("w17") + 0.3, {size:180, color:Y1, out:Ed("w17") + 0.2}); kin("21 ANS", W/2, 720, t, M("w17", 0.7), {size:130, out:Ed("w17") + 0.2});
-  kin("STATUES", W/2, 620, t, POPS18[0] - 0.1, {size:150, color:Y1, out:Ed("w18") + 0.2});
   if (t > S("w19")){ const o1 = M("w19", 0.55);
     kin("ET TOI ?", W/2, 470, t, S("w19") + 0.1, {size:130, color:Y1, out:o1}); kin("D'AUTRES ANIMAUX", W/2, 610, t, S("w19") + 0.7, {size:100, out:o1}); kin("SOLDATS ?", W/2, 730, t, S("w19") + 1.0, {size:130, color:Y1, out:o1});
     const a = EB(prog(t, o1 + 0.2, o1 + 0.6)); txt("DIS-LE", W/2, 560, {size:120, color:Y1, scale:a, alpha:Math.min(a, 1), stroke:16});
@@ -320,7 +304,7 @@ window.renderAt = render;
 const load = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { FLAG[k] = i; r(); }; i.onerror = r; i.src = src; });
 const img = (k, src, f) => new Promise(r => { const i = new Image(); i.onload = () => { PH[k] = f ? f(i) : i; r(); }; i.onerror = r; i.src = src; });
 window.ready = Promise.all([fetch("geo.json").then(r => r.json()).then(j => { GEO = j; setup(); }),
-  ...["pl", "ir", "iq", "sy", "eg", "it", "gb-sct"].map(f => load(f, `flags/${f}.svg`)),
+  ...["pl", "ir", "iq", "sy", "ps", "eg", "it", "gb-sct"].map(f => load(f, `flags/${f}.svg`)),
   img("bear", "assets/ours.png", outlined), img("ship", "assets/bateau.png"), img("combat", "assets/wojtek-combat.png"), img("maitre", "assets/wojtek-avecsonmaitre.JPG"),
   document.fonts.load("900 60px M"), document.fonts.load("800 60px M")]).then(() => true);
 </script>
