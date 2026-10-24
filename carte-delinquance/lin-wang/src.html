@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Lin Wang, l'éléphant soldat</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2) format("woff2");}
+html,body{margin:0;background:#0b1622}
+#c{width:540px;height:960px;display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="../node_modules/d3/dist/d3.min.js"></script>
+<script>
+const TL = __TL__, DUR = TL.duration;
+const W = 1080, H = 1920, TS = 256, ZMIN = 3, ZMAX = 10, MARGIN = 150;      // marge latérale des textes (zone sûre TikTok)
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const BUF = document.createElement("canvas"); BUF.width = W; BUF.height = H; const bctx = BUF.getContext("2d");
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a)*k;
+const prog = (t, a, b) => clamp((t - a)/(b - a));
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EX = d3.easeExpInOut, LIN = d3.easeLinear;
+const Y1 = "#ffd60a", RED = "#ff3b30", MOS = [255, 59, 48], ICE = "#9fe3ff";
+const V = Object.fromEntries(TL.vo.map(v => [v.id, v]));
+const S = k => V[k].start, Ed = k => V[k].end, M = (k, f) => S(k) + (Ed(k) - S(k))*f;
+const SFX = n => TL.sfx.filter(s => s.name === n).map(s => s.t);
+const near = (n, a, b) => SFX(n).find(x => x >= a && x <= b);
+// ------------------------------------------------------------------ lieux
+const TAIPEI = [121.53, 25.05], HUKAWNG = [96.6, 26.6], LEDO = [95.73, 27.29], MYIT = [97.4, 25.38], CANTON = [113.26, 23.13], KAOH = [120.3, 22.62], TOKYO = [139.7, 35.7];
+const R_ATTACK = [[95.73,27.29],[96.2,26.9],[96.6,26.5],[97.0,25.9],[97.4,25.38]];
+const R_MARCH = [[97.4,25.38],[98.0,25.1],[98.5,25.0],[99.2,25.1],[100.4,25.3],[101.6,25.0],[102.8,24.9],[104.6,24.7],[106.7,24.0],[108.6,23.4],[110.6,23.3],[112.2,23.2],[113.26,23.13]];
+const R_SHIP = [[113.26,23.13],[113.6,22.45],[114.8,22.2],[116.6,22.4],[118.4,22.5],[119.6,22.6],[120.28,22.62]];
+const R_JAPAN = [[139.7,35.7],[131,33],[124,28],[114,23],[106,20],[100,21],[97.6,24.2]];
+const R_PARADE = [[121.523,25.072],[121.535,25.06],[121.545,25.04],[121.56,25.02],[121.581,24.998]];
+const JOURNEY = [...R_MARCH, ...R_SHIP.slice(1), [120.6, 23.6], TAIPEI];
+// ------------------------------------------------------------------ calendrier
+const pops = (k, a=0, b=1) => SFX("pop").filter(x => x >= M(k, a) - 0.05 && x <= M(k, b) + 0.05);
+const T_2003 = near("impact", S("l01"), M("l01", 0.3)), T_PH1 = pops("l01")[0], T_86 = near("impact", M("l01", 0.6), Ed("l01"));
+const T_NAME = pops("l02")[0], T_WAR = near("hit", S("l02"), Ed("l02")), T_TITLE = near("impact", S("l03"), Ed("l03"));
+const T_JUNGLE = pops("l04")[0], P5 = pops("l05"), T_CAMION = near("hit", S("l05"), Ed("l05")), P6 = pops("l06"), T_DOUZE = near("impact", S("l06"), Ed("l06"));
+const P7 = pops("l07"), T_PAINT = pops("l08")[0], T_CANTON = pops("l10")[0], T_GEN = pops("l11")[0], T_TW = near("impact", S("l11"), Ed("l11")) || Ed("l11");
+const T_PARADE = pops("l12")[0], T_ZOO = pops("l13")[0], P14 = pops("l14"), T_ROCK = near("hit", S("l15"), Ed("l15")), T_PH18 = pops("l16")[0];
+const SHIP = [M("l11", 0.55), M("l11", 0.92)];
+const CL = {a: S("l09") - 0.55, b: S("l09") - 0.55 + 5.0};      // plan 3D (150 images)
+// ------------------------------------------------------------------ itinéraires
+const pathLen = pts => { const d = [0]; for (let i = 1; i < pts.length; i++) d.push(d[i-1] + Math.hypot(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1])); return d; };
+function along(pts, k){ const d = pathLen(pts), L = d[d.length - 1]*clamp(k); let i = 1; while (i < pts.length - 1 && d[i] < L) i++;
+  const q = (L - d[i-1])/(d[i] - d[i-1] || 1); return [lerp(pts[i-1][0], pts[i][0], q), lerp(pts[i-1][1], pts[i][1], q)]; }
+const upto = (pts, k) => { const d = pathLen(pts), L = d[d.length - 1]*clamp(k), out = [pts[0]]; for (let i = 1; i < pts.length && d[i] < L; i++) out.push(pts[i]); out.push(along(pts, k)); return out; };
+const MARCH_A = [M("l08", 0.1), Ed("l08") - 0.2], MARCH_B = [S("l10") - 0.2, M("l10", 0.62)];
+const marchK = t => t < CL.a + 0.5 ? 0.55*E(prog(t, ...MARCH_A)) : 0.55 + 0.45*E(prog(t, ...MARCH_B));
+// ------------------------------------------------------------------ caméra
+const mx = lon => (lon + 180)/360*TS;
+const my = lat => { const r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2*TS; };
+const view = (lon, lat, z, dy=-90) => [mx(lon), my(lat) - dy/2**z, W/2**z];
+const KEYS = [
+  [0.0,   view(112, 26, 4.1)],
+  [1.3,   view(119, 25, 4.9), EO],
+  [2.2,   view(121.0, 23.9, 8.3), EX],                        // Taïwan en deuil
+  [Ed("l02"), view(121.1, 24.0, 8.6), LIN],
+  [S("l03") + 0.6, view(106, 24.5, 4.15), EX],                // tout le voyage : Birmanie → Canton → Taïwan
+  [Ed("l03"), view(106, 24.5, 4.3), LIN],
+  [S("l04") + 0.6, view(96.8, 26.2, 6.0), EX],                // 1943 : la jungle de Birmanie
+  [S("l05") + 0.2, view(96.9, 26.0, 6.2), LIN],
+  [M("l05", 0.38), view(116, 28, 3.7), EX],                   // l'armée japonaise
+  [M("l05", 0.95), view(114, 27, 3.85), LIN],
+  [S("l06") + 0.5, view(96.6, 26.4, 6.3), EX],                // les troupes chinoises attaquent depuis Ledo
+  [Ed("l07"), view(96.9, 26.0, 6.8), LIN],
+  [S("l08") + 0.5, view(99.5, 25.2, 5.6), EX],                // le retour à pied
+  [CL.a + 0.4, view(101.5, 25.0, 5.4), LIN],
+  [CL.b - 0.3, view(103.5, 24.8, 5.3), LIN],
+  [M("l10", 0.62), view(112.8, 23.3, 6.6), E],                // Canton
+  [Ed("l10"), view(113.0, 23.2, 6.8), LIN],
+  [SHIP[0], view(115.5, 22.8, 5.9), E],                       // le bateau vers Taïwan
+  [SHIP[1], view(119.8, 22.9, 6.1), LIN],
+  [Ed("l11") + 0.2, view(120.6, 23.2, 8.2), E],
+  [Ed("l12"), view(120.6, 23.3, 8.5), LIN],
+  [S("l13") + 0.6, view(...TAIPEI, 9.2), EX],                 // zoo de Taipei
+  [Ed("l14"), view(121.53, 25.04, 9.5), LIN],
+  [S("l15") + 0.5, view(121.552, 25.035, 10.1), EX],             // le déménagement, en parade
+  [Ed("l15"), view(121.556, 25.03, 10.3), LIN],
+  [S("l16") + 0.6, view(120.95, 23.75, 8.35), EX],             // 2003 : tout Taïwan
+  [Ed("l17"), view(120.95, 23.75, 8.55), LIN],
+  [DUR, view(120.95, 23.8, 8.75), LIN],
+];
+function baseCamera(t){
+  let i = 0; while (i < KEYS.length - 2 && t > KEYS[i+1][0]) i++;
+  const [ta, va] = KEYS[i], [tb, vb, eb] = KEYS[i+1], k = (eb || E)(prog(t, ta, tb));
+  const v = d3.interpolateZoom(va, vb)(k); return {cx:v[0], cy:v[1], z:Math.log2(W/v[2])};
+}
+// caméra « vivante » : pendant les plans calmes, enchaînement de petits zooms / balayages (~1,7 s chacun)
+const BEAT_PAT = [[150, -70, 0.2], [-160, 45, 0.06], [70, 110, -0.15], [-120, -90, 0.22], [165, 60, -0.08], [-80, -115, 0.15]];
+const BEATS = []; let bi = 0;
+for (let i = 0; i < KEYS.length - 1; i++){ const ta = KEYS[i][0], tb = KEYS[i+1][0], e = KEYS[i+1][2], d = tb - ta;
+  if (e === EX || e === EO || d < 3.0) continue; const n = Math.max(2, Math.round(d/3.4)), pts = [[ta + 0.05, [0, 0, 0]]];
+  for (let j = 1; j < n; j++) pts.push([ta + d*j/n, BEAT_PAT[bi++ % BEAT_PAT.length]]);
+  pts.push([tb - 0.05, [0, 0, 0]]); BEATS.push(pts); }
+function beatOffset(t){
+  for (const pts of BEATS){ if (t < pts[0][0] || t > pts[pts.length - 1][0]) continue;
+    let j = 0; while (j < pts.length - 2 && t > pts[j+1][0]) j++;
+    const [a, oa] = pts[j], [b, ob] = pts[j+1], k = E(prog(t, a, b)); return oa.map((v, q) => lerp(v, ob[q], k)); }
+  return [0, 0, 0];
+}
+function camera(t){ const c = baseCamera(t), [dx, dy, dz] = beatOffset(t), z = c.z + dz; return {cx:c.cx + dx/2**z, cy:c.cy + dy/2**z, z}; }
+let CAM = camera(0);
+const wrapLon = lon => { const c = CAM.cx/TS*360 - 180; return lon + 360*Math.round((c - lon)/360); };
+const P = (lon, lat) => { const s = 2**CAM.z; return [(mx(wrapLon(lon)) - CAM.cx)*s + W/2, (my(lat) - CAM.cy)*s + H/2]; };
+// ------------------------------------------------------------------ tuiles
+const TILES = {};
+function visibleTiles(cam, z){
+  const s = 2**cam.z, n = 2**z, out = [], m = 1.12;
+  const tx0 = Math.floor((cam.cx - W*m/2/s)*n/TS), tx1 = Math.floor((cam.cx + W*m/2/s)*n/TS);
+  const ty0 = Math.floor((cam.cy - H*m/2/s)*n/TS), ty1 = Math.floor((cam.cy + H*m/2/s)*n/TS);
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) if (y >= 0 && y < n) out.push([z, ((x % n) + n) % n, y]);
+  return out;
+}
+const levelFor = z => Math.max(ZMIN, Math.min(ZMAX, Math.floor(z + 0.5)));
+window.plan = () => { const set = new Set();
+  for (let f = 0; f < DUR*30; f++){ const c = camera(f/30), L = levelFor(c.z);
+    for (const zz of [L, Math.max(ZMIN, L - 1)]) for (const [z, x, y] of visibleTiles(c, zz)) set.add(`${z}/${x}/${y}`); }
+  return [...set]; };
+window.prep = async t => {
+  const jobs = [], c = camera(t), L = levelFor(c.z);
+  for (const [z, x, y] of [...visibleTiles(c, L), ...visibleTiles(c, Math.max(ZMIN, L - 1))]){ const k = `${z}/${x}/${y}`; if (k in TILES) continue;
+    jobs.push(new Promise(r => { const i = new Image(); i.onload = () => { TILES[k] = i; r(); }; i.onerror = () => { TILES[k] = null; r(); }; i.src = `tiles/${k}.jpg`; })); }
+  await Promise.all(jobs);
+};
+function drawTiles(){
+  const L = levelFor(CAM.z), s = 2**CAM.z;
+  for (const zz of [Math.max(ZMIN, L - 1), L]){ const ts = TS*2**(CAM.z - zz);
+    for (const [z, x, y] of visibleTiles(CAM, zz)){ const img = TILES[`${z}/${x}/${y}`]; if (!img) continue;
+      const sx = (x*TS/2**z - CAM.cx)*s + W/2, sy = (y*TS/2**z - CAM.cy)*s + H/2;
+      ctx.drawImage(img, Math.floor(sx), Math.floor(sy), Math.ceil(ts) + 1, Math.ceil(ts) + 1); } }
+}
+// ------------------------------------------------------------------ outils de dessin
+__HELPERS__
+function inView(bb, pad=80){ const [a, b] = P(bb[0], bb[3]), [c, d] = P(bb[2], bb[1]); return c > -pad && a < W + pad && d > -pad && b < H + pad; }
+function label(s, x, y, o={}){ ctx.font = `900 ${o.size || 56}px M`; const w = ctx.measureText(s).width; txt(s, clamp(x, MARGIN + w/2, W - MARGIN - w/2), y, o); }
+function lineLL(pts, alpha, color, w, dash=null){ if (alpha <= 0 || pts.length < 2) return null; const pp = pts.map(p => P(...p));
+  ctx.save(); ctx.globalAlpha = Math.min(alpha, 1); ctx.lineCap = "round"; ctx.lineJoin = "round"; if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); pp.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.lineWidth = w + 8; ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); ctx.restore(); return pp[pp.length - 1]; }
+// arc (courbe) entre deux points, tracé jusqu'à k
+const arcPts = (a, b, k, bend=0.25) => { const mxl = (a[0] + b[0])/2, myl = (a[1] + b[1])/2, dx = b[0] - a[0], dy = b[1] - a[1];
+  const c = [mxl - dy*bend, myl + dx*bend + Math.abs(dx)*0.12]; return d3.range(0, 41).map(i => i/40*k).map(q => [(1-q)**2*a[0] + 2*(1-q)*q*c[0] + q*q*b[0], (1-q)**2*a[1] + 2*(1-q)*q*c[1] + q*q*b[1]]); };
+function flight(a, b, k, alpha, color=Y1, w=8, bend=0.25){ if (k <= 0 || alpha <= 0) return; const e = lineLL(arcPts(a, b, k, bend), alpha, color, w, [20, 12]);
+  if (e && k < 1){ pulse(e[0], e[1], 0, alpha*0.8, color, 40); pin(e[0], e[1], alpha, color, 13); } }
+function photo(img, t, t0, t1, cy=1010, w=640, h=800){
+  if (!img) return 0; const a = EB(prog(t, t0, t0 + 0.35)), out = E(prog(t, t1, t1 + 0.3)); if (a <= 0 || out >= 1) return 0;
+  const kb = 1.04 + 0.08*prog(t, t0, t1 + 0.3), ar = img.width/img.height, dw = Math.max(w, h*ar)*kb, dh = dw/ar;
+  ctx.save(); ctx.translate(W/2, cy + 80*out); ctx.scale(a*(1 - 0.3*out), a*(1 - 0.3*out)); ctx.globalAlpha = 1 - out;
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16; ctx.fillRect(-w/2 - 12, -h/2 - 12, w + 24, h + 24); ctx.shadowColor = "transparent";
+  ctx.beginPath(); ctx.rect(-w/2, -h/2, w, h); ctx.clip(); ctx.drawImage(img, -dw/2, -dh/2, dw, dh); ctx.restore();
+  const fl = t >= t0 ? Math.exp(-(t - t0)*9) : 0; if (fl > 0.02){ ctx.save(); ctx.fillStyle = `rgba(255,255,255,${0.45*fl})`; ctx.fillRect(-60, -60, W + 120, H + 120); ctx.restore(); }
+  return 1 - out;
+}
+// ------------------------------------------------------------------ données
+let BB = [], CANDLES = [];
+function setup(){
+  BB = GEO.b.map(r => [d3.min(r, p => p[0]), d3.min(r, p => p[1]), d3.max(r, p => p[0]), d3.max(r, p => p[1])]);
+  const ring = GEO.c.TWN.reduce((a, b) => a.length > b.length ? a : b), rnd = d3.randomLcg(4);
+  while (CANDLES.length < 40){ const p = [120.1 + rnd()*1.9, 22.0 + rnd()*3.3]; if (d3.polygonContains(ring, p)) CANDLES.push({p, t: S("l17") + rnd()*1.6}); }
+}
+function vehicle(img, pts, k, h, a){ if (!img || a <= 0) return; const e = P(...along(pts, k)), b = P(...along(pts, Math.min(1, k + 0.02))), w = h*img.width/img.height, flip = b[0] < e[0] - 0.5 ? -1 : 1;
+  ctx.save(); ctx.globalAlpha = Math.min(a, 1); ctx.translate(e[0], e[1] - h*0.3); ctx.scale(flip*a, a); ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10;
+  ctx.drawImage(img, -w/2, -h/2, w, h); ctx.restore(); return e; }
+function city(p, a, t, color=Y1, r=18){ if (a <= 0) return; const [x, y] = P(...p); pulse(x, y, t, a, color, 120); pin(x, y, EB(clamp(a*1.4)), color, r); }
+function glow(rings, a){ if (a <= 0) return; ctx.save(); path(rings); ctx.fillStyle = `rgba(255,214,10,${0.16*a})`; ctx.fill(); ctx.lineJoin = "round"; ctx.lineWidth = 5; ctx.strokeStyle = `rgba(255,255,255,${0.85*a})`; ctx.stroke(); ctx.restore(); }
+function renderMap(t){
+  CAM = camera(t);
+  ctx.fillStyle = "#0b1622"; ctx.fillRect(-60, -60, W + 120, H + 120);
+  drawTiles();
+  ctx.save(); ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 1.5; ctx.lineJoin = "round";
+  GEO.b.forEach((r, i) => { if (inView(BB[i])){ path([r]); ctx.stroke(); } }); ctx.restore();
+  // ---- drapeaux
+  flagFill("TWN", "tw", EO(prog(t, 2.0, 2.6))*(1 - prog(t, S("l03") + 0.2, S("l03") + 0.6)) + EO(prog(t, T_TW - 0.1, T_TW + 0.4))*(1 - prog(t, S("l13") + 0.2, S("l13") + 0.6)) + EO(prog(t, S("l16") + 0.5, S("l16") + 1.0)));
+  flagFill("MMR", "mm", EO(prog(t, S("l04") + 0.5, S("l04") + 1.0))*(1 - prog(t, M("l05", 0.3), M("l05", 0.4))));
+  flagFill("JPN", "jp", EO(prog(t, M("l05", 0.38), M("l05", 0.5)))*(1 - prog(t, S("l06") + 0.1, S("l06") + 0.5)));
+  glow(GEO.c.CHN, prog(t, M("l08", 0.4), M("l08", 0.6))*(1 - prog(t, CL.a, CL.a + 0.3)));
+  // ---- tout le voyage (titre)
+  const jA = prog(t, S("l03") + 0.3, S("l03") + 0.5)*(1 - prog(t, S("l04") - 0.1, S("l04") + 0.3));
+  if (jA > 0){ lineLL(upto(JOURNEY, E(prog(t, S("l03") + 0.4, T_TITLE + 0.3))), jA, Y1, 7, [18, 12]); city(MYIT, jA, t, "#fff", 14); city(TAIPEI, jA*prog(t, T_TITLE, T_TITLE + 0.3), t); }
+  // ---- jungle birmane / armée japonaise / attaque chinoise
+  city(HUKAWNG, prog(t, S("l04") + 0.7, S("l04") + 1.0)*(1 - prog(t, M("l05", 0.3), M("l05", 0.4))), t);
+  const jpA = prog(t, M("l05", 0.42), M("l05", 0.5))*(1 - prog(t, S("l06"), S("l06") + 0.4));
+  if (jpA > 0) arrow(R_JAPAN, E(prog(t, M("l05", 0.45), M("l05", 0.85))), jpA, RED, 10);
+  const atA = prog(t, S("l06") + 0.3, S("l06") + 0.6)*(1 - prog(t, Ed("l07"), Ed("l07") + 0.4));
+  if (atA > 0){ arrow(R_ATTACK, E(prog(t, S("l06") + 0.5, M("l06", 0.55))), atA, Y1, 11); city(MYIT, atA*prog(t, M("l06", 0.5), M("l06", 0.6)), t, RED, 16); }
+  // ---- la marche jusqu'à Canton
+  const mA = prog(t, M("l08", 0.05), M("l08", 0.15))*(1 - prog(t, M("l11", 0.3), M("l11", 0.5)));
+  if (mA > 0){ const k = marchK(t), pts = upto(R_MARCH, k); lineLL(pts, mA, Y1, 9, [16, 10]); const [x, y] = P(...along(R_MARCH, k)); pulse(x, y, t, mA*(k < 1 ? 1 : 0), Y1, 70); pin(x, y, mA, Y1, 15);
+    city(CANTON, mA*prog(t, M("l10", 0.6), M("l10", 0.7)), t); }
+  // ---- le bateau vers Taïwan
+  const sA = prog(t, SHIP[0] - 0.3, SHIP[0])*(1 - prog(t, S("l12") + 0.4, S("l12") + 0.9));
+  if (sA > 0){ const k = E(prog(t, ...SHIP)); lineLL(upto(R_SHIP, k), sA, "#fff", 7, [18, 14]); vehicle(PH.ship, R_SHIP, k, 110, sA*(1 - prog(t, SHIP[1] + 0.2, SHIP[1] + 0.6))); city(KAOH, sA*prog(t, SHIP[1] - 0.1, SHIP[1]), t); }
+  // ---- zoo de Taipei, parade de 1986
+  city(TAIPEI, prog(t, S("l13") + 0.5, S("l13") + 0.8)*(1 - prog(t, S("l15") + 0.2, S("l15") + 0.5)), t);
+  const pA = prog(t, S("l15") + 0.4, S("l15") + 0.7)*(1 - prog(t, Ed("l15"), Ed("l15") + 0.4));
+  if (pA > 0){ const k = E(prog(t, S("l15") + 0.6, Ed("l15") - 0.3)); lineLL(upto(R_PARADE, k), pA, Y1, 14, [18, 12]);
+    const e = along(R_PARADE, k); city(e, pA, t, RED, 16);
+    for (let i = 0; i < 14; i++){ const q = i/13, pp = along(R_PARADE, q), [x, y] = P(pp[0] + (i % 2 ? 0.006 : -0.006), pp[1]); if (q > k + 0.02) continue; ctx.save(); ctx.globalAlpha = pA*0.9; ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.fill(); ctx.restore(); } }
+  // ---- 2003 : hommage dans tout Taïwan
+  const cA = prog(t, S("l17"), S("l17") + 0.3)*(1 - prog(t, S("l18") + 0.5, S("l18") + 1.0));
+  if (cA > 0) CANDLES.forEach(c => { const a = EB(prog(t, c.t, c.t + 0.3))*cA; if (a <= 0) return; const [x, y] = P(...c.p); pulse(x, y, t + c.t, a*0.6, Y1, 50); pin(x, y, a, Y1, 8); });
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.45, W/2, H/2, H*0.85); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, `rgba(0,0,0,${0.32 + 0.25*prog(t, S("l16"), S("l16") + 0.6)})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  const tg = ctx.createLinearGradient(0, 0, 0, 560); tg.addColorStop(0, "rgba(0,0,0,.38)"); tg.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 560);
+}
+// flou de mouvement pendant les balayages / zooms rapides
+function motionBlur(t){
+  const a = camera(t), b = camera(t + 1/30), s = 2**a.z;
+  let dx = (b.cx - a.cx)*s, dy = (b.cy - a.cy)*s; const dz = b.z - a.z, sp = Math.hypot(dx, dy);
+  if ((sp < 5 && Math.abs(dz) < 0.012) || sp > 2000) return;
+  const cap = Math.min(1, 140/Math.max(sp, 1)); dx *= cap; dy *= cap;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, W, H); bctx.drawImage(cv, 0, 0);
+  const N = 5, st = clamp(Math.max(sp/60, Math.abs(dz)/0.08));
+  for (let i = 1; i <= N; i++){ const q = i/N, sc = 2**(-clamp(dz, -0.12, 0.12)*q*1.2);
+    ctx.globalAlpha = 0.2*st; ctx.save(); ctx.translate(W/2 - dx*q*0.9, H/2 - dy*q*0.9); ctx.scale(sc, sc); ctx.drawImage(BUF, -W/2, -H/2); ctx.restore(); }
+  ctx.restore();
+}
+// ------------------------------------------------------------------ sous-titres + frise
+const CAPS = TL.vo.filter(v => !["l01", "l02", "l03", "l18"].includes(v.id)).map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){ const o = {hi:/\*/.test(w), w:w.replace(/\*/g, "")}; const p = words[words.length-1];
+    if (p && (/^[:;!?…%]$/.test(o.w) || (/^\d+$/.test(p.w) && /^\d{3}/.test(o.w)))) { p.w += " " + o.w; p.hi = p.hi || o.hi; } else words.push(o); }
+  const groups = []; let cur = [];
+  for (const w of words){ const len = cur.map(x => x.w).join(" ").length + w.w.length + 1;
+    if (cur.length && len > 14){ groups.push(cur); cur = []; } cur.push(w); if (/[.,:!?…]$/.test(w.w)){ groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const tot = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4); let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4; const s = v.start + (v.end - v.start)*acc/tot; acc += l; return {g, s, e:v.start + (v.end - v.start)*acc/tot}; });
+}).flat();
+function yearAt(t){ let v = null; for (const [t0, t1, y0, y1] of TL.ticker) if (t >= t0) v = lerp(y0, y1, E(prog(t, t0, t1))); return v; }
+const TWIN = [[S("l04"), Ed("l04") + 0.2], [S("l08"), CL.a], [S("l11"), Ed("l11") + 0.2], [S("l13"), Ed("l13") + 0.2], [S("l15"), Ed("l15") + 0.2], [S("l16"), M("l16", 0.45)]];
+const HITS = TL.sfx.filter(s => ["impact", "hit"].includes(s.name)).map(s => [s.t, s.name === "hit" ? 0.035 : 0.06, s.name === "hit" ? 5 : 10]);
+HITS.push([0.03, 0.08, 12], [2.2, 0.05, 6]);
+let PH = {}, CLIPF = {};
+const inClip = t => t > CL.a + 0.35 && t < CL.b - 0.35;
+const prepBase = window.prep;
+window.prep = async t => {
+  const jobs = [inClip(t) ? Promise.resolve() : prepBase(t)];
+  if (t >= CL.a && t < CL.b){ const f = Math.min(Math.floor((t - CL.a)*30), 149), key = "c" + f;
+    if (!CLIPF[key]){ for (const k of Object.keys(CLIPF)) delete CLIPF[k];
+      jobs.push(new Promise(r => { const i = new Image(); i.onload = () => { CLIPF[key] = i; r(); }; i.onerror = r; i.src = `../lw3d/clip/${String(f).padStart(4, "0")}.jpg`; })); } }
+  await Promise.all(jobs);
+};
+function clipAlpha(t){ return Math.min(EO(prog(t, CL.a, CL.a + 0.35)), 1 - prog(t, CL.b - 0.35, CL.b)); }
+function drawClip(t){
+  if (t < CL.a || t >= CL.b) return; const f = Math.min(Math.floor((t - CL.a)*30), 149), img = CLIPF["c" + f]; if (!img) return;
+  const a = clipAlpha(t), z = 1 + 0.12*(1 - EO(prog(t, CL.a, CL.a + 0.35)));
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(W/2, H/2); ctx.scale(z, z); ctx.drawImage(img, -W/2, -H/2, W, H); ctx.restore();
+  const fl = Math.exp(-(t - CL.a)*9); if (fl > 0.02){ ctx.save(); ctx.fillStyle = `rgba(255,255,255,${0.4*fl})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+}
+function render(t){
+  let p = 0, sx = 0, sy = 0;
+  for (const [ti, amp, sh] of HITS) if (t >= ti){ const d = t - ti; p += amp*Math.exp(-d*8); sx += sh*Math.exp(-d*7)*Math.sin(d*50); sy += sh*0.7*Math.exp(-d*7)*Math.cos(d*43); }
+  ctx.save(); ctx.translate(W/2 + sx, H/2 + sy); ctx.scale(1.04 + p, 1.04 + p); ctx.translate(-W/2, -H/2);
+  const ca = clipAlpha(t)*(t >= CL.a && t < CL.b ? 1 : 0);
+  if (ca < 0.999){ renderMap(t); motionBlur(t); } else { ctx.fillStyle = "#000"; ctx.fillRect(-60, -60, W + 120, H + 120); }
+  drawClip(t);
+  overlay(t, 1 - ca);
+  ctx.restore();
+  const fl = Math.exp(-t*7); if (fl > 0.02){ ctx.fillStyle = `rgba(255,255,255,${0.6*fl})`; ctx.fillRect(0, 0, W, H); }
+}
+function overlay(t, mapA){
+  elephantIntro(t);
+  // ---- photos au centre (~2-3 s chacune)
+  const L = [780, 585], Pt = [600, 760];
+  photo(PH.p01, t, T_PH1 - 0.05, M("l02", 0.85), 1010, ...L);
+  photo(PH.p03, t, T_JUNGLE, Ed("l04") + 0.25, 1010, ...L);
+  photo(PH.p04, t, P5[0], M("l05", 0.36), 1010, ...Pt);
+  photo(PH.p05, t, P6[0], P6[1] - 0.1, 1010, ...L);
+  photo(PH.p06, t, P6[1], Ed("l06") + 0.15, 1010, ...Pt);
+  photo(PH.p07, t, P7[0], P7[1] - 0.1, 1010, ...L);
+  photo(PH.p08, t, P7[1], P7[2] - 0.1, 1010, ...L);
+  photo(PH.p09, t, P7[2], Ed("l07") + 0.2, 1010, ...L);
+  photo(PH.p10, t, T_PAINT, CL.a + 0.1, 1010, ...L);
+  photo(PH.p11, t, T_CANTON, Ed("l10") + 0.3, 1010, ...L);
+  photo(PH.p12, t, T_GEN, SHIP[0] - 0.1, 1010, ...Pt);
+  photo(PH.p14, t, T_PARADE, Ed("l12") + 0.1, 1010, ...L);
+  photo(PH.p16, t, P14[0], P14[1] - 0.1, 1010, ...L);
+  photo(PH.p15, t, P14[1], Ed("l14") + 0.2, 1010, ...L);
+  photo(PH.p18, t, T_PH18, Ed("l16") + 0.25, 1010, ...L);
+  // ---- accroche (sans sous-titres) et appel final
+  kin("2003", W/2, 480, t, T_2003, {size:190, color:Y1, out:T_PH1 - 0.2});
+  kin("TAÏWAN EN DEUIL", W/2, 480, t, T_PH1 - 0.1, {size:100, out:T_86 - 0.15});
+  kin("86 ANS", W/2, 480, t, T_86, {size:170, color:Y1, out:Ed("l01") + 0.3});
+  kin("LIN WANG", W/2, 480, t, T_NAME, {size:150, color:Y1, out:T_WAR - 0.15});
+  kin("LA GUERRE", W/2, 480, t, T_WAR, {size:150, color:RED, out:Ed("l02") + 0.3});
+  const hd = EB(prog(t, T_TITLE, T_TITLE + 0.3))*(1 - prog(t, S("l04") - 0.1, S("l04") + 0.25));
+  if (hd > 0){ txt("L'ÉLÉPHANT", W/2, 520, {size:fit("L'ÉLÉPHANT", 130, W - 2*MARGIN), alpha:Math.min(hd, 1), stroke:16, scale:hd}); txt("SOLDAT", W/2, 670, {size:180, color:Y1, alpha:Math.min(hd, 1), stroke:20, scale:hd, glow:"rgba(255,214,10,.45)"}); }
+  if (t > S("l18")){ const o1 = M("l18", 0.55);
+    kin("ET TOI ?", W/2, 470, t, S("l18") + 0.1, {size:130, color:Y1, out:o1}); kin("TU CONNAISSAIS", W/2, 610, t, S("l18") + 0.6, {size:100, out:o1}); kin("LIN WANG ?", W/2, 730, t, S("l18") + 0.9, {size:130, color:Y1, out:o1});
+    const a = EB(prog(t, o1 + 0.2, o1 + 0.6)); txt("DIS-LE", W/2, 560, {size:120, color:Y1, scale:a, alpha:Math.min(a, 1), stroke:16});
+    const b = EB(prog(t, o1 + 0.4, o1 + 0.8)); txt("EN COMMENTAIRE !", W/2, 680, {size:fit("EN COMMENTAIRE !", 84, W - 2*MARGIN), scale:b, alpha:Math.min(b, 1), stroke:13}); }
+  // ---- frise des années
+  const yv = yearAt(t), ya = mapA*(yv === null ? 0 : d3.max(TWIN, ([a, b]) => prog(t, a - 0.1, a + 0.2)*(1 - prog(t, b, b + 0.3))));
+  if (ya > 0){ const base = Math.round(yv);
+    for (let j = -1; j <= 1; j++){ const v = base + j, x = W/2 + (v - yv)*280; if (x < MARGIN || x > W - MARGIN) continue; const act = clamp(1 - Math.abs(v - yv));
+      txt(String(v), x, 450, {size:44 + act*40, color:act > 0.5 ? Y1 : "#fff", alpha:Math.min(ya, 1)*(0.35 + 0.65*act)*clamp(Math.min(x - MARGIN, W - MARGIN - x)/80), stroke:9, glow:act > 0.5 ? "rgba(255,214,10,.45)" : null}); } }
+  // ---- sous-titres
+  let cur = null; for (const g of CAPS) if (g.s <= t) cur = g;
+  if (cur && t <= cur.e + 0.25){ const a = EB(prog(t, cur.s, cur.s + 0.15));
+    const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.replace(/[.,]+$/, "").toUpperCase(), c:w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 300, {size:80, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:16}); }
+}
+// éléphant (PNG) + barrissement : il entre en se balançant, lève la trompe, puis sort
+function elephantIntro(t){
+  const img = PH.eleph; if (!img || t > 2.4) return;
+  const a = EB(prog(t, 0, 0.45)), out = E(prog(t, 1.75, 2.35)), sway = Math.sin(t*6)*0.03;
+  const h = 640, w = h*img.width/img.height;
+  ctx.save(); ctx.translate(W/2 + Math.sin(t*9)*8*(1 - out) - out*950, 1400 + out*80); ctx.rotate(sway); ctx.scale(a, a);
+  ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18; ctx.drawImage(img, -w/2, -h, w, h); ctx.restore();
+}
+function outlined(img, r=9){ const c = document.createElement("canvas"); c.width = img.width + 2*r; c.height = img.height + 2*r; const g = c.getContext("2d");
+  for (let a = 0; a < 32; a++) g.drawImage(img, r + Math.cos(a/32*6.283)*r, r + Math.sin(a/32*6.283)*r);
+  g.globalCompositeOperation = "source-in"; g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.globalCompositeOperation = "source-over"; g.drawImage(img, r, r); return c; }
+window.renderAt = render;
+const load = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { FLAG[k] = i; r(); }; i.onerror = r; i.src = src; });
+const img = (k, src, f) => new Promise(r => { const i = new Image(); i.onload = () => { PH[k] = f ? f(i) : i; r(); }; i.onerror = r; i.src = src; });
+window.ready = Promise.all([fetch("geo.json").then(r => r.json()).then(j => { GEO = j; setup(); }),
+  ...["mm", "jp", "tw"].map(f => load(f, `flags/${f}.svg`)),
+  img("eleph", "assets/elephant.png", outlined), img("ship", "assets/13.png"), img("p03", "assets/03.png"), img("p01", "assets/01.jpg"), img("p04", "assets/04.jpg"), img("p05", "assets/05.jpg"), img("p06", "assets/06.jpg"), img("p07", "assets/07.jpg"), img("p08", "assets/08.jpg"), img("p09", "assets/09.jpg"), img("p10", "assets/10.jpg"), img("p11", "assets/11.jpg"), img("p12", "assets/12.jpg"), img("p14", "assets/14.png"), img("p15", "assets/15.jpg"), img("p16", "assets/16.jpg"), img("p18", "assets/18.jpg"),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M")]).then(() => true);
+</script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+{
+ "vo": [
+  {
+   "id": "l01",
+   "start": 1.8,
+   "end": 7.362,
+   "cap": "En *2003*, Taïwan est en deuil… pour un *éléphant*. De *86 ans* !"
+  },
+  {
+   "id": "l02",
+   "start": 7.812,
+   "end": 12.836,
+   "cap": "Il s'appelait *Lin Wang*. Et avant de manger des cacahuètes au zoo… il avait fait la *guerre*."
+  },
+  {
+   "id": "l03",
+   "start": 13.286,
+   "end": 16.001,
+   "cap": "Voici l'incroyable histoire de l'*éléphant soldat* !"
+  },
+  {
+   "id": "l04",
+   "start": 16.801,
+   "end": 19.689,
+   "cap": "*1943*. La jungle de *Birmanie*."
+  },
+  {
+   "id": "l05",
+   "start": 20.139,
+   "end": 27.261,
+   "cap": "L'armée *japonaise* y utilise des éléphants… comme des *camions*. Des camions de *4 tonnes*, qui mangent *150 kilos* par jour."
+  },
+  {
+   "id": "l06",
+   "start": 27.711,
+   "end": 34.115,
+   "cap": "Mais les troupes *chinoises* attaquent… et repartent avec *une douzaine* d'éléphants ! Parmi eux : un *jeune mâle*. Notre héros."
+  },
+  {
+   "id": "l07",
+   "start": 34.565,
+   "end": 42.567,
+   "cap": "Nouvelle armée, nouveau boulot : il porte des *munitions*, tire des *canons*… et ouvre des *routes* en poussant des arbres entiers."
+  },
+  {
+   "id": "l08",
+   "start": 43.267,
+   "end": 48.261,
+   "cap": "Quand la guerre se termine, il faut rentrer en *Chine*. *À pied*. À travers les *montagnes*."
+  },
+  {
+   "id": "l09",
+   "start": 48.861,
+   "end": 51.983,
+   "cap": "Le voyage est *terrible* : plusieurs éléphants ne survivent pas."
+  },
+  {
+   "id": "l10",
+   "start": 52.433,
+   "end": 56.208,
+   "cap": "Mais notre jeune mâle *tient bon*… et arrive à *Canton*, dans le sud de la Chine."
+  },
+  {
+   "id": "l11",
+   "start": 56.658,
+   "end": 63.386,
+   "cap": "*1947* : un *général chinois* a une idée. Mettre un éléphant sur un *bateau*… direction *Taïwan* !"
+  },
+  {
+   "id": "l12",
+   "start": 63.836,
+   "end": 69.237,
+   "cap": "Là-bas, il défile dans les *parades militaires*, en vrai soldat… et donne un coup de trompe sur les *chantiers*."
+  },
+  {
+   "id": "l13",
+   "start": 69.937,
+   "end": 76.199,
+   "cap": "En *1954*, il prend sa retraite au *zoo de Taipei*. Et on lui donne enfin un nom : *Lin Wang*."
+  },
+  {
+   "id": "l14",
+   "start": 76.649,
+   "end": 81.83,
+   "cap": "Il devient la *star* de l'île ! Des générations d'enfants l'appellent… « *grand-père Lin Wang* »."
+  },
+  {
+   "id": "l15",
+   "start": 82.28,
+   "end": 90.05,
+   "cap": "En *1986*, le zoo déménage. Et Lin Wang traverse la ville en *parade*, comme une *rock star*, devant des *milliers* d'habitants !"
+  },
+  {
+   "id": "l16",
+   "start": 90.85,
+   "end": 96.761,
+   "cap": "Il s'éteint en *2003*, à *86 ans*. L'éléphant le *plus âgé* jamais connu en captivité."
+  },
+  {
+   "id": "l17",
+   "start": 97.211,
+   "end": 99.515,
+   "cap": "Des *milliers* de Taïwanais viennent lui dire *adieu*."
+  },
+  {
+   "id": "l18",
+   "start": 100.315,
+   "end": 103.757,
+   "cap": "Et toi, tu connaissais l'histoire de Lin Wang ? Dis-le en commentaire !"
+  }
+ ],
+ "cue": {},
+ "ticker": [
+  [
+   16.801,
+   16.811,
+   1943,
+   1943,
+   1
+  ],
+  [
+   43.267,
+   43.867000000000004,
+   1943,
+   1945,
+   1
+  ],
+  [
+   56.658,
+   57.258,
+   1945,
+   1947,
+   1
+  ],
+  [
+   69.937,
+   70.737,
+   1947,
+   1954,
+   1
+  ],
+  [
+   82.28,
+   83.28,
+   1954,
+   1986,
+   2
+  ],
+  [
+   90.85,
+   91.64999999999999,
+   1986,
+   2003,
+   1
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "whoosh",
+   "t": 1.25,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 2.467,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 4.581,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 6.528,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 9.219,
+   "gain": 0.8
+  },
+  {
+   "name": "hit",
+   "t": 12.334,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 13.086,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 14.915,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh",
+   "t": 16.401,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 18.389,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 21.207,
+   "gain": 0.8
+  },
+  {
+   "name": "hit",
+   "t": 23.13,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 25.124,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 27.511,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 29.632,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 31.425,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 33.154,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 36.966,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 38.566,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 40.566,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 42.967,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 43.567,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 43.867,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 46.863,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 48.361,
+   "gain": 0.8
+  },
+  {
+   "name": "down",
+   "t": 50.266,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 52.233,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 55.075,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 56.958,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 57.258,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 58.676,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 60.56,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 62.848,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 65.456,
+   "gain": 0.8
+  },
+  {
+   "name": "hit",
+   "t": 68.427,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 69.637,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 70.051,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 70.28,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 70.508,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 70.737,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 75.26,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 77.426,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 80.017,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 82.08,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 82.343,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 82.53,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 82.718,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 82.905,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 83.093,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 83.28,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 86.942,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 90.897,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 91.038,
+   "gain": 0.5
+  },
+  {
+   "name": "down",
+   "t": 91.15,
+   "gain": 0.6
+  },
+  {
+   "name": "tick",
+   "t": 91.179,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 91.321,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 91.462,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 91.603,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 93.805,
+   "gain": 0.7
+  },
+  {
+   "name": "shimmer",
+   "t": 97.411,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 100.515,
+   "gain": 0.7
+  }
+ ],
+ "duration": 105.357
+}
