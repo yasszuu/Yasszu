@@ -45,3 +45,10 @@
   il faut une image pour l'illustrer. Avant chaque vidéo, envoyer à l'utilisateur une **liste d'images numérotée, calée réplique par réplique**
   (≈ 1 image toutes les 5-8 s hors trajets : photos d'archive, scènes, objets, PNG détourés), avec pour chacune le nom de fichier attendu
   (`01-xxx.jpg`…), ce qu'elle doit montrer et le moment où elle apparaît. Présentation : photo au centre (~2-3 s) ou PNG qui entre en mouvement.
+
+## Carte satellite (qualité au zoom)
+- Toute la carte utilise maintenant de l'imagerie **Sentinel-2** réelle (AWS `sentinel-cogs`, 10 m/px) au lieu de la texture Natural Earth (~1 km/px, floue au zoom).
+- `outils-satellite/s2region.py` : mosaïque d'une grande région (aperçus 160 m, médiane de 3 scènes claires en saison sèche) → `fillgaps.py` pour boucher les jonctions UTM.
+- `outils-satellite/s2mosaic.py` : couche fine sur une zone de zoom (40 m ou 20 m) — ex. Taïwan, Taipei.
+- `outils-satellite/sat.py` : couches empilées (large → fine), chacune étalonnée en luminosité sur la précédente, fondu aux bords, appliquées seulement sur les terres ; branché dans `mktiles.py`.
+- On peut donc zoomer jusqu'à z12–13 (quartiers d'une ville) sans flou. Les tuiles des serveurs EOX/ESRI/Google sont bloquées dans l'environnement : passer par Sentinel-2 sur AWS.

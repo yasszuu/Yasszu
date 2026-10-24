@@ -15,7 +15,7 @@ html,body{margin:0;background:#0b1622}
 <script src="../node_modules/d3/dist/d3.min.js"></script>
 <script>
 const TL = __TL__, DUR = TL.duration;
-const W = 1080, H = 1920, TS = 256, ZMIN = 3, ZMAX = 10, MARGIN = 150;      // marge latérale des textes (zone sûre TikTok)
+const W = 1080, H = 1920, TS = 256, ZMIN = 3, ZMAX = 13, MARGIN = 150;      // marge latérale des textes (zone sûre TikTok)
 const cv = document.getElementById("c"), ctx = cv.getContext("2d");
 const BUF = document.createElement("canvas"); BUF.width = W; BUF.height = H; const bctx = BUF.getContext("2d");
 const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a)*k;
@@ -76,10 +76,10 @@ const KEYS = [
   [SHIP[1], view(119.8, 22.9, 6.1), LIN],
   [Ed("l11") + 0.2, view(120.6, 23.2, 8.2), E],
   [Ed("l12"), view(120.6, 23.3, 8.5), LIN],
-  [S("l13") + 0.6, view(...TAIPEI, 9.2), EX],                 // zoo de Taipei
-  [Ed("l14"), view(121.53, 25.04, 9.5), LIN],
-  [S("l15") + 0.5, view(121.552, 25.035, 10.1), EX],             // le déménagement, en parade
-  [Ed("l15"), view(121.556, 25.03, 10.3), LIN],
+  [S("l13") + 0.6, view(...TAIPEI, 10.6), EX],                 // zoo de Taipei
+  [Ed("l14"), view(121.535, 25.045, 11.0), LIN],
+  [S("l15") + 0.5, view(121.552, 25.035, 12.5), EX],             // le déménagement, en parade
+  [Ed("l15"), view(121.556, 25.03, 12.75), LIN],
   [S("l16") + 0.6, view(120.95, 23.75, 8.35), EX],             // 2003 : tout Taïwan
   [Ed("l17"), view(120.95, 23.75, 8.55), LIN],
   [DUR, view(120.95, 23.8, 8.75), LIN],
