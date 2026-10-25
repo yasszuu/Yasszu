@@ -9,7 +9,7 @@ from rasterio.transform import from_origin
 from scipy.ndimage import distance_transform_edt
 B = "https://sentinel-cogs.s3.us-west-2.amazonaws.com"
 out, lon0, lon1, lat0, lat1, pxd, ovl = sys.argv[1], *map(float, sys.argv[2:7]), int(sys.argv[7])
-NS = 3; os.makedirs('cache', exist_ok=True)
+NS = int(os.environ.get('NS', 3)); CMAX = float(os.environ.get('CMAX', 25)); USE_SCL = os.environ.get('SCL') == '1'; os.makedirs('cache', exist_ok=True)
 import requests
 TLS = threading.local()
 def get(u):
@@ -22,18 +22,18 @@ def get(u):
             time.sleep(2**k)
 def ls(prefix): return re.findall(r"<Prefix>([^<]+)</Prefix>", get(f"{B}/?list-type=2&prefix={prefix}&delimiter=/").decode())[1:]
 def scenes(t):
-    cfn = f'cache/{t}.json'
+    cfn = f'cache/{t}_{os.environ.get("MONTHS", "")}_{NS}_{CMAX}.json'
     if os.path.exists(cfn): return json.load(open(cfn))
     z, b, sq = t[:2], t[2], t[3:]; res = []
     for y in ("2023", "2024"):
-        for mo in ("1", "2", "3", "11", "12"):
+        for mo in os.environ.get("MONTHS", "1,2,3,11,12").split(","):
             for s in ls(f"sentinel-s2-l2a-cogs/{z}/{b}/{sq}/{y}/{mo}/"):
                 sid = s.rstrip('/').split('/')[-1]
                 try: p = json.loads(get(f"{B}/{s}{sid}.json"))['properties']
                 except Exception: continue
                 nd = p.get('s2:nodata_pixel_percentage', 0)
                 if nd < 40: res.append((p.get('eo:cloud_cover', 100) + nd*0.05, s))
-    res.sort(); r = [s for c, s in res[:NS] if c < 25]; json.dump(r, open(cfn, 'w')); return r
+    res.sort(); r = [s for c, s in res[:NS] if c < CMAX]; json.dump(r, open(cfn, 'w')); return r
 m = mgrs.MGRS(); tiles = sorted({m.toMGRS(la, lo, MGRSPrecision=0) for la in np.arange(lat0 + 0.1, lat1, 0.2) for lo in np.arange(lon0 + 0.1, lon1, 0.2)})
 exist = set()
 for zb in sorted({t[:3] for t in tiles}): exist |= {zb + p.rstrip("/").split("/")[-1] for p in ls(f"sentinel-s2-l2a-cogs/{zb[:2]}/{zb[2]}/")}
@@ -47,11 +47,16 @@ def work(t):
     arrs = []
     for s in ss:
         try:
-            with rasterio.open(f"{B}/{s}TCI.tif", overview_level=ovl) as src: arrs.append(src.read()); tr, crs = src.transform, src.crs
+            with rasterio.open(f"{B}/{s}TCI.tif", overview_level=ovl) as src: a = src.read(); tr, crs = src.transform, src.crs
+            if USE_SCL:
+                with rasterio.open(f"{B}/{s}SCL.tif", overview_level=ovl - 1) as src: c = src.read(1)
+                if c.shape != a.shape[1:]: c = np.asarray(__import__('PIL.Image').Image.fromarray(c).resize(a.shape[:0:-1], 0))
+                a = a*np.isin(c, [2, 4, 5, 6, 7, 11])[None]
+            arrs.append(a)
         except Exception: pass
     if not arrs: return
     st = np.stack(arrs).astype(np.float32); st[st == 0] = np.nan
-    if len(arrs) >= 3:
+    if len(arrs) >= 3 and not USE_SCL:
         br = np.nanmean(st, 1); med = np.nanmedian(br, 0); st[np.broadcast_to((br > med + 25)[:, None], st.shape)] = np.nan
     with np.errstate(all='ignore'): img = np.nanmedian(st, 0)
     ok = ~np.isnan(img[0]); img = np.nan_to_num(img)
