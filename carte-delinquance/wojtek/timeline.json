@@ -1,0 +1,441 @@
+{
+ "vo": [
+  {
+   "id": "w01",
+   "start": 1.7,
+   "end": 5.625,
+   "cap": "En *1944*, un ours a combattu dans l'*armée polonaise*."
+  },
+  {
+   "id": "w02",
+   "start": 6.075,
+   "end": 9.6,
+   "cap": "Il avait un *grade*, des *rations*… et il buvait de la *bière*."
+  },
+  {
+   "id": "w03",
+   "start": 10.05,
+   "end": 13.628,
+   "cap": "Voici l'incroyable histoire de *Wojtek*, l'ours soldat."
+  },
+  {
+   "id": "w04",
+   "start": 14.428,
+   "end": 16.878,
+   "cap": "Nous sommes en *1942*, en *Iran*."
+  },
+  {
+   "id": "w05",
+   "start": 17.328,
+   "end": 22.506,
+   "cap": "Des soldats polonais, libérés des *camps soviétiques*, traversent le pays pour rejoindre les *Alliés*."
+  },
+  {
+   "id": "w06",
+   "start": 22.956,
+   "end": 30.986,
+   "cap": "Près de *Hamadan*, ils croisent un jeune garçon qui porte un sac. Dedans : un *ourson brun*, dont la mère a été tuée par des chasseurs."
+  },
+  {
+   "id": "w07",
+   "start": 31.436,
+   "end": 38.647,
+   "cap": "Les soldats l'échangent contre des *conserves*, du *chocolat* et un *couteau*. Ils l'appellent *Wojtek* : « le guerrier joyeux »."
+  },
+  {
+   "id": "w08",
+   "start": 39.097,
+   "end": 45.463,
+   "cap": "Wojtek grandit avec eux. Il dort sous leurs tentes, *lutte* avec les soldats… et mange même leurs *cigarettes*."
+  },
+  {
+   "id": "w09",
+   "start": 46.063,
+   "end": 51.402,
+   "cap": "Avec son unité, il traverse l'*Irak*, la *Syrie*, la *Palestine*, puis l'*Égypte*."
+  },
+  {
+   "id": "w10",
+   "start": 52.002,
+   "end": 58.136,
+   "cap": "Mais en *1944*, l'armée doit embarquer pour l'*Italie*… et les animaux sont *interdits* sur les navires."
+  },
+  {
+   "id": "w11",
+   "start": 58.586,
+   "end": 63.674,
+   "cap": "Alors les soldats trouvent une solution : ils enrôlent officiellement Wojtek comme *soldat*."
+  },
+  {
+   "id": "w12",
+   "start": 64.374,
+   "end": 69.775,
+   "cap": "En *mai 1944*, c'est la bataille du *Mont-Cassin*, l'une des plus violentes de la guerre."
+  },
+  {
+   "id": "w13",
+   "start": 70.225,
+   "end": 75.103,
+   "cap": "Selon ses camarades, Wojtek aide à porter des *caisses d'obus* de près de *45 kilos*."
+  },
+  {
+   "id": "w14",
+   "start": 75.553,
+   "end": 81.371,
+   "cap": "Son unité en fait son *emblème* : un ours qui porte un obus. Il est même promu *caporal*."
+  },
+  {
+   "id": "w15",
+   "start": 82.171,
+   "end": 85.448,
+   "cap": "Après la guerre, Wojtek suit les soldats jusqu'en *Écosse*."
+  },
+  {
+   "id": "w16",
+   "start": 86.048,
+   "end": 93.412,
+   "cap": "En *1947*, il est confié au *zoo d'Édimbourg*. Ses anciens camarades viennent le voir… et lui lancent des *cigarettes*."
+  },
+  {
+   "id": "w17",
+   "start": 94.012,
+   "end": 97.239,
+   "cap": "Il y meurt en *1963*, à *21 ans*."
+  },
+  {
+   "id": "w18",
+   "start": 97.939,
+   "end": 101.949,
+   "cap": "Aujourd'hui, des *statues* de Wojtek se dressent en *Écosse* et en *Pologne*."
+  },
+  {
+   "id": "w19",
+   "start": 102.749,
+   "end": 106.782,
+   "cap": "Et toi, tu connais d'autres animaux devenus soldats ? Dis-le en commentaire !"
+  }
+ ],
+ "cue": {},
+ "ticker": [
+  [
+   14.428,
+   14.438,
+   1942,
+   1942,
+   1
+  ],
+  [
+   46.063,
+   50.3342,
+   1942,
+   1943,
+   1
+  ],
+  [
+   52.002,
+   52.502,
+   1943,
+   1944,
+   1
+  ],
+  [
+   82.171,
+   82.771,
+   1944,
+   1946,
+   1
+  ],
+  [
+   86.048,
+   86.44800000000001,
+   1946,
+   1947,
+   1
+  ],
+  [
+   94.012,
+   95.6255,
+   1947,
+   1963,
+   1
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "whoosh",
+   "t": 1.25,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 2.406,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 4.644,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 6.78,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 7.556,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 8.965,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 9.85,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 12.197,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh",
+   "t": 14.028,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 16.265,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 18.105,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 23.92,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 27.935,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 32.734,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 33.599,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 34.465,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 37.565,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 39.147,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 45.763,
+   "gain": 0.8
+  },
+  {
+   "name": "hit",
+   "t": 47.771,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 48.733,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 49.64,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.334,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 50.655,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh",
+   "t": 51.702,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 52.502,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 57.032,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 62.911,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh",
+   "t": 64.074,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 67.345,
+   "gain": 1.0
+  },
+  {
+   "name": "riser",
+   "t": 74.371,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 74.371,
+   "gain": 0.9
+  },
+  {
+   "name": "pop",
+   "t": 77.298,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 80.789,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh",
+   "t": 81.871,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 82.471,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 82.771,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 84.956,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 85.848,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 86.448,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 88.625,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 90.835,
+   "gain": 0.8
+  },
+  {
+   "name": "tick",
+   "t": 94.113,
+   "gain": 0.5
+  },
+  {
+   "name": "down",
+   "t": 94.312,
+   "gain": 0.6
+  },
+  {
+   "name": "tick",
+   "t": 94.315,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 94.516,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 94.718,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 94.92,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 95.121,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 95.323,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 95.525,
+   "gain": 0.5
+  },
+  {
+   "name": "whoosh",
+   "t": 97.639,
+   "gain": 0.7
+  },
+  {
+   "name": "pop",
+   "t": 100.144,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 101.347,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 102.949,
+   "gain": 0.7
+  }
+ ],
+ "duration": 108.382
+}

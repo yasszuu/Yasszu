@@ -1,0 +1,54 @@
+# Notes de production (préférences validées)
+
+- **Voix** : ElevenLabs (Multilingual v2), script avec `<break time="1.5s" />` entre répliques ; mp3 déposé dans le dossier Google Drive **CLAUDE**.
+- **Cris d'animaux** : jamais synthétisés → demander à l'utilisateur un vrai enregistrement (dossier Drive CLAUDE).
+- **Images d'animaux** : détourées (PNG/WebP transparents), envoyées dans le chat ou sur le Drive.
+- **DA** : style « Culture G » — ouverture directement zoomée + recul / demi-tour du globe vers le lieu ; imagerie satellite vive
+  (`lion/grade.py`) ; textes blancs ombrés + jaune `#ffd60a` ; pas de source en bas de l'écran.
+- **Pas de pastilles / badges ronds pleins** (ex. le rond jaune « ≈ 300 KG ») : chiffres en gros texte blanc/jaune ombré, comme le reste.
+- **Mix** : bruitages et musique à -50 % sous la voix, -14 LUFS.
+- Durée ≥ 1 min 01.
+- **Police unique : Montserrat** (Black / ExtraBold) pour TOUS les textes. Pas de police arrondie (Lilita One refusée).
+- **Bruitage d'ouverture** (whoosh synthétisé) jugé moche → ne plus synthétiser les whooshes / transitions ;
+  demander à l'utilisateur un pack de vrais bruitages (whoosh, pop, impact…) ou s'en passer.
+- **Symboles, icônes, schémas** (mini-animaux, bateau, virus, etc.) : ne pas les dessiner soi-même.
+  Prévenir l'utilisateur AVANT, avec la liste exacte, pour qu'il les génère et les envoie (PNG détourés).
+- Ne pas empiler plusieurs textes cinétiques en même temps au même endroit (ex. « 600 millions / 100 millions / résistants »).
+- **Ouverture** : toujours un plan carte (jamais une photo en premier).
+- **Flou de vitesse** : fort en zoom avant, très léger en zoom arrière.
+- **Sous-titres** : GROS (≈ 84 px), EN HAUT de l'écran, par groupes de 2–3 mots ; le titre n'apparaît que pendant l'accroche.
+- **Photos plein écran** : ponctuelles (~2 s), toujours amenées par une plongée « ultra-zoom » sur la carte + flash.
+- **Motion design carte** : multiplier zooms, focus (assombrir hors du pays), ultra-zooms, balayages le long d'un fleuve / d'une route.
+- **Pas d'ultra-zoom** au-delà de l'échelle régionale (imagerie Natural Earth ~1,8 km/pixel → flou). Pour une vraie plongée
+  « Google Maps », demander à l'utilisateur un clip Google Earth Studio (mention « Google Earth » visible).
+- **Pas de photo en ouverture** : la première minute d'accroche reste sur la carte ; les animaux y apparaissent en PNG détourés.
+- **Flou de mouvement très léger** sur les balayages/rotations du globe et les zooms (ne pas abuser) — l'image doit rester nette.
+- **Trajets dessinés sur la carte** : montrer l'origine et le parcours de l'animal (lignes animées pays → pays avec dates) avant d'arriver en France.
+- **Zoom maximum** : ouverture au niveau « continent » (comme la vidéo Afrique du Sud d'ishak-geo), lieu **entouré / pingé** — jamais de gros zoom pixelisé. Ailleurs, ne pas dépasser ~1,6× la vue France entière.
+- **Cri / bruit de l'animal uniquement dans l'intro** (sinon dérangeant).
+- **Pas de textes encadrés (« chips ») en bas de l'écran** : sous-titres en haut + textes cinétiques suffisent ; compteurs en texte simple.
+- **Animaux passagers clandestins** (bateau, pneu, camion…) : montrer clairement l'animal à l'intérieur (il vole/entre dans l'objet, puis reste visible sur le véhicule avec halo).
+- **Plans 3D Blender (style « maquette » validé, démo `demo-3d-arctique.mp4`)** : 2-3 plans par vidéo aux moments forts ; formes simples low-poly, couleurs franches, animal = forme 3D rouge vif sans détail ; caméra qui suit le sujet, profondeur de champ. Éviter la surexposition (lumière un peu plus douce que la démo).
+- **Pas de Terre entière / d'espace visible** : rester à l'échelle pays/continent (globe plus grand que l'écran), beaucoup de mouvement
+  (caméra qui suit l'animal, balayages, zooms). Exception rare : illustrer un tour du monde ou la distance Terre-Lune.
+- **Pas d'image / de sticker par-dessus les plans 3D** : les PNG fournis servent uniquement sur la carte ; dans la 3D, l'animal = forme rouge.
+- **Aucun texte penché** : tous les textes (sous-titres, textes cinétiques, étiquettes) bien droits.
+- **Pas de textes encadrés (« tampons »)** : une date ou un fait marquant = texte droit, même police (Montserrat), sans cadre.
+- **Accroche dynamique, jamais statique** : zooms/punchs de caméra, secousses sur les mots forts, entrées en mouvement des PNG dès la 1re seconde.
+- **Zone sûre TikTok** : aucune image ni texte important dans le bas de l'écran (~les 480 px du bas : pseudo, description) ni collé au bord droit (boutons) ; PNG centrés au milieu de l'écran.
+- **Motion avant tout** : jamais d'effet diaporama — caméra toujours en mouvement (balayages, plongées, dérives), transitions = mouvements de caméra (jamais de cut), éléments qui apparaissent en continu (points, fronts, tracés), flou de mouvement sur les whips.
+- **Marges latérales des textes** : au moins 150 px de chaque côté (sur 1080) pour tous les textes (cinétiques, compteurs, sous-titres, étiquettes) — sinon coupés/peu lisibles sur TikTok.
+- **Caméra jamais immobile** : même pendant les phrases « monotones », enchaîner de petits zooms / balayages (~1,7 s chacun, couche « beats » ajoutée à la caméra) en plus des grands mouvements.
+- **Mouvement de caméra DOSÉ** (retour lion/loup/hippo/moustique) : jamais statique, mais pas de micro-mouvements incessants qui donnent mal à la tête. Une dérive lente et continue (zoom ou pan doux) pendant les phrases calmes, un seul mouvement marqué par idée/phrase, whips réservés aux changements de lieu ; amplitude des « beats » divisée par ~2 et durée ~3-4 s ; flou de mouvement léger.
+- **Pas de doublon avec les sous-titres** : un texte animé ne doit jamais répéter les mots déjà affichés par les sous-titres (ni étiquette de lieu déjà dite) ; textes animés seulement dans l'accroche et l'appel final (sans sous-titres), le reste = sous-titres + éléments visuels (drapeaux, tracés, épingles, photos).
+- **Beaucoup plus d'images à demander** (retour Wojtek) : dès qu'un passage ne change pas de lieu (la voix raconte sans mouvement géographique),
+  il faut une image pour l'illustrer. Avant chaque vidéo, envoyer à l'utilisateur une **liste d'images numérotée, calée réplique par réplique**
+  (≈ 1 image toutes les 5-8 s hors trajets : photos d'archive, scènes, objets, PNG détourés), avec pour chacune le nom de fichier attendu
+  (`01-xxx.jpg`…), ce qu'elle doit montrer et le moment où elle apparaît. Présentation : photo au centre (~2-3 s) ou PNG qui entre en mouvement.
+
+## Carte satellite (qualité au zoom)
+- Toute la carte utilise maintenant de l'imagerie **Sentinel-2** réelle (AWS `sentinel-cogs`, 10 m/px) au lieu de la texture Natural Earth (~1 km/px, floue au zoom).
+- `outils-satellite/s2region.py` : mosaïque d'une grande région (aperçus 160 m, médiane de 3 scènes claires en saison sèche) → `fillgaps.py` pour boucher les jonctions UTM.
+- `outils-satellite/s2mosaic.py` : couche fine sur une zone de zoom (40 m ou 20 m) — ex. Taïwan, Taipei.
+- `outils-satellite/sat.py` : couches empilées (large → fine), chacune étalonnée en luminosité sur la précédente, fondu aux bords, appliquées seulement sur les terres ; branché dans `mktiles.py`.
+- On peut donc zoomer jusqu'à z12–13 (quartiers d'une ville) sans flou. Les tuiles des serveurs EOX/ESRI/Google sont bloquées dans l'environnement : passer par Sentinel-2 sur AWS.

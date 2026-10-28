@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Départements Criminogènes</title>
+<style>
+@font-face{font-family:M;font-weight:600;src:url(data:font/woff2;base64,__M600__) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(data:font/woff2;base64,__M800__) format("woff2");}
+@font-face{font-family:M;font-weight:900;src:url(data:font/woff2;base64,__M900__) format("woff2");}
+:root{--bg:#02040a;--fg:#fff;--muted:#9aa4b8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#02040a}}
+:root[data-theme="dark"]{--bg:#02040a}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:M,system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#c{height:100%;max-width:100%;aspect-ratio:9/16;display:block}
+#gl{display:none}
+#ctrl{position:fixed;left:16px;bottom:16px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+#ctrl button{background:#151b27;color:var(--fg);border:1px solid #2a3346;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+body.capture #ctrl{display:none}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1080" height="1920"></canvas></div>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div id="ctrl"><button id="play">▶ Lecture (son)</button><span id="tc"></span></div>
+<script>__D3__</script>
+<script>__TOPOJSON__</script>
+<script>
+const WORLD = __WORLD__, DEPS = __DEPS__, TL = __TL__;
+const TEX = {world:"__TEXWORLD__", eu:"__TEXEU__"};
+const EU_BOX = [-14, 24, 33, 60];          // lonMin, lonMax, latMin, latMax de la texture Europe
+const SOURCE = "Source : SSMSI – crimes et délits enregistrés en 2024 pour 1 000 habitants";
+
+const W = 1080, H = 1920, MAPY = 1065;
+const Y1 = "#ffd60a", Y2 = "#ffe45c", ORANGE = "#ff9f1c";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const proj = d3.geoOrthographic().clipAngle(90).translate([W/2, MAPY]).precision(0.3);
+const path = d3.geoPath(proj, ctx), measure = d3.geoPath(proj);
+
+const countries = topojson.feature(WORLD, WORLD.objects.countries).features;
+const france = countries.find(f => f.properties.name === "France");
+const borders = topojson.mesh(WORLD, WORLD.objects.countries, (a,b) => a !== b);
+const depByCode = Object.fromEntries(DEPS.features.map(f => [f.properties.code, f]));
+const metro = {type:"FeatureCollection", features: DEPS.features};
+
+// ------------------------------------------------------------------ caméra
+const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b, x));
+const prog = (t,a,b) => clamp((t-a)/(b-a));
+const lerp = (a,b,k) => a + (b-a)*k;
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(2);
+
+function fit(feature, center, w, h){
+  proj.rotate([-center[0], -center[1]]).scale(1).translate([0,0]);
+  const [[x0,y0],[x1,y1]] = measure.bounds(feature);
+  proj.translate([W/2, MAPY]);
+  return {lon:center[0], lat:center[1], s: Math.min(w/(x1-x0), h/(y1-y0))};
+}
+const FR = fit(metro, [2.5, 46.3], W*0.84, 820);
+const IDF = {lon:2.42, lat:48.72, s:FR.s*4};
+const ITEMS = TL.items.map(it => {
+  const f = depByCode[it.code], c = d3.geoCentroid(f);
+  const cam = ["75","93"].includes(it.code) ? IDF : {lon:c[0], lat:c[1]-0.25, s:FR.s*1.9};
+  return {...it, f, c, cam};
+});
+const G0 = {lon:-100, lat:12, s:440}, G2 = {lon:2.5, lat:46.3, s:440};
+const SPIN = TL.spinEnd, [Z0, Z1] = TL.zoom, TF = TL.final, DUR = TL.duration;
+
+function camLerp(a, b, k, fly, ease=E){
+  const e = ease(k);
+  let s = Math.exp(lerp(Math.log(a.s), Math.log(b.s), e));
+  if (fly){
+    const dist = d3.geoDistance([a.lon,a.lat],[b.lon,b.lat]) * 180/Math.PI;
+    s *= 1 - clamp(dist/10, 0, 0.5) * Math.sin(Math.PI*e);
+  }
+  return {lon: lerp(a.lon,b.lon,e), lat: lerp(a.lat,b.lat,e), s};
+}
+function camera(t){
+  if (t < SPIN) return camLerp(G0, G2, prog(t, 0, SPIN), false, d3.easeSinInOut);
+  if (t < Z1) return camLerp(G2, FR, prog(t, Z0, Z1), false, d3.easeCubicInOut);
+  let prev = FR;
+  for (const it of ITEMS){
+    if (t < it.t0) return prev;
+    if (t < it.t0 + 1.0) return camLerp(prev, it.cam, prog(t, it.t0, it.t0 + 1.0), true);
+    prev = it.cam;
+  }
+  if (t < TF) return prev;
+  // retour sur la France puis très lente poussée
+  const back = camLerp(prev, {...FR, lat: FR.lat - 0.9}, prog(t, TF, TF + 1.3), true);
+  back.s *= 1 + 0.04*prog(t, TF+1.3, DUR);
+  return back;
+}
+
+// ------------------------------------------------------------------ WebGL : imagerie satellite
+const glc = document.getElementById("gl");
+const gl = glc.getContext("webgl2", {premultipliedAlpha:false, preserveDrawingBuffer:true, antialias:false});
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+uniform sampler2D uWorld, uEu;
+uniform vec3 uCam; uniform vec2 uC; uniform float uH, uShade; uniform vec4 uBox;
+out vec4 o;
+const float PI = 3.14159265359;
+vec3 grade(vec3 c){
+  float l = dot(c, vec3(.299,.587,.114));
+  c = mix(vec3(l), c, 1.18);                 // saturation
+  c = (c - .5)*1.08 + .5;                     // contraste
+  return clamp(c*.95, 0., 1.);
+}
+void main(){
+  float px = gl_FragCoord.x, py = uH - gl_FragCoord.y;
+  float x = (px - uC.x)/uCam.z, y = (uC.y - py)/uCam.z;
+  float r2 = x*x + y*y;
+  float edge = 1.0 - smoothstep(1.0 - 2.0/uCam.z, 1.0, sqrt(r2));
+  if (r2 >= 1.0){ o = vec4(0); return; }
+  float z = sqrt(1.0 - r2);
+  float d = -uCam.y;
+  float X = z*cos(d) + y*sin(d);
+  float Z = y*cos(d) - z*sin(d);
+  float lon = atan(x, X) + uCam.x;
+  float lat = asin(clamp(Z, -1., 1.));
+  lon = mod(lon + PI, 2.*PI) - PI;
+  vec2 uv = vec2((lon + PI)/(2.*PI), (PI/2. - lat)/PI);
+  // dérivées continues (évite la couture à ±180°)
+  vec2 uv2 = vec2(fract(uv.x + .5), uv.y);
+  vec2 dx = dFdx(uv), dy = dFdy(uv), dx2 = dFdx(uv2), dy2 = dFdy(uv2);
+  if (abs(dx2.x) + abs(dy2.x) < abs(dx.x) + abs(dy.x)) { dx = dx2; dy = dy2; }
+  vec3 col = textureGrad(uWorld, uv, dx, dy).rgb;
+  // texture Europe haute résolution
+  float lonD = degrees(lon), latD = degrees(lat);
+  vec2 euv = vec2((lonD - uBox.x)/(uBox.y - uBox.x), (uBox.w - latD)/(uBox.w - uBox.z));
+  float m = smoothstep(0., .03, euv.x) * smoothstep(1., .97, euv.x) * smoothstep(0., .04, euv.y) * smoothstep(1., .96, euv.y);
+  vec3 ce = textureGrad(uEu, clamp(euv, 0., 1.), dFdx(euv), dFdy(euv)).rgb;
+  col = mix(col, ce, m);
+  col = grade(col);
+  // éclairage du globe (s'efface au zoom)
+  float light = mix(1.0, .35 + .75*pow(z, .6), uShade);
+  float rim = uShade * pow(1. - z, 3.) * .55;
+  col = col*light + vec3(.35,.6,1.)*rim;
+  o = vec4(col, edge);
+}`;
+function sh(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prg = gl.createProgram();
+gl.attachShader(prg, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prg, sh(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prg); gl.useProgram(prg);
+const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prg, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = n => gl.getUniformLocation(prg, n);
+function loadTex(src, unit){
+  return new Promise(res => { const img = new Image(); img.onload = () => {
+    const tx = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, tx);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const ext = gl.getExtension("EXT_texture_filter_anisotropic");
+    if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+    res(); }; img.src = src; });
+}
+gl.uniform1i(U("uWorld"), 0); gl.uniform1i(U("uEu"), 1);
+gl.uniform4f(U("uBox"), ...EU_BOX); gl.uniform1f(U("uH"), H); gl.uniform2f(U("uC"), W/2, MAPY);
+function drawGlobe(cam, shade){
+  gl.viewport(0, 0, W, H); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform3f(U("uCam"), cam.lon*Math.PI/180, cam.lat*Math.PI/180, cam.s);
+  gl.uniform1f(U("uShade"), shade);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ------------------------------------------------------------------ helpers dessin
+const rnd = d3.randomLcg(11);
+const stars = d3.range(320).map(() => [rnd()*W, rnd()*H, rnd()*1.7+0.3, rnd()]);
+function txt(s, x, y, o={}){
+  const {size=60, weight=900, color="#fff", align="center", alpha=1, glow=null, stroke=0, scale=1, base="alphabetic", spacing=0} = o;
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.scale(scale, scale);
+  ctx.font = `${weight} ${size}px M`; ctx.textAlign = align; ctx.textBaseline = base;
+  if (spacing) ctx.letterSpacing = spacing + "px";
+  if (stroke){ ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(s, 0, 0); }
+  ctx.shadowColor = glow || "rgba(0,0,0,0.9)"; ctx.shadowBlur = glow ? 28 : 18; ctx.shadowOffsetY = glow ? 0 : 3;
+  ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.shadowBlur = 8; ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+// texte riche : segments [{t, c}] centrés sur une ligne
+function richLine(segs, x, y, o={}){
+  const {size=56, weight=900} = o;
+  ctx.font = `${weight} ${size}px M`;
+  const widths = segs.map(s => ctx.measureText(s.t).width), total = d3.sum(widths);
+  let cx = x - total/2;
+  segs.forEach((s, i) => { txt(s.t, cx, y, {...o, align:"left", color:s.c}); cx += widths[i]; });
+}
+function dashed(x0, y0, x1, y1, alpha){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.setLineDash([14, 10]); ctx.lineWidth = 4; ctx.strokeStyle = "#fff";
+  ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.restore();
+}
+const fmt = v => v.toLocaleString("fr-FR", {maximumFractionDigits:1});
+
+// sous-titres découpés en groupes de mots, synchronisés sur la voix
+const CAPS = TL.vo.map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){
+    const o = {hi: /\*/.test(w), w: w.replace(/\*/g, "")};
+    if (/^[:;!?]$/.test(o.w) && words.length) words[words.length-1].w += " " + o.w;   // ponctuation collée au mot
+    else words.push(o);
+  }
+  const groups = []; let cur = [];
+  for (const w of words){ cur.push(w); const len = cur.map(x => x.w).join(" ").length;
+    if (len >= 13 || /[.,:!?]$/.test(w.w)) { groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const total = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4);
+  let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4;
+    const s = v.start + (v.end - v.start)*acc/total; acc += l;
+    return {g, s, e: v.start + (v.end - v.start)*acc/total}; });
+}).flat();
+
+// ------------------------------------------------------------------ rendu d'une image
+function render(t){
+  const cam = camera(t);
+  proj.rotate([-cam.lon, -cam.lat]).scale(cam.s);
+  const zk = prog(cam.s, 440, 2500);
+  const focus = E(prog(t, Z0 + 0.6, Z1));
+  const ratio = cam.s / FR.s;
+
+  // fond spatial
+  const bg = ctx.createRadialGradient(W/2, MAPY, 50, W/2, MAPY, H*0.8);
+  bg.addColorStop(0, "#0a1630"); bg.addColorStop(1, "#010208");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  if (zk < 1){
+    for (const [x,y,r,p] of stars){
+      ctx.globalAlpha = (1-zk)*(0.3 + 0.7*Math.abs(Math.sin(t*1.1 + p*30)));
+      ctx.fillStyle = "#dfe6ff"; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(W/2, MAPY, cam.s*0.95, W/2, MAPY, cam.s*1.22);
+    g.addColorStop(0, `rgba(80,150,255,${0.55*(1-zk)})`); g.addColorStop(1, "rgba(80,150,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  // imagerie
+  drawGlobe(cam, 1 - zk);
+  ctx.drawImage(glc, 0, 0);
+
+  // projecteur : on assombrit tout sauf la France
+  if (focus > 0){
+    ctx.save(); ctx.beginPath(); path({type:"Sphere"}); path(france);
+    ctx.fillStyle = `rgba(2,6,18,${0.42*focus})`; ctx.fill("evenodd"); ctx.restore();
+  }
+  // frontières discrètes
+  ctx.save(); ctx.beginPath(); path(borders);
+  ctx.strokeStyle = `rgba(255,255,255,${0.12 + 0.1*zk})`; ctx.lineWidth = 1.2; ctx.stroke(); ctx.restore();
+
+  // repère pulsant sur la France pendant la rotation
+  const pa = prog(t, 0.8, 1.6) * (1 - prog(t, Z0 + 0.4, Z0 + 1.2));
+  if (pa > 0){
+    const [px, py] = proj([2.5, 46.6]);
+    for (let k = 0; k < 2; k++){ const ph = (t*0.8 + k*0.5) % 1;
+      ctx.save(); ctx.globalAlpha = pa*(1-ph); ctx.strokeStyle = Y1; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(px, py, 10 + ph*70, 0, 7); ctx.stroke(); ctx.restore(); }
+    ctx.save(); ctx.globalAlpha = pa; ctx.fillStyle = Y1; ctx.shadowColor = Y1; ctx.shadowBlur = 25;
+    ctx.beginPath(); ctx.arc(px, py, 10, 0, 7); ctx.fill(); ctx.restore();
+    txt("FRANCE", px, py - 34, {size:40, alpha:pa*EO(prog(t, 1.2, 1.8)), stroke:0});
+  }
+
+  // départements
+  const da = E(prog(t, Z1 - 0.9, Z1 + 0.3));
+  if (da > 0){
+    ctx.save(); ctx.globalAlpha = da; ctx.beginPath(); path(metro);
+    ctx.strokeStyle = "rgba(255,255,255,0.32)"; ctx.lineWidth = clamp(1.1*Math.sqrt(ratio), 1, 2.4); ctx.stroke(); ctx.restore();
+  }
+  // contour France
+  if (focus > 0){
+    ctx.save(); ctx.beginPath(); path(france);
+    ctx.shadowColor = "rgba(255,255,255,.9)"; ctx.shadowBlur = 18*focus;
+    ctx.strokeStyle = `rgba(255,255,255,${0.9*focus})`; ctx.lineWidth = 3.5; ctx.stroke(); ctx.restore();
+  }
+
+  // surlignage jaune
+  ITEMS.forEach(it => {
+    const h = EO(prog(t, it.tHi, it.tHi + 0.35));
+    if (h <= 0) return;
+    const active = t >= it.t0 && t < it.tEnd;
+    const flash = active ? Math.exp(-(t - it.tHi)*3.5) : 0;
+    ctx.save(); ctx.beginPath(); path(it.f);
+    ctx.globalAlpha = h*(0.55 + 0.4*flash); ctx.fillStyle = Y1; ctx.fill();
+    ctx.globalAlpha = h; ctx.shadowColor = Y1; ctx.shadowBlur = 30 + 50*flash;
+    ctx.strokeStyle = Y2; ctx.lineWidth = 5; ctx.lineJoin = "round"; ctx.stroke();
+    ctx.restore();
+    if (active && flash > 0.02){   // onde de choc
+      const [x, y] = proj(it.c);
+      ctx.save(); ctx.globalAlpha = flash; ctx.strokeStyle = Y2; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(x, y, 30 + (1-flash)*260, 0, 7); ctx.stroke(); ctx.restore();
+    }
+  });
+
+  // étiquette du département actif
+  ITEMS.forEach(it => {
+    const a = EB(prog(t, it.tHi + 0.05, it.tHi + 0.45)) * (1 - prog(t, it.tEnd - 0.25, it.tEnd));
+    if (a <= 0) return;
+    const [x, y] = proj(it.c);
+    const small = ["75","93"].includes(it.code);
+    const off = it.code === "75" ? [-150, 250] : it.code === "93" ? [170, -190] : [0, -150];
+    const lx = x + off[0], ly = y + off[1];
+    if (small) dashed(x, y, lx, ly + (off[1] > 0 ? -60 : 20), a);
+    const name = it.name.toUpperCase();
+    const size = name.length > 12 ? 58 : 76;
+    txt(name, lx, ly, {size, scale:0.6 + 0.4*a, alpha:Math.min(a, 1), stroke:10});
+    txt(`${fmt(it.rate)} ‰`, lx, ly + size*0.95, {size:size*0.85, color:Y1, scale:0.6 + 0.4*a, alpha:Math.min(a, 1), stroke:10});
+  });
+
+  // badges numérotés finaux
+  const fa = prog(t, TF + 1.0, TF + 1.6);
+  if (fa > 0){
+    ITEMS.forEach((it, j) => {
+      const a = EB(prog(t, TF + 1.0 + j*0.14, TF + 1.45 + j*0.14));
+      if (a <= 0) return;
+      const [x, y] = proj(it.c);
+      const [ox, oy, side] = {"75":[-120,-95,"l"], "93":[110,-120,"r"], "13":[60,75,"b"], "34":[-95,90,"l"], "69":[105,0,"r"]}[it.code];
+      const off = [ox, oy];
+      const bx = x + off[0], by = y + off[1];
+      ctx.save(); ctx.globalAlpha = a; ctx.setLineDash([8,6]); ctx.strokeStyle = "#fff"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(bx, by); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.translate(bx, by); ctx.scale(a, a);
+      ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 16; ctx.fillStyle = Y1;
+      ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.fill(); ctx.restore();
+      txt(String(it.rank), bx, by + 2, {size:44, color:"#111", base:"middle", scale:Math.max(a, .01), alpha:1});
+      const lx = side === "b" ? bx : bx + (side === "r" ? 46 : -46), al = side === "b" ? "center" : side === "r" ? "left" : "right";
+      const ly = side === "b" ? by + 70 : by - 4;
+      txt(it.name.toUpperCase(), lx, ly, {size:30, align:al, alpha:Math.min(a,1), stroke:7});
+      txt(`${fmt(it.rate)} ‰`, lx, ly + 34, {size:28, color:Y1, align:al, alpha:Math.min(a,1), stroke:7});
+    });
+  }
+
+  // vignette
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.35, W/2, H/2, H*0.75);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  // bandeau sombre derrière le titre
+  const tg = ctx.createLinearGradient(0, 0, 0, 700);
+  tg.addColorStop(0, "rgba(0,0,0,0.55)"); tg.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 700);
+
+  overlay(t);
+}
+
+function overlay(t){
+  // titre (style "UN PAYS AU HASARD")
+  const ta = EB(prog(t, 0.2, 0.75));
+  if (ta > 0){
+    const s = 0.7 + 0.3*ta;
+    richLine([{t:"LES DÉPARTEMENTS", c:"#fff"}], W/2, 300, {size:68, scale:s, alpha:Math.min(ta,1), stroke:0});
+    richLine([{t:"LES PLUS ", c:"#fff"}, {t:"CRIMINOGÈNES", c:Y1}], W/2, 385, {size:68, scale:s, alpha:Math.min(ta,1), glow:"rgba(255,214,10,0.55)"});
+    const sa = EO(prog(t, TL.title, TL.title + 0.5));
+    txt("DE FRANCE  •  2024", W/2, 448, {size:34, weight:800, color:"#fff", alpha:sa, spacing:4});
+  }
+
+  // frise du classement (style "Que s'est-il passé en : 1911 1912 1913")
+  const fr0 = ITEMS[0].t0 - 0.2;
+  const fa = EO(prog(t, fr0, fr0 + 0.5)) * (1 - prog(t, TF, TF + 0.5));
+  if (fa > 0){
+    let idx = 0;
+    ITEMS.forEach((it, i) => { idx += E(prog(t, it.t0, it.t0 + 0.6)) * (i > 0 ? 1 : 0); });
+    const y = 560, gap = 250;
+    ctx.save(); ctx.globalAlpha = fa;
+    ctx.strokeStyle = Y1; ctx.lineWidth = 4; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.restore();
+    ITEMS.forEach((it, i) => {
+      const x = W/2 + (i - idx)*gap, d = Math.abs(i - idx);
+      if (x < -150 || x > W + 150) return;
+      const act = clamp(1 - d);
+      ctx.save(); ctx.globalAlpha = fa; ctx.fillStyle = Y1;
+      ctx.fillRect(x - 2, y - 14, 4, 28); ctx.restore();
+      txt(`N°${it.rank}`, x, y + 70 + act*18, {size:52 + act*40, color:act > 0.5 ? ORANGE : Y1, alpha:fa*(0.55 + 0.45*act), stroke:8,
+        glow: act > 0.5 ? "rgba(255,159,28,0.6)" : null});
+    });
+  }
+
+  // sous-titres
+  let cur = null;
+  for (const c of CAPS) if (c.s <= t) cur = c;
+  for (const c of (cur && t <= cur.e + 0.35) ? [cur] : []){
+    const a = EB(prog(t, c.s, c.s + 0.18));
+    const segs = []; c.g.forEach((w, i) => segs.push({t:(i ? " " : "") + w.w.toUpperCase(), c: w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 1530, {size:58, weight:900, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:12});
+  }
+
+  // source
+  txt(SOURCE, W/2, H - 70, {size:22, weight:600, color:"rgba(255,255,255,.75)", alpha:prog(t, Z1, Z1 + 0.8), stroke:4});
+}
+
+// ------------------------------------------------------------------ lecture
+window.DURATION = DUR;
+window.renderAt = render;
+window.ready = Promise.all([loadTex(TEX.world, 0), loadTex(TEX.eu, 1),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M"), document.fonts.load("600 60px M")]);
+if (new URLSearchParams(location.search).has("capture")) document.body.classList.add("capture");
+else window.ready.then(() => {
+  const audio = new Audio("__AUDIO__");
+  let start = null; render(0);
+  const tc = document.getElementById("tc");
+  document.getElementById("play").onclick = () => { audio.currentTime = 0; audio.play().catch(() => {}); start = performance.now(); };
+  const loop = now => {
+    if (start !== null){ const t = Math.min((audio.paused ? (now - start)/1000 : audio.currentTime), DUR);
+      render(t); tc.textContent = t.toFixed(1) + " s / " + DUR.toFixed(0) + " s"; }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>

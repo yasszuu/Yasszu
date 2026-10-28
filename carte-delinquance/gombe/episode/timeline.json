@@ -1,0 +1,627 @@
+{
+ "vo": [
+  {
+   "id": "s01",
+   "start": 1.2,
+   "end": 7.538,
+   "cap": "Ils avaient grandi ensemble, mangé ensemble, dormi ensemble… *4 ans plus tard*, ils s'étaient *entretués*."
+  },
+  {
+   "id": "s02",
+   "start": 8.038,
+   "end": 13.428,
+   "cap": "Ce ne sont pas des humains. Ce sont des *chimpanzés*. Et c'est la *première guerre* jamais observée chez les animaux."
+  },
+  {
+   "id": "s03",
+   "start": 13.828,
+   "end": 15.912,
+   "cap": "Voici la guerre des chimpanzés de *Gombe*."
+  },
+  {
+   "id": "s04",
+   "start": 16.612,
+   "end": 20.938,
+   "cap": "Tout se passe ici, au bord du *lac Tanganyika*, dans le petit parc national de *Gombe*."
+  },
+  {
+   "id": "s05",
+   "start": 24.838,
+   "end": 30.45,
+   "cap": "Depuis *1960*, la primatologue *Jane Goodall* y observe une communauté de chimpanzés : *Kasakela*."
+  },
+  {
+   "id": "s06",
+   "start": 30.85,
+   "end": 33.859,
+   "cap": "À l'époque, elle pense que les chimpanzés sont *plus pacifiques* que nous."
+  },
+  {
+   "id": "s07",
+   "start": 34.359,
+   "end": 37.372,
+   "cap": "Mais au début des années *70*, la communauté se *divise*."
+  },
+  {
+   "id": "s08",
+   "start": 37.772,
+   "end": 43.361,
+   "cap": "*6 mâles*, *3 femelles* et leurs petits partent s'installer au *sud*. Ils forment un nouveau clan : *Kahama*."
+  },
+  {
+   "id": "s09",
+   "start": 43.761,
+   "end": 47.019,
+   "cap": "Au *nord*, Kasakela garde *8 mâles* adultes et *12 femelles*."
+  },
+  {
+   "id": "s10",
+   "start": 47.519,
+   "end": 51.803,
+   "cap": "Pendant un temps, les deux clans s'évitent. Puis la frontière devient un *champ de bataille*."
+  },
+  {
+   "id": "s11",
+   "start": 52.403,
+   "end": 58.367,
+   "cap": "Le *7 janvier 1974*, *6 mâles* de Kasakela s'enfoncent en silence dans le territoire de *Kahama*."
+  },
+  {
+   "id": "s12",
+   "start": 61.367,
+   "end": 67.815,
+   "cap": "Ils surprennent *Godi*, un jeune mâle, seul dans un arbre. Ils le frappent, le mordent… Godi ne sera *jamais revu*."
+  },
+  {
+   "id": "s13",
+   "start": 68.315,
+   "end": 71.801,
+   "cap": "C'est la *première fois* qu'on voit des chimpanzés *tuer volontairement* l'un des leurs."
+  },
+  {
+   "id": "s14",
+   "start": 72.301,
+   "end": 74.865,
+   "cap": "Et ce n'est que le début. Les *raids* se multiplient."
+  },
+  {
+   "id": "s15",
+   "start": 75.365,
+   "end": 79.313,
+   "cap": "Même le vieux *Goliath*, qui avait été l'un de leurs chefs, est attaqué par ses *anciens amis*."
+  },
+  {
+   "id": "s16",
+   "start": 79.913,
+   "end": 85.915,
+   "cap": "Un à un, les *6 mâles* de Kahama disparaissent. Le dernier, *Sniff*, est tué en *1978*."
+  },
+  {
+   "id": "s17",
+   "start": 86.415,
+   "end": 89.418,
+   "cap": "*Kasakela a gagné*. Et s'empare de *tout le territoire*."
+  },
+  {
+   "id": "s18",
+   "start": 89.918,
+   "end": 95.456,
+   "cap": "Mais la victoire ne dure pas : au sud, un clan encore plus puissant, *Kalande*, repousse bientôt les vainqueurs."
+  },
+  {
+   "id": "s19",
+   "start": 98.456,
+   "end": 102.285,
+   "cap": "Pour Jane Goodall, c'est un *choc* : la guerre n'est pas une *invention humaine*."
+  },
+  {
+   "id": "s20",
+   "start": 103.085,
+   "end": 108.589,
+   "cap": "Et toi, tu savais que les chimpanzés pouvaient se faire la guerre ? Dis-le en commentaire ! Et abonne-toi pour le prochain épisode."
+  }
+ ],
+ "cue": {},
+ "ticker": [
+  [
+   24.838,
+   26.5216,
+   1960,
+   1960
+  ],
+  [
+   34.359,
+   35.8655,
+   1960,
+   1972
+  ],
+  [
+   52.403,
+   54.1922,
+   1972,
+   1974
+  ],
+  [
+   72.301,
+   74.865,
+   1974,
+   1976
+  ],
+  [
+   79.913,
+   85.915,
+   1976,
+   1978
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "cri",
+   "t": 0.15,
+   "gain": 0.9
+  },
+  {
+   "name": "impact",
+   "t": 5.13,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 7.838,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 9.925,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 11.811,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 13.528,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 16.412,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 18.991,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 20.138,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 24.588,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 56.567,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 61.017,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 93.456,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 97.906,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 25.138,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 29.608,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 32.054,
+   "gain": 0.5
+  },
+  {
+   "name": "woosh",
+   "t": 34.159,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 36.619,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 38.051,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 38.231,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 38.411,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 38.591,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 38.771,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 38.951,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 39.131,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 39.311,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 39.491,
+   "gain": 0.35
+  },
+  {
+   "name": "pop",
+   "t": 44.738,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 44.828,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 44.918,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.008,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.098,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.188,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.278,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.368,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.458,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.548,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.638,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.728,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.818,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.908,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 45.998,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 46.088,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 46.178,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 46.268,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 46.358,
+   "gain": 0.22
+  },
+  {
+   "name": "pop",
+   "t": 46.448,
+   "gain": 0.22
+  },
+  {
+   "name": "impact",
+   "t": 50.304,
+   "gain": 0.7
+  },
+  {
+   "name": "woosh",
+   "t": 52.203,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 52.999,
+   "gain": 0.5
+  },
+  {
+   "name": "impact",
+   "t": 64.269,
+   "gain": 0.8
+  },
+  {
+   "name": "woosh",
+   "t": 66.525,
+   "gain": 0.4
+  },
+  {
+   "name": "impact",
+   "t": 69.361,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 73.455,
+   "gain": 0.4
+  },
+  {
+   "name": "impact",
+   "t": 73.735,
+   "gain": 0.4
+  },
+  {
+   "name": "impact",
+   "t": 74.015,
+   "gain": 0.4
+  },
+  {
+   "name": "impact",
+   "t": 74.295,
+   "gain": 0.4
+  },
+  {
+   "name": "impact",
+   "t": 74.575,
+   "gain": 0.4
+  },
+  {
+   "name": "impact",
+   "t": 78.129,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 80.393,
+   "gain": 0.45
+  },
+  {
+   "name": "impact",
+   "t": 80.813,
+   "gain": 0.45
+  },
+  {
+   "name": "impact",
+   "t": 81.233,
+   "gain": 0.45
+  },
+  {
+   "name": "impact",
+   "t": 81.653,
+   "gain": 0.45
+  },
+  {
+   "name": "impact",
+   "t": 82.073,
+   "gain": 0.45
+  },
+  {
+   "name": "impact",
+   "t": 82.493,
+   "gain": 0.45
+  },
+  {
+   "name": "woosh",
+   "t": 86.315,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 87.917,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 89.718,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 92.41,
+   "gain": 0.7
+  },
+  {
+   "name": "impact",
+   "t": 99.605,
+   "gain": 0.6
+  },
+  {
+   "name": "woosh",
+   "t": 102.785,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 34.485,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 34.61,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 34.736,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 34.861,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 34.987,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 35.112,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 35.238,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 35.363,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 35.489,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 35.614,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 35.74,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 35.865,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 53.298,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 54.192,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 73.583,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 74.865,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 82.914,
+   "gain": 0.4
+  },
+  {
+   "name": "tick",
+   "t": 85.915,
+   "gain": 0.4
+  }
+ ],
+ "clips": [
+  {
+   "name": "vallee",
+   "a": 20.338,
+   "b": 24.838
+  },
+  {
+   "name": "raid",
+   "a": 56.767,
+   "b": 61.267
+  },
+  {
+   "name": "kalande",
+   "a": 93.656,
+   "b": 98.156
+  }
+ ],
+ "duration": 110.589
+}

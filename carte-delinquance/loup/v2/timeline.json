@@ -1,0 +1,961 @@
+{
+ "vo": [
+  {
+   "id": "h1",
+   "start": 1.6,
+   "end": 7.316,
+   "cap": "En *novembre 1992*, un couple de loups est aperçu dans les *Alpes françaises*."
+  },
+  {
+   "id": "h2",
+   "start": 7.516,
+   "end": 10.337,
+   "cap": "Trente ans plus tard, ils sont *plus de 1 000*."
+  },
+  {
+   "id": "h3",
+   "start": 10.587,
+   "end": 12.311,
+   "cap": "Voici leur *incroyable retour*."
+  },
+  {
+   "id": "a1",
+   "start": 12.811,
+   "end": 16.774,
+   "cap": "Au *XVIIIe siècle*, le loup vivait sur presque *tout le territoire*."
+  },
+  {
+   "id": "a2",
+   "start": 16.924,
+   "end": 21.591,
+   "cap": "Mais *traqué*, *piégé*, *empoisonné*… il recule partout."
+  },
+  {
+   "id": "a3",
+   "start": 21.691,
+   "end": 25.146,
+   "cap": "Et il *disparaît* de France dans les *années 1930*."
+  },
+  {
+   "id": "b1",
+   "start": 25.746,
+   "end": 30.471,
+   "cap": "Il ne survit plus qu'en *Italie* : à peine *une centaine*, cachés dans les *Apennins*."
+  },
+  {
+   "id": "b2",
+   "start": 30.721,
+   "end": 34.632,
+   "cap": "*Protégés* à partir de *1971*, ils se multiplient..."
+  },
+  {
+   "id": "b3",
+   "start": 34.732,
+   "end": 38.483,
+   "cap": "et remontent vers le *nord*, de montagne en montagne."
+  },
+  {
+   "id": "c1",
+   "start": 38.983,
+   "end": 42.177,
+   "cap": "Jusqu'au *5 novembre 1992*."
+  },
+  {
+   "id": "c2",
+   "start": 42.777,
+   "end": 45.618,
+   "cap": "Ils sont repérés dans le parc du *Mercantour*."
+  },
+  {
+   "id": "c3",
+   "start": 45.918,
+   "end": 48.481,
+   "cap": "Personne ne les a réintroduits : ils sont *revenus seuls*."
+  },
+  {
+   "id": "d1",
+   "start": 48.981,
+   "end": 50.458,
+   "cap": "Ensuite, *tout s'accélère*."
+  },
+  {
+   "id": "d2",
+   "start": 50.658,
+   "end": 52.827,
+   "cap": "Le *Massif central* en *1997*."
+  },
+  {
+   "id": "d3",
+   "start": 53.027,
+   "end": 54.961,
+   "cap": "Les *Pyrénées* en *1999*."
+  },
+  {
+   "id": "d4",
+   "start": 55.161,
+   "end": 56.803,
+   "cap": "Puis le *Jura* en *2003*."
+  },
+  {
+   "id": "d5",
+   "start": 57.003,
+   "end": 58.362,
+   "cap": "Et enfin, les *Vosges*."
+  },
+  {
+   "id": "d6",
+   "start": 58.712,
+   "end": 62.897,
+   "cap": "Aujourd'hui, il est signalé jusqu'en *Bretagne*… et en *Normandie* !"
+  },
+  {
+   "id": "e1",
+   "start": 63.347,
+   "end": 70.515,
+   "cap": "En 2025, l'OFB estime leur nombre à environ *1 080 loups*."
+  },
+  {
+   "id": "f1",
+   "start": 71.115,
+   "end": 76.15,
+   "cap": "Mais ce retour a un prix : environ *12 000 animaux d'élevage* tués en un an."
+  },
+  {
+   "id": "f2",
+   "start": 76.5,
+   "end": 80.946,
+   "cap": "Et en 2025, l'Europe a *abaissé sa protection*."
+  },
+  {
+   "id": "g1",
+   "start": 81.946,
+   "end": 85.085,
+   "cap": "Alors, le loup a-t-il *sa place en France* ?"
+  },
+  {
+   "id": "g2",
+   "start": 85.435,
+   "end": 90.948,
+   "cap": "Dis-le en commentaire ! Prochain épisode : *le lion de l'Atlas*."
+  }
+ ],
+ "cue": {
+  "zoomFR": [
+   10.487,
+   13.011
+  ],
+  "fillAll": [
+   13.111,
+   14.411
+  ],
+  "fade": [
+   16.924,
+   24.746000000000002
+  ],
+  "stamp": 24.796,
+  "toItaly": [
+   25.046,
+   26.346
+  ],
+  "apennins": [
+   26.145999999999997,
+   27.746
+  ],
+  "protect": 30.921,
+  "path": [
+   34.432,
+   39.183
+  ],
+  "arrive": 42.227,
+  "merc": 43.077,
+  "toFR": [
+   48.781,
+   49.981
+  ],
+  "expand": [
+   49.381,
+   62.897
+  ],
+  "labels": {
+   "48": 50.758,
+   "66": 53.127,
+   "39": 55.261,
+   "88": 57.103,
+   "29": 59.912000000000006,
+   "76": 60.712
+  },
+  "count": 63.747,
+  "prey": 72.315,
+  "downgrade": 76.8,
+  "outro": 80.746,
+  "next": 87.035,
+  "tickerShow": [
+   12.511,
+   81.246
+  ]
+ },
+ "ticker": [
+  [
+   12.811,
+   12.821,
+   1750,
+   1750,
+   10
+  ],
+  [
+   16.924,
+   24.746000000000002,
+   1750,
+   1930,
+   10
+  ],
+  [
+   25.546,
+   25.756,
+   1970,
+   1970,
+   1
+  ],
+  [
+   30.721,
+   31.321,
+   1970,
+   1971,
+   1
+  ],
+  [
+   34.732,
+   42.177,
+   1971,
+   1992,
+   1
+  ],
+  [
+   48.981,
+   50.658,
+   1992,
+   1997,
+   1
+  ],
+  [
+   50.658,
+   53.027,
+   1997,
+   1999,
+   1
+  ],
+  [
+   53.027,
+   55.161,
+   1999,
+   2003,
+   1
+  ],
+  [
+   55.161,
+   57.003,
+   2003,
+   2011,
+   1
+  ],
+  [
+   57.003,
+   58.712,
+   2011,
+   2016,
+   1
+  ],
+  [
+   58.712,
+   62.897,
+   2016,
+   2025,
+   1
+  ],
+  [
+   63.347,
+   63.357,
+   2025,
+   2025,
+   1
+  ]
+ ],
+ "sfx": [
+  {
+   "name": "impact",
+   "t": 0.02,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 1.3,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 2.743,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 4.744,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 6.459,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh_long",
+   "t": 7.416,
+   "gain": 0.9
+  },
+  {
+   "name": "riser",
+   "t": 9.491,
+   "gain": 0.6
+  },
+  {
+   "name": "impact",
+   "t": 9.632,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh_long",
+   "t": 10.487,
+   "gain": 0.9
+  },
+  {
+   "name": "impact",
+   "t": 11.621,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 12.611,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 17.624,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 19.024,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 20.284,
+   "gain": 0.7
+  },
+  {
+   "name": "stamp",
+   "t": 24.282,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh_long",
+   "t": 25.446,
+   "gain": 0.9
+  },
+  {
+   "name": "shimmer",
+   "t": 28.581,
+   "gain": 0.5
+  },
+  {
+   "name": "pop",
+   "t": 32.285,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh",
+   "t": 34.632,
+   "gain": 0.6
+  },
+  {
+   "name": "step",
+   "t": 34.939,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 35.352,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "step",
+   "t": 35.766,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 36.18,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "step",
+   "t": 36.593,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 37.007,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "step",
+   "t": 37.42,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 37.834,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "step",
+   "t": 38.248,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 38.661,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "step",
+   "t": 39.075,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 39.489,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "step",
+   "t": 39.902,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 40.316,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "step",
+   "t": 40.729,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 41.143,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "step",
+   "t": 41.557,
+   "gain": 0.35
+  },
+  {
+   "name": "step",
+   "t": 41.97,
+   "gain": 0.44999999999999996
+  },
+  {
+   "name": "riser",
+   "t": 42.177,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 41.379,
+   "gain": 1.0
+  },
+  {
+   "name": "whoosh_long",
+   "t": 42.477,
+   "gain": 0.8
+  },
+  {
+   "name": "pop",
+   "t": 44.766,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh_long",
+   "t": 48.681,
+   "gain": 0.9
+  },
+  {
+   "name": "impact",
+   "t": 49.867,
+   "gain": 0.7
+  },
+  {
+   "name": "whoosh",
+   "t": 50.408,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 51.851,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 52.777,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 54.091,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 54.911,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 56.064,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 56.753,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 57.75,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh",
+   "t": 58.462,
+   "gain": 0.7
+  },
+  {
+   "name": "hit",
+   "t": 61.014,
+   "gain": 0.6
+  },
+  {
+   "name": "whoosh_long",
+   "t": 63.047,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 69.081,
+   "gain": 0.8
+  },
+  {
+   "name": "bell",
+   "t": 69.081,
+   "gain": 0.5
+  },
+  {
+   "name": "hit",
+   "t": 74.136,
+   "gain": 0.9
+  },
+  {
+   "name": "whoosh_long",
+   "t": 76.2,
+   "gain": 0.8
+  },
+  {
+   "name": "down",
+   "t": 79.168,
+   "gain": 0.8
+  },
+  {
+   "name": "whoosh_long",
+   "t": 81.646,
+   "gain": 0.8
+  },
+  {
+   "name": "impact",
+   "t": 84.143,
+   "gain": 0.6
+  },
+  {
+   "name": "pop",
+   "t": 85.635,
+   "gain": 0.7
+  },
+  {
+   "name": "tick",
+   "t": 17.359,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 17.793,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 18.228,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 18.662,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 19.097,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 19.531,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 19.966,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 20.4,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 20.835,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 21.27,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 21.704,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 22.139,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 22.573,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 23.008,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 23.442,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 23.877,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 24.311,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 24.746,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 31.321,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 35.087,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 35.441,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 35.796,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 36.15,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 36.505,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 36.859,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 37.214,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 37.568,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 37.923,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 38.277,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 38.632,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 38.986,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 39.341,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 39.695,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 40.05,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 40.404,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 40.759,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 41.113,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 41.468,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 41.822,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 42.177,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.316,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.652,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 49.987,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.323,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 50.658,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 51.843,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 53.027,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 53.561,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 54.094,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 54.627,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 55.161,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 55.391,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 55.621,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 55.852,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 56.082,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 56.312,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 56.543,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 56.773,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 57.003,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 57.345,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 57.687,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 58.028,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 58.37,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 58.712,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 59.177,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 59.642,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 60.107,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 60.572,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 61.037,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 61.502,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 61.967,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 62.432,
+   "gain": 0.5
+  },
+  {
+   "name": "tick",
+   "t": 62.897,
+   "gain": 0.5
+  }
+ ],
+ "duration": 92.748
+}

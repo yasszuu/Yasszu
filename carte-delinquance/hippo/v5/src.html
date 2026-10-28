@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Les hippopotames d'Escobar</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format("woff2");}
+@font-face{font-family:M;font-weight:800;src:url(../node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2) format("woff2");}
+html,body{margin:0;background:#0b1622}
+#c{width:540px;height:960px;display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="../node_modules/d3/dist/d3.min.js"></script>
+<script>
+const TL = __TL__, RIVERS = __RIVERS__, DUR = TL.duration;
+const W = 1080, H = 1920, TS = 256, ZMIN = 3, ZMAX = 9, MARGIN = 150;      // marge latérale des textes (zone sûre TikTok)
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const BUF = document.createElement("canvas"); BUF.width = W; BUF.height = H; const bctx = BUF.getContext("2d");
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a)*k;
+const prog = (t, a, b) => clamp((t - a)/(b - a));
+const E = d3.easeCubicInOut, EO = d3.easeCubicOut, EB = d3.easeBackOut.overshoot(1.8), EX = d3.easeExpInOut, LIN = d3.easeLinear;
+const Y1 = "#ffd60a", RED = "#ff3b30", HIP = [255, 107, 61], RIV = "#3ec9ff";
+const V = Object.fromEntries(TL.vo.map(v => [v.id, v]));
+const S = k => V[k].start, Ed = k => V[k].end, M = (k, f) => S(k) + (Ed(k) - S(k))*f;
+const SFX = n => TL.sfx.filter(s => s.name === n).map(s => s.t);
+const near = (n, a, b) => SFX(n).find(x => x >= a && x <= b);
+// ------------------------------------------------------------------ lieux
+const NAPOLES = [-74.73, 5.93], MEDELLIN = [-75.57, 6.25], DORADAL = [-74.72, 5.9], AFRICA = [21, 1.5], MEXPT = [-99.1, 19.4], INDPT = [72.6, 23.0];
+const MAGDA = RIVERS.Magdalena.flat().filter(p => p[1] > 3.2);
+const FLEE = [[-74.07, 4.71], [-76.53, 3.45], [-75.6, 7.9], [-73.1, 7.1], [-75.5, 10.4], [-72.5, 4.2]];   // animaux déplacés (zoos du pays)
+// ------------------------------------------------------------------ calendrier
+const T_FLAG = near("impact", S("h01"), M("h01", 0.15)), T_200 = near("impact", M("h01", 0.15), M("h01", 0.4)), T_AFR = near("pop", M("h01", 0.8), Ed("h01") + 0.3);
+const T_PABLO = near("impact", S("h02"), Ed("h02")), T_80S = near("pop", S("h03"), M("h03", 0.3)), T_NAPPHOTO = near("pop", M("h03", 0.6), Ed("h03"));
+const POPS_ANIM = SFX("pop").filter(x => x > S("h04") && x < M("h04", 0.4)), POPS_4 = SFX("pop").filter(x => x > M("h04", 0.5) && x < Ed("h04"));
+const T_KILL = near("impact", S("h05"), Ed("h05")), T_DANGER = near("impact", S("h06"), Ed("h06"));
+const T_ABAND = near("pop", S("h07"), M("h07", 0.1)), T_NOPRED = near("impact", M("h07", 0.5), Ed("h07")), T_BOOM = near("impact", S("h08"), Ed("h08"));
+const T_170 = near("impact", M("h09", 0.7), Ed("h09")), T_DANGPH = near("pop", S("h10"), M("h10", 0.2)), T_MEURT = near("impact", S("h10"), Ed("h10"));
+const T_LAMA = near("pop", M("h11", 0.5), Ed("h11")), T_INV = near("impact", S("h12"), Ed("h12")), T_STER = near("hit", S("h13"), Ed("h13"));
+const T_MEX = near("pop", M("h13", 0.7), M("h13", 0.85)), T_IND = near("pop", M("h13", 0.86), Ed("h13") + 0.1), T_DOWN = SFX("down")[0], T_REF = near("impact", S("h14"), Ed("h14"));
+const T_80 = near("impact", S("h15"), Ed("h15")), T_VILL = near("pop", S("h16"), M("h16", 0.2));
+const T_ATTR = near("hit", M("h16", 0.5), M("h16", 0.8)), T_SYMB = near("hit", M("h16", 0.8), Ed("h16") + 0.2), T_1000 = near("impact", S("h17"), Ed("h17"));
+// ------------------------------------------------------------------ caméra
+const mx = lon => (lon + 180)/360*TS;
+const my = lat => { const r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2*TS; };
+const view = (lon, lat, z, dy=-90) => [mx(lon), my(lat) - dy/2**z, W/2**z];
+const COLV = (z=6.6, dl=0, db=0) => view(-73.8 + dl, 4.2 + db, z);
+const NAPV = (z, dy=-90) => view(NAPOLES[0], NAPOLES[1], z, dy);
+const ATL = (z=3.9) => view(-26, 5, z);
+const KEYS = [
+  [0.0,   view(-58, 0, 4.7)],
+  [0.5,   view(-63, 1.5, 5.1), EO],
+  [1.35,  COLV(6.5), EX],                                  // whip sur la Colombie
+  [T_200 - 0.2, COLV(6.65, 0.1), LIN],
+  [M("h01", 0.5), view(-74.6, 6.3, 8.2), E],                // les 200 hippos dans la vallée
+  [M("h01", 0.68), ATL(3.85), EX],                         // … à des milliers de km de l'Afrique
+  [Ed("h01") + 0.2, ATL(4.0), LIN],
+  [S("h02") + 0.6, NAPV(7.95, -330), EX],                  // Pablo Escobar
+  [Ed("h02") + 0.3, NAPV(8.15, -330), LIN],
+  [S("h03") + 0.5, view(-74.9, 6.0, 7.4), EX],             // années 80
+  [M("h03", 0.5), view(-74.85, 5.98, 7.6), LIN],
+  [M("h03", 0.62), NAPV(8.3, -330), EX],                   // Hacienda Nápoles
+  [Ed("h03") + 0.2, NAPV(8.5, -330), LIN],
+  [S("h04") + 0.5, ATL(3.85), EX],                         // girafes, zèbres, éléphants… venus d'Afrique
+  [M("h04", 0.45), ATL(4.0), LIN],
+  [M("h04", 0.58), NAPV(8.2), EX],                         // les 4 hippopotames
+  [Ed("h04") + 0.3, NAPV(8.4), LIN],
+  [S("h05") + 0.5, view(...MEDELLIN, 8.0), EX],            // Medellín 1993
+  [Ed("h05") + 0.3, view(...MEDELLIN, 8.3), LIN],
+  [S("h06") + 0.5, view(-74.6, 5.6, 7.4), EX],             // les animaux déplacés
+  [Ed("h06"), view(-74.7, 5.8, 7.6), LIN],
+  [M("h07", 0.28), NAPV(8.0, -200), LIN],
+  [M("h07", 0.38), view(-74.55, 6.6, 7.9), EX],            // le Magdalena : balayage vers le nord
+  [Ed("h07"), view(-74.3, 8.6, 7.9), LIN],
+  [S("h08") + 0.6, view(-74.6, 6.6, 7.6), EX],             // la population explose
+  [Ed("h09"), view(-74.65, 6.4, 7.9), LIN],
+  [Ed("h10"), view(-74.6, 6.2, 8.1), LIN],                 // dangereux
+  [S("h11") + 0.5, view(-74.4, 8.3, 8.0), EX],             // pollution, lamantin
+  [Ed("h11"), view(-74.6, 9.7, 8.1), LIN],
+  [S("h12") + 0.5, COLV(6.55), EX],                        // espèce invasive
+  [M("h13", 0.5), COLV(6.8, -0.4, 0.8), LIN],
+  [M("h13", 0.68), view(-14, 15, 3.05), EX],               // Mexique, Inde
+  [Ed("h14") + 0.3, view(-12, 16, 3.2), LIN],
+  [S("h15") + 0.5, view(-74.65, 6.5, 7.8), EX],           // euthanasie
+  [Ed("h15"), view(-74.7, 6.3, 8.0), LIN],
+  [Ed("h16"), NAPV(8.4), LIN],                             // Doradal
+  [S("h17") + 0.5, view(-74.4, 6.8, 7.0), EX],            // 1 000 en 2035
+  [Ed("h17"), view(-74.4, 6.8, 7.2), LIN],
+  [S("h18") + 0.8, COLV(6.55), E],
+  [DUR, COLV(6.8, 0.3, 0.6), LIN],
+];
+function baseCamera(t){
+  let i = 0; while (i < KEYS.length - 2 && t > KEYS[i+1][0]) i++;
+  const [ta, va] = KEYS[i], [tb, vb, eb] = KEYS[i+1], k = (eb || E)(prog(t, ta, tb));
+  const v = d3.interpolateZoom(va, vb)(k); return {cx:v[0], cy:v[1], z:Math.log2(W/v[2])};
+}
+// caméra « vivante » : pendant les plans calmes, enchaînement de petits zooms / balayages (~1,7 s chacun)
+const BEAT_PAT = [[300, -140, 0.4], [-320, 90, 0.12], [140, 220, -0.3], [-240, -180, 0.45], [330, 120, -0.15], [-160, -230, 0.3]];
+const BEATS = []; let bi = 0;
+for (let i = 0; i < KEYS.length - 1; i++){ const ta = KEYS[i][0], tb = KEYS[i+1][0], e = KEYS[i+1][2], d = tb - ta;
+  if (e === EX || e === EO || d < 2.2) continue; const n = Math.max(2, Math.round(d/1.7)), pts = [[ta + 0.05, [0, 0, 0]]];
+  for (let j = 1; j < n; j++) pts.push([ta + d*j/n, BEAT_PAT[bi++ % BEAT_PAT.length]]);
+  pts.push([tb - 0.05, [0, 0, 0]]); BEATS.push(pts); }
+function beatOffset(t){
+  for (const pts of BEATS){ if (t < pts[0][0] || t > pts[pts.length - 1][0]) continue;
+    let j = 0; while (j < pts.length - 2 && t > pts[j+1][0]) j++;
+    const [a, oa] = pts[j], [b, ob] = pts[j+1], k = E(prog(t, a, b)); return oa.map((v, q) => lerp(v, ob[q], k)); }
+  return [0, 0, 0];
+}
+function camera(t){ const c = baseCamera(t), [dx, dy, dz] = beatOffset(t), z = c.z + dz; return {cx:c.cx + dx/2**z, cy:c.cy + dy/2**z, z}; }
+let CAM = camera(0);
+const P = (lon, lat) => { const s = 2**CAM.z; return [(mx(lon) - CAM.cx)*s + W/2, (my(lat) - CAM.cy)*s + H/2]; };
+// ------------------------------------------------------------------ tuiles
+const TILES = {};
+function visibleTiles(cam, z){
+  const s = 2**cam.z, n = 2**z, out = [], m = 1.12;
+  const tx0 = Math.floor((cam.cx - W*m/2/s)*n/TS), tx1 = Math.floor((cam.cx + W*m/2/s)*n/TS);
+  const ty0 = Math.floor((cam.cy - H*m/2/s)*n/TS), ty1 = Math.floor((cam.cy + H*m/2/s)*n/TS);
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) if (y >= 0 && y < n) out.push([z, ((x % n) + n) % n, y]);
+  return out;
+}
+const levelFor = z => Math.max(ZMIN, Math.min(ZMAX, Math.floor(z + 0.5)));
+window.plan = () => { const set = new Set();
+  for (let f = 0; f < DUR*30; f++){ const c = camera(f/30), L = levelFor(c.z);
+    for (const zz of [L, Math.max(ZMIN, L - 1)]) for (const [z, x, y] of visibleTiles(c, zz)) set.add(`${z}/${x}/${y}`); }
+  return [...set]; };
+window.prep = async t => {
+  const jobs = [], c = camera(t), L = levelFor(c.z);
+  for (const [z, x, y] of [...visibleTiles(c, L), ...visibleTiles(c, Math.max(ZMIN, L - 1))]){ const k = `${z}/${x}/${y}`; if (k in TILES) continue;
+    jobs.push(new Promise(r => { const i = new Image(); i.onload = () => { TILES[k] = i; r(); }; i.onerror = () => { TILES[k] = null; r(); }; i.src = `tiles/${k}.jpg`; })); }
+  await Promise.all(jobs);
+};
+function drawTiles(){
+  const L = levelFor(CAM.z), s = 2**CAM.z;
+  for (const zz of [Math.max(ZMIN, L - 1), L]){ const ts = TS*2**(CAM.z - zz);
+    for (const [z, x, y] of visibleTiles(CAM, zz)){ const img = TILES[`${z}/${x}/${y}`]; if (!img) continue;
+      const sx = (x*TS/2**z - CAM.cx)*s + W/2, sy = (y*TS/2**z - CAM.cy)*s + H/2;
+      ctx.drawImage(img, Math.floor(sx), Math.floor(sy), Math.ceil(ts) + 1, Math.ceil(ts) + 1); } }
+}
+// ------------------------------------------------------------------ outils de dessin
+__HELPERS__
+function inView(bb, pad=80){ const [a, b] = P(bb[0], bb[3]), [c, d] = P(bb[2], bb[1]); return c > -pad && a < W + pad && d > -pad && b < H + pad; }
+function label(s, x, y, o={}){ ctx.font = `900 ${o.size || 56}px M`; const w = ctx.measureText(s).width; txt(s, clamp(x, MARGIN + w/2, W - MARGIN - w/2), y, o); }
+function lineLL(pts, alpha, color, w, dash=null){ if (alpha <= 0 || pts.length < 2) return null; const pp = pts.map(p => P(...p));
+  ctx.save(); ctx.globalAlpha = Math.min(alpha, 1); ctx.lineCap = "round"; ctx.lineJoin = "round"; if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); pp.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.lineWidth = w + 8; ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); ctx.restore(); return pp[pp.length - 1]; }
+// arc (courbe) entre deux points, tracé jusqu'à k
+const arcPts = (a, b, k, bend=0.25) => { const mxl = (a[0] + b[0])/2, myl = (a[1] + b[1])/2, dx = b[0] - a[0], dy = b[1] - a[1];
+  const c = [mxl - dy*bend, myl + dx*bend + Math.abs(dx)*0.12]; return d3.range(0, 41).map(i => i/40*k).map(q => [(1-q)**2*a[0] + 2*(1-q)*q*c[0] + q*q*b[0], (1-q)**2*a[1] + 2*(1-q)*q*c[1] + q*q*b[1]]); };
+function flight(a, b, k, alpha, color=Y1, w=8, bend=0.25){ if (k <= 0 || alpha <= 0) return; const e = lineLL(arcPts(a, b, k, bend), alpha, color, w, [20, 12]);
+  if (e && k < 1){ pulse(e[0], e[1], 0, alpha*0.8, color, 40); pin(e[0], e[1], alpha, color, 13); } }
+function photo(img, t, t0, t1, cy=1010, w=640, h=800){
+  if (!img) return 0; const a = EB(prog(t, t0, t0 + 0.35)), out = E(prog(t, t1, t1 + 0.3)); if (a <= 0 || out >= 1) return 0;
+  const kb = 1.04 + 0.08*prog(t, t0, t1 + 0.3), ar = img.width/img.height, dw = Math.max(w, h*ar)*kb, dh = dw/ar;
+  ctx.save(); ctx.translate(W/2, cy + 80*out); ctx.scale(a*(1 - 0.3*out), a*(1 - 0.3*out)); ctx.globalAlpha = 1 - out;
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16; ctx.fillRect(-w/2 - 12, -h/2 - 12, w + 24, h + 24); ctx.shadowColor = "transparent";
+  ctx.beginPath(); ctx.rect(-w/2, -h/2, w, h); ctx.clip(); ctx.drawImage(img, -dw/2, -dh/2, dw, dh); ctx.restore();
+  const fl = t >= t0 ? Math.exp(-(t - t0)*9) : 0; if (fl > 0.02){ ctx.save(); ctx.fillStyle = `rgba(255,255,255,${0.45*fl})`; ctx.fillRect(-60, -60, W + 120, H + 120); ctx.restore(); }
+  return 1 - out;
+}
+// ------------------------------------------------------------------ hippopotames (points)
+let HIPS = [], BB = [], MAGDA_D = [];
+function setup(){
+  BB = GEO.b.map(r => [d3.min(r, p => p[0]), d3.min(r, p => p[1]), d3.max(r, p => p[0]), d3.max(r, p => p[1])]);
+  const rnd = d3.randomLcg(9), ni = d3.minIndex(MAGDA, p => Math.hypot(p[0] - NAPOLES[0] - 0.12, p[1] - NAPOLES[1]));
+  MAGDA_D = MAGDA.filter(p => p[1] > 5.0 && p[1] < 10.6);
+  for (let i = 0; i < 1000; i++){
+    const spread = i < 170 ? 0.5 : 1, j = clamp(Math.round(ni + (rnd() - 0.42)*2*spread*MAGDA.length*(i < 170 ? 0.35 : 0.55)), 0, MAGDA.length - 1);
+    const p = MAGDA[j], amp = i < 170 ? 0.13 : 0.4, q = [p[0] + (rnd() - 0.5)*2*amp, p[1] + (rnd() - 0.5)*amp];
+    HIPS.push({p:q, d:Math.hypot(q[0] - NAPOLES[0], q[1] - NAPOLES[1]), k:rnd()}); }
+  const first = HIPS.slice(0, 170).sort((a, b) => a.d - b.d), rest = HIPS.slice(170).sort((a, b) => a.d - b.d); HIPS = [...first, ...rest];
+  for (let i = 0; i < 4; i++) HIPS[i].home = [NAPOLES[0] - 0.03 + (i % 2)*0.06, NAPOLES[1] - 0.02 + Math.floor(i/2)*0.045];
+}
+// nombre d'hippopotames affichés
+function nHip(t){
+  if (t < POPS_4[0] - 0.1) return 0;
+  return 4 + 30*EO(prog(t, S("h08"), T_BOOM)) + 136*E(prog(t, M("h09", 0.55), T_170)) + 830*E(prog(t, S("h17") + 0.3, T_1000));
+}
+function drawHips(t, alpha){
+  if (alpha <= 0) return; const n = nHip(t); if (n <= 0) return;
+  const s = clamp(2**(CAM.z - 7)*8, 5, 13), move = E(prog(t, M("h07", 0.4), M("h07", 0.7)));
+  const kill = (h, i) => i >= 4 && i < 170 && h.k < 0.47 ? prog(t, lerp(M("h15", 0.55), T_80 - 0.1, h.k*2), lerp(M("h15", 0.55), T_80 - 0.1, h.k*2) + 0.25)*(1 - prog(t, S("h17"), S("h17") + 0.5)) : 0;
+  const live = new Path2D(), dead = new Path2D(), proj = new Path2D();
+  for (let i = 0; i < Math.ceil(n); i++){ const h = HIPS[i]; const a = EB(clamp(n - i))*(i < 4 ? EB(prog(t, POPS_4[i] || 0, (POPS_4[i] || 0) + 0.25)) : 1);
+    if (a <= 0) continue; const p = i < 4 ? [lerp(h.home[0], h.p[0], move), lerp(h.home[1], h.p[1], move)] : h.p, [x, y] = P(...p);
+    if (x < -40 || x > W + 40 || y < -40 || y > H + 40) continue; const r = s*a*(i < 4 && t < M("h07", 0.7) ? 1.5 : 1);
+    const pth = kill(h, i) > 0.5 ? dead : i >= 170 ? proj : live; pth.moveTo(x + r, y); pth.arc(x, y, r, 0, 7); }
+  ctx.save(); ctx.globalAlpha = alpha; ctx.lineWidth = 1.8; ctx.strokeStyle = "rgba(255,255,255,.95)";
+  ctx.fillStyle = `rgb(${HIP})`; ctx.fill(live); ctx.stroke(live);
+  ctx.fillStyle = "rgba(255,170,60,.95)"; ctx.fill(proj); ctx.stroke(proj);
+  ctx.fillStyle = "rgba(60,60,60,.85)"; ctx.strokeStyle = "rgba(255,59,48,.9)"; ctx.fill(dead); ctx.stroke(dead); ctx.restore();
+}
+// ------------------------------------------------------------------ carte
+function renderMap(t){
+  CAM = camera(t);
+  ctx.fillStyle = "#0b1622"; ctx.fillRect(-60, -60, W + 120, H + 120);
+  drawTiles();
+  ctx.save(); ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 1.5; ctx.lineJoin = "round";
+  GEO.b.forEach((r, i) => { if (inView(BB[i])){ path([r]); ctx.stroke(); } }); ctx.restore();
+  // ---- drapeaux
+  flagFill("COL", "co", EO(prog(t, T_FLAG - 0.08, T_FLAG + 0.45))*(1 - prog(t, T_200 - 0.3, T_200 + 0.1)) + EO(prog(t, S("h12") + 0.3, S("h12") + 0.9))*(1 - prog(t, T_INV - 0.2, T_INV + 0.3)));
+  const fin = prog(t, T_DOWN, T_REF);
+  flagFill("MEX", "mx", EO(prog(t, T_MEX, T_MEX + 0.4))*(1 - prog(t, Ed("h14") + 0.3, Ed("h14") + 0.8)), fin);
+  flagFill("IND", "in", EO(prog(t, T_IND, T_IND + 0.4))*(1 - prog(t, Ed("h14") + 0.3, Ed("h14") + 0.8)), fin);
+  // ---- rivière Magdalena
+  const rvA = prog(t, M("h07", 0.3), M("h07", 0.4))*(1 - prog(t, S("h12"), S("h12") + 0.5)) + prog(t, S("h15"), S("h15") + 0.5)*(1 - prog(t, Ed("h17"), Ed("h17") + 0.5));
+  if (rvA > 0){ const k = E(prog(t, M("h07", 0.32), M("h07", 0.75))) || (t > S("h15") ? 1 : 0), pol = prog(t, S("h11") + 0.4, M("h11", 0.55))*(1 - prog(t, S("h12"), S("h12") + 0.5));
+    const col = d3.interpolateRgb(RIV, "#7a6a2a")(pol);
+    lineLL(MAGDA_D.slice(0, Math.max(2, Math.round(MAGDA_D.length*(t > S("h15") ? 1 : k)))), rvA, col, 9); }
+  // ---- 200 hippos (accroche)
+  const hk = prog(t, T_200 - 0.1, T_200)*(1 - prog(t, M("h01", 0.62), M("h01", 0.72)));
+  if (hk > 0){ const s = clamp(2**(CAM.z - 7)*8, 5, 13), live = new Path2D();
+    HIPS.slice(0, 200).forEach((h, i) => { const a = EB(prog(t, T_200 + i*0.004, T_200 + i*0.004 + 0.25))*hk; if (a <= 0) return; const [x, y] = P(...h.p); live.moveTo(x + s*a, y); live.arc(x, y, s*a, 0, 7); });
+    ctx.save(); ctx.lineWidth = 1.8; ctx.strokeStyle = "#fff"; ctx.fillStyle = `rgb(${HIP})`; ctx.fill(live); ctx.stroke(live); ctx.restore(); }
+  // ---- Colombie → Afrique (h01) et animaux venus d'Afrique (h04)
+  const afA = prog(t, M("h01", 0.66), M("h01", 0.7))*(1 - prog(t, Ed("h01") + 0.3, S("h02") + 0.5));
+  if (afA > 0){ flight(NAPOLES, AFRICA, E(prog(t, M("h01", 0.68), T_AFR)), afA, "#fff", 8, 0.18); const [x, y] = P(...AFRICA); pulse(x, y, t, prog(t, T_AFR - 0.1, T_AFR)*afA, Y1, 120); pin(x, y, EB(prog(t, T_AFR, T_AFR + 0.3))*afA, Y1, 16); }
+  const anA = prog(t, S("h04") + 0.3, S("h04") + 0.6)*(1 - prog(t, M("h04", 0.5), M("h04", 0.58)));
+  if (anA > 0) POPS_ANIM.forEach((tp, i) => { const src = [AFRICA[0] + [-6, 4, 10][i], AFRICA[1] + [6, -8, 2][i]]; flight(src, NAPOLES, E(prog(t, tp - 0.2, tp + 1.3)), anA, i === 1 ? Y1 : "#fff", 7, 0.15 + i*0.05);
+    const [x, y] = P(...src); pin(x, y, EB(prog(t, tp - 0.2, tp + 0.1))*anA, "#fff", 12); });
+  // ---- Hacienda Nápoles
+  const naA = prog(t, M("h03", 0.6), M("h03", 0.68))*(1 - prog(t, Ed("h04") + 0.2, Ed("h04") + 0.5)) + prog(t, S("h06") + 0.3, S("h06") + 0.6)*(1 - prog(t, M("h07", 0.4), M("h07", 0.5)));
+  if (naA > 0){ const [x, y] = P(...NAPOLES); pulse(x, y, t, naA, Y1, 120); pin(x, y, naA, Y1, 18); }
+  // ---- Medellín 1993
+  const meA = prog(t, S("h05") + 0.3, S("h05") + 0.6)*(1 - prog(t, Ed("h05") + 0.2, Ed("h05") + 0.5));
+  if (meA > 0){ const [x, y] = P(...MEDELLIN); pulse(x, y, t, meA*(1 - prog(t, T_KILL, T_KILL + 0.1)), RED, 140); pin(x, y, meA, RED, 20); cross(x, y, prog(t, T_KILL, T_KILL + 0.25)*meA, 46);
+    label("MEDELLÍN", x, y + 92, {size:58, alpha:meA, stroke:12}); }
+  // ---- les autres animaux quittent l'hacienda
+  const flA = prog(t, S("h06") + 0.4, S("h06") + 0.7)*(1 - prog(t, Ed("h06"), Ed("h06") + 0.4));
+  if (flA > 0) FLEE.forEach((d, i) => { const t0 = S("h06") + 0.6 + i*0.25; flight(NAPOLES, d, E(prog(t, t0, t0 + 1.4)), flA, "#fff", 6, 0.2); });
+  // ---- hippos
+  drawHips(t, 1 - prog(t, M("h13", 0.62), M("h13", 0.7)) + prog(t, S("h15") - 0.2, S("h15") + 0.3));
+  // ---- Doradal
+  const doA = prog(t, M("h16", 0.4), M("h16", 0.5))*(1 - prog(t, Ed("h16"), Ed("h16") + 0.3));
+  if (doA > 0){ const [x, y] = P(...DORADAL); pulse(x, y, t, doA, Y1, 120); pin(x, y, doA, Y1, 18); label("DORADAL", x, y - 80, {size:58, alpha:doA, stroke:12}); }
+  // ---- Mexique / Inde
+  const mxA = prog(t, T_MEX - 0.4, T_MEX)*(1 - prog(t, Ed("h14") + 0.2, Ed("h14") + 0.6)), ret = 1 - E(prog(t, T_DOWN, T_REF));
+  if (mxA > 0){ flight(NAPOLES, MEXPT, E(prog(t, T_MEX - 0.5, T_MEX + 0.2))*ret, mxA, Y1, 7, -0.25); flight(NAPOLES, INDPT, E(prog(t, T_IND - 0.9, T_IND + 0.2))*ret, mxA*prog(t, T_IND - 0.9, T_IND - 0.6), Y1, 7, -0.12);
+    for (const [pt, tt, n] of [[MEXPT, T_MEX, "10"], [INDPT, T_IND, "60"]]){ const [x, y] = P(...pt); const a = EB(prog(t, tt + 0.1, tt + 0.4))*mxA;
+      if (a > 0) txt(n, x, y - 90, {size:96, color:Y1, scale:a, alpha:Math.min(a, 1), stroke:14, glow:"rgba(255,214,10,.45)"}); cross(x, y, prog(t, T_REF, T_REF + 0.25)*mxA, 50); } }
+  const vg = ctx.createRadialGradient(W/2, H/2, H*0.45, W/2, H/2, H*0.85); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.32)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  const tg = ctx.createLinearGradient(0, 0, 0, 560); tg.addColorStop(0, "rgba(0,0,0,.38)"); tg.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 560);
+}
+function cross(x, y, a, s=34){ if (a <= 0) return; ctx.save(); ctx.globalAlpha = Math.min(a, 1); ctx.strokeStyle = RED; ctx.lineWidth = 12; ctx.lineCap = "round"; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 12;
+  const k = EB(clamp(a)); ctx.beginPath(); ctx.moveTo(x - s*k, y - s*k); ctx.lineTo(x + s*k, y + s*k); ctx.moveTo(x + s*k, y - s*k); ctx.lineTo(x - s*k, y + s*k); ctx.stroke(); ctx.restore(); }
+// flou de mouvement pendant les balayages / zooms rapides
+function motionBlur(t){
+  const a = camera(t), b = camera(t + 1/30), s = 2**a.z;
+  let dx = (b.cx - a.cx)*s, dy = (b.cy - a.cy)*s; const dz = b.z - a.z, sp = Math.hypot(dx, dy);
+  if (sp < 5 && Math.abs(dz) < 0.012) return;
+  const cap = Math.min(1, 140/Math.max(sp, 1)); dx *= cap; dy *= cap;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, W, H); bctx.drawImage(cv, 0, 0);
+  const N = 5, st = clamp(Math.max(sp/60, Math.abs(dz)/0.08));
+  for (let i = 1; i <= N; i++){ const q = i/N, sc = 2**(-clamp(dz, -0.12, 0.12)*q*1.2);
+    ctx.globalAlpha = 0.28*st; ctx.save(); ctx.translate(W/2 - dx*q*0.9, H/2 - dy*q*0.9); ctx.scale(sc, sc); ctx.drawImage(BUF, -W/2, -H/2); ctx.restore(); }
+  ctx.restore();
+}
+// ------------------------------------------------------------------ sous-titres + frise
+const CAPS = TL.vo.filter(v => !["h01", "h02", "h18"].includes(v.id)).map(v => {
+  const words = [];
+  for (const w of v.cap.split(/\s+/)){ const o = {hi:/\*/.test(w), w:w.replace(/\*/g, "")}; const p = words[words.length-1];
+    if (p && (/^[:;!?…%]$/.test(o.w) || (/^\d+$/.test(p.w) && /^\d{3}/.test(o.w)))) { p.w += " " + o.w; p.hi = p.hi || o.hi; } else words.push(o); }
+  const groups = []; let cur = [];
+  for (const w of words){ const len = cur.map(x => x.w).join(" ").length + w.w.length + 1;
+    if (cur.length && len > 14){ groups.push(cur); cur = []; } cur.push(w); if (/[.,:!?…]$/.test(w.w)){ groups.push(cur); cur = []; } }
+  if (cur.length) groups.push(cur);
+  const tot = d3.sum(groups, g => g.map(x => x.w).join(" ").length + 4); let acc = 0;
+  return groups.map(g => { const l = g.map(x => x.w).join(" ").length + 4; const s = v.start + (v.end - v.start)*acc/tot; acc += l; return {g, s, e:v.start + (v.end - v.start)*acc/tot}; });
+}).flat();
+function yearAt(t){ let v = null; for (const [t0, t1, y0, y1] of TL.ticker) if (t >= t0) v = lerp(y0, y1, E(prog(t, t0, t1))); return v; }
+const TWIN = [[S("h09"), Ed("h09") + 0.2], [S("h17"), Ed("h17") + 0.2]];
+const HITS = TL.sfx.filter(s => ["impact", "hit"].includes(s.name)).map(s => [s.t, s.name === "hit" ? 0.05 : 0.075, s.name === "hit" ? 7 : 14]);
+HITS.push([0.03, 0.1, 18], [1.35, 0.06, 8]);
+let PH = {};
+function render(t){
+  let p = 0, sx = 0, sy = 0;
+  for (const [ti, amp, sh] of HITS) if (t >= ti){ const d = t - ti; p += amp*Math.exp(-d*8); sx += sh*Math.exp(-d*7)*Math.sin(d*50); sy += sh*0.7*Math.exp(-d*7)*Math.cos(d*43); }
+  ctx.save(); ctx.translate(W/2 + sx, H/2 + sy); ctx.scale(1.04 + p, 1.04 + p); ctx.translate(-W/2, -H/2);
+  renderMap(t); motionBlur(t);
+  overlay(t);
+  ctx.restore();
+  const rf = t >= T_KILL ? Math.exp(-(t - T_KILL)*7) : 0; if (rf > 0.02){ ctx.fillStyle = `rgba(255,40,30,${0.35*rf})`; ctx.fillRect(0, 0, W, H); }
+  const fl = Math.exp(-t*7); if (fl > 0.02){ ctx.fillStyle = `rgba(255,255,255,${0.7*fl})`; ctx.fillRect(0, 0, W, H); }
+}
+function counter(n, t, t0, t1, y, o={}){ const a = EB(prog(t, t0, t0 + 0.2))*(1 - prog(t, t1, t1 + 0.25)); if (a <= 0) return;
+  txt(n, W/2, y, {size:fit(n, o.size || 190, W - 2*MARGIN), color:o.color || Y1, scale:a, alpha:Math.min(a, 1), stroke:22, glow:o.glow || "rgba(255,214,10,.45)"}); }
+const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+function overlay(t){
+  hippoIntro(t);
+  // ---- photos (au centre, ~2 s)
+  photo(PH.pablo, t, T_PABLO - 0.05, S("h03") + 0.25, 1010, 640, 552);
+  photo(PH.p2, t, T_NAPPHOTO, Ed("h03") - 0.1);
+  photo(PH.p4, t, T_ABAND, M("h07", 0.27));
+  photo(PH.p6, t, T_DANGPH, M("h10", 0.68));
+  photo(PH.p8, t, T_VILL, M("h16", 0.42));
+  lamantin(t);
+  // ---- accroche
+  kin("EN COLOMBIE", W/2, 520, t, T_FLAG - 0.1, {size:120, out:T_200 - 0.15});
+  if (t < T_200 + 0.02) counter(fmt(lerp(0, 200, d3.easeExpIn(prog(t, T_200 - 0.4, T_200)))), t, T_200 - 0.4, T_200, 560, {size:200});
+  else { counter("200", t, T_200, M("h01", 0.62), 560, {size:230}); kin("HIPPOPOTAMES", W/2, 720, t, T_200 + 0.1, {size:110, out:M("h01", 0.62)}); }
+  kin("À 10 000 KM", W/2, 520, t, M("h01", 0.72), {size:120, color:Y1, out:Ed("h01") + 0.2}); kin("DE L'AFRIQUE", W/2, 660, t, T_AFR - 0.3, {size:110, out:Ed("h01") + 0.2});
+  kin("À CAUSE DE…", W/2, 470, t, S("h02") + 0.3, {size:96, out:T_PABLO - 0.1});
+  const pa = EB(prog(t, T_PABLO, T_PABLO + 0.3))*(1 - prog(t, S("h03") + 0.25, S("h03") + 0.5));
+  if (pa > 0){ txt("PABLO", W/2, 470, {size:120, alpha:Math.min(pa, 1), stroke:16, scale:pa}); txt("ESCOBAR", W/2, 605, {size:120, color:Y1, alpha:Math.min(pa, 1), stroke:16, scale:pa, glow:"rgba(255,214,10,.45)"}); }
+  // ---- histoire
+  kin("ANNÉES 80", W/2, 620, t, T_80S, {size:140, color:Y1, out:M("h03", 0.55)});
+  kin("HACIENDA NÁPOLES", W/2, 470, t, T_NAPPHOTO + 0.1, {size:96, color:Y1, out:Ed("h03") - 0.1});
+  ["GIRAFES", "ZÈBRES", "ÉLÉPHANTS"].forEach((w, i) => kin(w, W/2, 620, t, POPS_ANIM[i], {size:130, color:i === 1 ? Y1 : "#fff", out:i < 2 ? POPS_ANIM[i + 1] - 0.1 : M("h04", 0.5)}));
+  kin("4 HIPPOPOTAMES", W/2, 560, t, POPS_4[0], {size:110, color:Y1, out:Ed("h04") + 0.15}); kin("1 MÂLE, 3 FEMELLES", W/2, 690, t, M("h04", 0.8), {size:84, out:Ed("h04") + 0.15});
+  kin("1993", W/2, 600, t, S("h05") + 0.1, {size:180, color:Y1, out:T_KILL - 0.15}); kin("ABATTU", W/2, 600, t, T_KILL, {size:160, color:RED, out:Ed("h05") + 0.2});
+  kin("TROP", W/2, 560, t, T_DANGER - 0.1, {size:130, out:Ed("h06") + 0.15}); kin("DANGEREUX", W/2, 700, t, T_DANGER, {size:140, color:RED, out:Ed("h06") + 0.15});
+  kin("ABANDONNÉS", W/2, 470, t, T_ABAND + 0.1, {size:110, color:Y1, out:M("h07", 0.27)});
+  kin("AUCUN", W/2, 560, t, T_NOPRED - 0.1, {size:130, out:Ed("h07") + 0.15}); kin("PRÉDATEUR", W/2, 700, t, T_NOPRED, {size:140, color:Y1, out:Ed("h07") + 0.15});
+  kin("ÇA EXPLOSE", W/2, 620, t, T_BOOM, {size:140, color:Y1, out:Ed("h08") + 0.15});
+  if (t < T_170) counter(fmt(t < M("h09", 0.55) ? 4 : nHip(t)), t, S("h09") + 0.2, T_170 - 0.02, 620, {size:200}); else counter("170", t, T_170, Ed("h09") + 0.2, 620, {size:230});
+  kin("MEURTRIER", W/2, 470, t, T_MEURT, {size:120, color:RED, out:Ed("h10") + 0.1});
+  kin("LAMANTIN", W/2, 470, t, T_LAMA + 0.1, {size:120, color:Y1, out:Ed("h11") + 0.4});
+  kin("ESPÈCE", W/2, 560, t, T_INV - 0.1, {size:130, out:Ed("h12") + 0.15}); kin("INVASIVE", W/2, 700, t, T_INV, {size:150, color:RED, out:Ed("h12") + 0.15});
+  kin("STÉRILISATION", W/2, 620, t, T_STER, {size:120, color:Y1, out:M("h13", 0.6)});
+  kin("70 HIPPOS", W/2, 620, t, M("h13", 0.72), {size:130, color:Y1, out:Ed("h13") + 0.1});
+  kin("AUCUN PAYS", W/2, 620, t, T_REF - 0.1, {size:130, color:RED, out:Ed("h14") + 0.2});
+  kin("AVRIL 2026", W/2, 620, t, S("h15") + 0.6, {size:130, color:Y1, out:M("h15", 0.65)});
+  counter("80", t, T_80, Ed("h15") + 0.2, 600, {size:230, color:RED, glow:"rgba(255,59,48,.5)"}); kin("EUTHANASIÉS", W/2, 770, t, T_80 + 0.1, {size:110, out:Ed("h15") + 0.2});
+  kin("ATTRACTION", W/2, 620, t, T_ATTR, {size:130, color:Y1, out:T_SYMB - 0.12}); kin("SYMBOLE", W/2, 620, t, T_SYMB, {size:150, color:Y1, out:Ed("h16") + 0.2});
+  if (t < T_1000) counter(fmt(nHip(t)), t, S("h17") + 0.4, T_1000 - 0.02, 620, {size:200, color:"#ffaa3c"}); else { counter("+ DE 1 000", t, T_1000, Ed("h17") + 0.2, 620, {size:170}); kin("EN 2035", W/2, 780, t, T_1000 + 0.1, {size:110, out:Ed("h17") + 0.2}); }
+  if (t > S("h18")){ const o1 = M("h18", 0.55);
+    kin("ET TOI ?", W/2, 480, t, S("h18") + 0.1, {size:130, color:Y1, out:o1}); kin("TU FERAIS QUOI ?", W/2, 630, t, S("h18") + 0.7, {size:100, out:o1});
+    const a = EB(prog(t, o1 + 0.2, o1 + 0.6)); txt("DIS-LE", W/2, 560, {size:120, color:Y1, scale:a, alpha:Math.min(a, 1), stroke:16});
+    const b = EB(prog(t, o1 + 0.4, o1 + 0.8)); txt("EN COMMENTAIRE !", W/2, 680, {size:fit("EN COMMENTAIRE !", 84, W - 2*MARGIN), scale:b, alpha:Math.min(b, 1), stroke:13}); }
+  // ---- frise des années
+  const yv = yearAt(t), ya = yv === null ? 0 : d3.max(TWIN, ([a, b]) => prog(t, a - 0.1, a + 0.2)*(1 - prog(t, b, b + 0.3)));
+  if (ya > 0){ const base = Math.round(yv);
+    for (let j = -1; j <= 1; j++){ const v = base + j, x = W/2 + (v - yv)*280; if (x < MARGIN || x > W - MARGIN) continue; const act = clamp(1 - Math.abs(v - yv));
+      txt(String(v), x, 450, {size:44 + act*40, color:act > 0.5 ? Y1 : "#fff", alpha:Math.min(ya, 1)*(0.35 + 0.65*act)*clamp(Math.min(x - MARGIN, W - MARGIN - x)/80), stroke:9, glow:act > 0.5 ? "rgba(255,214,10,.45)" : null}); } }
+  // ---- sous-titres
+  let cur = null; for (const g of CAPS) if (g.s <= t) cur = g;
+  if (cur && t <= cur.e + 0.25){ const a = EB(prog(t, cur.s, cur.s + 0.15));
+    const segs = cur.g.map((w, i) => ({t:(i ? " " : "") + w.w.replace(/[.,]+$/, "").toUpperCase(), c:w.hi ? Y1 : "#fff"}));
+    richLine(segs, W/2, 300, {size:80, scale:0.8 + 0.2*a, alpha:Math.min(a*2, 1), stroke:16}); }
+}
+// hippopotame (PNG) + cri : gueule ouverte qui fonce vers la caméra, puis sort
+function hippoIntro(t){
+  const img = PH.hippo; if (!img || t > 1.9) return;
+  const a = EB(prog(t, 0, 0.4)), out = E(prog(t, 1.3, 1.85)), roar = Math.sin(Math.PI*clamp(t/2.0));
+  const h = 700*(1 + 0.07*roar), w = h*img.width/img.height;
+  ctx.save(); ctx.translate(W/2 + Math.sin(t*48)*7*roar - out*900, 1380 + out*200); ctx.scale(a*(1 + 0.2*out), a*(1 + 0.2*out));
+  ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18; ctx.drawImage(img, -w/2, -h, w, h); ctx.restore();
+}
+function lamantin(t){
+  const img = PH.lama; if (!img) return; const a = EB(prog(t, T_LAMA, T_LAMA + 0.35)), out = E(prog(t, Ed("h11") + 0.3, Ed("h11") + 0.6)); if (a <= 0 || out >= 1) return;
+  const h = 560, w = h*img.width/img.height, bob = Math.sin((t - T_LAMA)*3)*10;
+  ctx.save(); ctx.translate(W/2, 1300 + bob + out*400); ctx.scale(a, a); ctx.globalAlpha = 1 - out;
+  ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18; ctx.drawImage(img, -w/2, -h, w, h); ctx.restore();
+}
+function outlined(img, r=9){ const c = document.createElement("canvas"); c.width = img.width + 2*r; c.height = img.height + 2*r; const g = c.getContext("2d");
+  for (let a = 0; a < 32; a++) g.drawImage(img, r + Math.cos(a/32*6.283)*r, r + Math.sin(a/32*6.283)*r);
+  g.globalCompositeOperation = "source-in"; g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.globalCompositeOperation = "source-over"; g.drawImage(img, r, r); return c; }
+window.renderAt = render;
+const load = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { FLAG[k] = i; r(); }; i.onerror = r; i.src = src; });
+const img = (k, src, f) => new Promise(r => { const i = new Image(); i.onload = () => { PH[k] = f ? f(i) : i; r(); }; i.onerror = r; i.src = src; });
+window.ready = Promise.all([fetch("geo.json").then(r => r.json()).then(j => { GEO = j; setup(); }),
+  ...["co", "mx", "in"].map(f => load(f, `flags/${f}.svg`)),
+  img("hippo", "assets/hippo-gueule.png", outlined), img("lama", "assets/lamantin.png", outlined), img("pablo", "assets/pablo.png"),
+  img("p2", "assets/p2-portail.jpg"), img("p4", "assets/p4-abandon.jpg"), img("p6", "assets/p6-danger.jpg"), img("p8", "assets/p8-village.jpg"),
+  document.fonts.load("900 60px M"), document.fonts.load("800 60px M")]).then(() => true);
+</script>
+</body>
+</html>
